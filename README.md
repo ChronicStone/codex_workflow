@@ -2,6 +2,8 @@
 
 This package installs a custom workflow for the Codex, including project-scope guidance, workflow routes, and specialized subagents.
 
+This workflow optimizes token usage and facilitates the smooth and seamless implementation of long-term plans across individual sessions.
+
 > NOTE: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again.
 
 ## Installation
