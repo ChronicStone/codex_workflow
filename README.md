@@ -1,8 +1,6 @@
 # Codex Project Workflow
 
-This package installs a custom workflow for the Codex, including project-scope guidance, workflow routes, and specialized subagents.
-
-This workflow optimizes token usage and facilitates the smooth and seamless implementation of long-term plans across individual sessions.
+Codex workflow for optimize token usage and managing long-running implementation plans across multiple sessions
 
 > NOTE: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again.
 
@@ -46,6 +44,8 @@ The default workflow is designed to save tokens for the ChatGPT Plus package. Th
 - Set `executor_luna` and `tester` to the `max` model_reasoning_effort. Currently `xhigh`. 
 - Allow subagents to send more detailed report packets to the main agent (event and final report are currently limited to 150 & 250 words).
 - Allow subagents to retry more times when stuck/blocked before replacing them (currently 2). The new subagent will have to reload the context packet, but this will reduce the risk of getting stuck; consider this.
+
+## Restart codex after installation
 
 ## How to use the workflow with the Codex
 
