@@ -21,7 +21,7 @@ my-project/
 Send the following request to Codex:
 > Please extract `codex_workflows.zip`, read the extracted `workflows_setup_guide.md` file, and perform the entire installation process within it.
 
-Codex will create two workflow files and the main documentation framework in agent_docs/, agent file `AGENTS.md` in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
+Codex will create two workflow files, main documentation framework in agent_docs/ and agent file `AGENTS.md` in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
 
 ## Configuration Questions
 
@@ -57,7 +57,7 @@ There are 3 work routes:
 - Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
 
 ### How to use 
-- Normally, for simple or general Q&A, you don't need to do anything.
+- Normally, for simple work or general Q&A, you don't need to do anything.
 - When starting or continuing a plan in progress, just tell Codex in the prompt: "use medium route / use heavy route. ..."
 
 (Codex will not automatically activate the medium/heavy route. The selected route will be maintained throughout the work session unless you actively change the route.)
