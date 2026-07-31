@@ -1,8 +1,18 @@
 # Codex Project Workflow
 
-Codex workflow for optimize token usage and managing long-running implementation plans across multiple sessions
+Codex workflow - Automatically set up and configure Luna subagent + main agent as Orchestrator for optimize token usage and managing long-running implementation plans across multiple sessions
 
 > Note: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again. 
+
+Zip file contains the following files:
+- `workflows_setup_guide.md` - The installation guide for the workflow for Codex setup agent.
+- `AGENTS.md` - The main agent file.
+- `tester.toml` - The tester subagent configuration file.
+- `doc-writer.toml` - The doc-writer subagent configuration file.
+- `executor_luna.toml` - The executor_luna subagent configuration file.
+- `executor_sol.toml` - The executor_sol subagent configuration file.
+- `heavy_route.md` - The heavy route workflow files.
+- `medium_route.md` - The medium route workflow file.
 
 ## Installation
 
