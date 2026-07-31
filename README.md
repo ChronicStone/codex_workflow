@@ -2,7 +2,7 @@
 
 Codex workflow for optimize token usage and managing long-running implementation plans across multiple sessions
 
-> NOTE: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again.
+> Note: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again. 
 
 ## Installation
 
@@ -21,7 +21,7 @@ my-project/
 Send the following request to Codex:
 > Please extract `codex_workflows.zip`, read the extracted `workflows_setup_guide.md` file, and perform the entire installation process within it.
 
-Codex will create two workflow files and the main documentation framework in agent_docs/ in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
+Codex will create two workflow files and the main documentation framework in agent_docs/, agent file `AGENTS.md` in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
 
 ## Configuration Questions
 
@@ -40,30 +40,34 @@ You can describe requirements such as:
 
 ### 2. Power Configuration
 
-The default workflow is designed to save tokens for the ChatGPT Plus package. Codex will ask if you want to enable each advanced option individually.
+The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex will ask if you want to enable each advanced option individually.
 
 - Allow more subagents (currently a maximum of 3) and allow more than one `executor_sol` call.
 - Set `executor_luna` and `tester` to the `max` model_reasoning_effort. Currently `xhigh`. 
 - Allow subagents to send more detailed report packets to the main agent (event and final report are currently limited to 150 & 250 words).
 - Allow subagents to retry more times when stuck/blocked before replacing them (currently 2). The new subagent will have to reload the context packet, but this will reduce the risk of getting stuck; consider this.
 
-## Restart codex after installation
+### Restart codex after installation
 
-## How to use the workflow with Codex
+## What is a workflow route?
 
 There are 3 work routes:
 - Light route: Default, for light and medium tasks. Original Codex, minimal context, no need for further explanation.
-- Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol 5.6 high/xhigh should be used as the main agent.
-- Medium route: Coordinating multiple subagents for a less heavy task can sometimes cost more tokens than having the main agent do the work itself. Letting the main agent do the work will be faster. Sol 5.6 medium is recommended.
+- Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended. 
+- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
 
-- Normally, you don't need to do anything.
-- When starting or continuing a plan in progress, tell Codex in the prompt: "use medium route / use heavy route. ..."
+### How to use 
+- Normally, for simple or general Q&A, you don't need to do anything.
+- When starting or continuing a plan in progress, just tell Codex in the prompt: "use medium route / use heavy route. ..."
+
 (Codex will not automatically activate the medium/heavy route. The selected route will be maintained throughout the work session unless you actively change the route.)
 - When you want to end a session, clean up and update documents, commit, etc., tell Codex: "end this session. ...". 
+
 Follow this procedure so that ongoing projects can be smoothly resumed in a future session. You can still continue the session after that if needed. 
 
-## Customize the workflow
+### Customize the workflow
 
 - Customize the End-of-Session handoff to suit your needs in AGENTS.md
 - Add the custom subagents you want in ~/.codex/agents
+
 .... 
