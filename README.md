@@ -70,11 +70,19 @@ There are 3 work routes:
 
 ### How to use 
 - Normally, for simple work or general Q&A, you don't need to do anything.
-- When starting or continuing a plan in progress, just tell Codex in the prompt: "use medium route / use heavy route. [your task description]".
+- When starting or continuing a plan in progress, just tell Codex in the prompt: "
 
-(Codex will not automatically activate the medium/heavy route. The selected route will be maintained throughout the work session unless you actively change the route.)
+```text
+use medium route / use heavy route. [your task description]".
+```
+Codex will switch to a full workflow with a medium/heavy route.  Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt.
 
-- When you want to end a session, clean up and update documents, commit, etc., tell Codex: "end this session. [tell Codex more details if need]". End-of-Session handoff will be performed (see AGENTS.md for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
+- When you want to end current session, clean up and update documents, commit, etc., tell Codex: 
+
+```text
+end this session. [tell Codex more details if need]".
+```
+`End-of-Session` handoff will be performed (see AGENTS.md for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
 
 You can still continue the session after that message if needed. 
 
