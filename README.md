@@ -33,6 +33,8 @@ Send the following request to Codex:
 
 Codex will create two workflow files, main documentation framework in agent_docs/ and agent file `AGENTS.md` in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
 
+Done! At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
+
 ## Configuration Questions
 
 After installation, Codex will ask the following questions in sequence.
@@ -68,12 +70,13 @@ There are 3 work routes:
 
 ### How to use 
 - Normally, for simple work or general Q&A, you don't need to do anything.
-- When starting or continuing a plan in progress, just tell Codex in the prompt: "use medium route / use heavy route. ..."
+- When starting or continuing a plan in progress, just tell Codex in the prompt: "use medium route / use heavy route. [your task description]".
 
 (Codex will not automatically activate the medium/heavy route. The selected route will be maintained throughout the work session unless you actively change the route.)
-- When you want to end a session, clean up and update documents, commit, etc., tell Codex: "end this session. ...". 
 
-Follow this procedure so that ongoing projects can be smoothly resumed in a future session. You can still continue the session after that if needed. 
+- When you want to end a session, clean up and update documents, commit, etc., tell Codex: "end this session. [tell Codex more details if need]". End-of-Session handoff will be performed (see AGENTS.md for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
+
+You can still continue the session after that message if needed. 
 
 ### Customize the workflow
 
