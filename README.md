@@ -1,43 +1,68 @@
 # Codex Project Workflow
 
-Codex workflow - Automatically set up and configure Luna subagent + main agent as Orchestrator for optimize token usage and managing long-running implementation plans across multiple sessions
+A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
 
-> Note: This workflow has scope only within the current project. When you start a new project, you will need to install the workflow again. 
+The workflow is designed to reduce unnecessary token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation, and an End-of-Session handoff.
 
-Zip file contains the following files:
-- `workflows_setup_guide.md` - The installation guide for the workflow for Codex setup agent.
-- `AGENTS.md` - The main agent file.
-- `tester.toml` - The tester subagent configuration file.
-- `doc-writer.toml` - The doc-writer subagent configuration file.
-- `executor_luna.toml` - The executor_luna subagent configuration file.
-- `executor_sol.toml` - The executor_sol subagent configuration file.
-- `heavy_route.md` - The heavy route workflow files.
-- `medium_route.md` - The medium route workflow file.
+> **Note:** The workflow is installed per project. Install it again when starting a new project.
+
+## Repository contents
+
+* `workflows_setup_guide.md` — Installation instructions read and executed by Codex.
+* `AGENTS.md` — Main-agent workflow and project rules.
+* `heavy_route.md` — Multi-agent workflow for large implementation plans.
+* `medium_route.md` — Full project workflow without subagents.
+* `executor_luna.toml` — Default Luna implementation subagent.
+* `executor_sol.toml` — Sol executor for difficult or highly cross-cutting work.
+* `tester.toml` — Independent testing and defect-analysis subagent.
+* `doc-writer.toml` — Documentation subagent for verified implementation results.
 
 ## Installation
 
-### 1. Move the ZIP file to the project
+### 1. Download the repository
 
-Download the ZIP file and move it to the root directory of the project where you want to use the workflow.
+Use either of these methods:
+
+* Select **Code → Download ZIP** on GitHub and extract it.
+* Clone the repository with Git.
+
+Place or rename the downloaded repository folder as `codex_workflows` inside your project directory:
 
 ```text
 my-project/
-├── codex_workflows.zip
+├── codex_workflows/
+│   ├── workflows_setup_guide.md
+│   ├── AGENTS.md
+│   ├── heavy_route.md
+│   ├── medium_route.md
+│   ├── executor_luna.toml
+│   ├── executor_sol.toml
+│   ├── tester.toml
+│   └── doc-writer.toml
 └── ...
 ```
 
-### 2. launch Codex app or Codex cli in the project directory, tell it to install the default workflow
+### 2. Ask Codex to install the workflow
 
-Send the following request to Codex:
-> Please extract `codex_workflows.zip`, read the extracted `workflows_setup_guide.md` file, and perform the entire installation process within it.
+Launch Codex CLI or the Codex app from your project directory and send:
 
-Codex will create two workflow files, main documentation framework in agent_docs/ and agent file `AGENTS.md` in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
+```text
+Read `codex_workflows/workflows_setup_guide.md` and perform the complete installation process described in it.
+```
+
+Codex will automatically:
+
+* install the project-level `AGENTS.md`;
+* create the workflow and project-documentation structure under `agent_docs/`;
+* install `executor_luna`, `executor_sol`, `tester`, and `doc-writer` under `~/.codex/agents/`;
+* configure the workflow for the current project;
+* ask the optional configuration questions described below.
 
 Done! At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
 
 ## Configuration Questions
 
-After installation, Codex will ask the following questions in sequence.
+After basic installation, Codex will ask the following advanced configuration questions. You can answer them or skip them. If you skip, the default settings will be used.
 
 ### 1. Workflow Style and Design Principles (optinal)
 
