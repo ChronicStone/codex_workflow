@@ -21,6 +21,8 @@ my-project/
 Send the following request to the Codex:
 > Please extract `codex_workflows.zip`, read the extracted `workflows_setup_guide.md` file, and perform the entire installation process within it.
 
+Codex will create two workflow files and the main documentation framework in agent_docs/ in your workspace, along with initializing the subagent set including `tester`, `doc-writer`, `executor_luna`, `executor_sol` inside ~/.codex/agents/
+
 ## Configuration Questions
 
 After installation, the Codex will ask the following questions in sequence.
