@@ -1,25 +1,13 @@
-<h3 align="center">
-  <strong>SIMPLE ─── EASY ──── EFFICIENT</strong><br>
-  <sub>  (to use)　         　 (to install)　　 (token consumption)</sub>
-</h3>
+<h3 align="center"><big><big><strong>SIMPLE&emsp;&emsp;───&emsp;&emsp;EASY&emsp;&emsp;───&emsp;&emsp;EFFICIENT</strong></big></big></h3>
+<p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
+<hr>
 
 A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
 
-The workflow is designed to reduce unnecessary token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation, and an End-of-Session handoff.
+The workflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation, and an End-of-Session handoff.
 
 > **Note:** The workflow is installed per project. Install it again when starting a new project.
 
-## Repository contents
-
-* `workflows_setup_guide.md` — Installation instructions read and executed by Codex.
-* `AGENTS.md` — Main-agent workflow and project rules.
-* `heavy_route.md` — Multi-agent workflow for large implementation plans.
-* `medium_route.md` — Full project workflow without subagents.
-* `executor_luna.toml` — Default Luna implementation subagent.
-* `executor_sol.toml` — Sol executor for difficult or highly cross-cutting work.
-* `tester.toml` — Independent testing and defect-analysis subagent.
-* `doc-writer.toml` — Documentation subagent for related documentation work.
-* `explorer.toml` — Subagent for exploring code, docs, libs, tools... 
 
 ## Installation
 
@@ -53,14 +41,6 @@ Launch Codex CLI or the Codex app from your project directory and send:
 ```text
 Read `codex_workflows/workflows_setup_guide.md` and perform the complete installation process described in it.
 ```
-
-Codex will automatically:
-
-* install the project-level `AGENTS.md`;
-* create the workflow and project-documentation structure under `agent_docs/`;
-* install `executor_luna`, `executor_sol`, `tester`, and `doc-writer` under `~/.codex/agents/`;
-* configure the workflow for the current project;
-* ask the optional configuration questions described below.
 
 Done! At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
 
