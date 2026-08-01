@@ -103,14 +103,15 @@ Run this section only when the user directly commands the exact phrase `end this
 
 1. Collect checkpoints only from running or incomplete workers.
 2. Confirm verification occurred after the last relevant code/test change; do not rerun solely because the session is ending.
-3. If a doc-writer thread already exists, it may perform compact read-only integrity checks; do not spawn one solely for status checks.
-4. Collect concise final status, diff statistics, whitespace/error checks, and targeted changed-file review in one bounded read-only batch when practical. Keep status reconciliation, documentation writes, Git staging, and the commit sequential.
-5. Empty `project_progress.md` content if the plan is complete, otherwise , reconcile it with the final status, verification evidence, blockers, and next action if its recorded state has changed.
-6. Replace `latest_session_work.md` once with changes, verification, pending work, and next entry point.
-7. Update durable docs only when warranted and `project_diary.md` only for significant decisions or lessons.
-8. If meaningful project files changed, run `git add .` and commit with `git commit -m "[auto commit] <summary>"`.
+3. Complete warranted durable documentation first.  If a doc-writer thread already exists, it may perform compact read-only integrity checks; do not spawn one solely for status checks.  Update `project_diary.md` only for significant decisions or lessons.
+4. If meaningful project files changed, spawn or reuse one `explorer` with `fork_turns="none"` for a bounded `SESSION-CLOSURE-AUDIT`.  The explorer performs read-only repository closure checks and returns directly to the main agent; it must not edit files, Git state, `project_progress.md`, or `latest_session_work.md`.
+5. Scope the explorer audit to changed-file counts, insertion/deletion totals, whitespace/error checks, the largest unignored file, material generated/ignored payloads, unexpected changed surfaces, and blockers.  It may confirm existing verification evidence and report paths but must not rerun tests solely for closure or review central implementation correctness.
+6. Require a compact explorer final, normally no more than 150 words, containing: `status`, `changed_files`, `insertions`, `deletions`, `largest_unignored_file`, `generated_payloads`, `diff_check`, `unexpected_scope`, and `blockers`.  Do not request full file listings unless the explorer finds an anomaly.
+7. The main agent consumes that audit without repeating the same repository-wide status, diff-stat, or large-file scans unless the explorer reports a defect, evidence conflicts, or later unexpected changes invalidate the audit.  The main agent still performs targeted critical review and owns the final scope decision.
+8. Empty `project_progress.md` content if the plan is complete; otherwise reconcile it with final status, verification evidence, blockers, and next action when its recorded state changed.  Replace `latest_session_work.md` once with changes, verification, pending work, and the next entry point.  These two files remain exclusively under main-agent authority.
+9. After the main-owned status writes, run only compact checks needed to cover those predictable edits.  Escalate to broader inspection only on failure or unexpected scope.
+10. If meaningful project files changed, run `git add .`, commit quietly with `git commit --quiet -m "[auto commit] <summary>"`, and report only the one-line commit identity plus any remaining dirty state.
 
-If no meaningful project files changed, no need to refresh `latest_session_work.md`.
+If no meaningful project files changed, do not spawn the closure explorer and no need to refresh `latest_session_work.md`.
 
 Every completed session should leave honest status, bounded changes, current verification, preserved user work, and a clear continuation point.
-
