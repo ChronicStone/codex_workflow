@@ -1,4 +1,4 @@
-# SIMPLE AND EASY-to-use Codex workflow
+# SIMPLE and EASY-to-use Codex workflow
 
 A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
 
@@ -15,7 +15,8 @@ The workflow is designed to reduce unnecessary token usage and manage long-runni
 * `executor_luna.toml` — Default Luna implementation subagent.
 * `executor_sol.toml` — Sol executor for difficult or highly cross-cutting work.
 * `tester.toml` — Independent testing and defect-analysis subagent.
-* `doc-writer.toml` — Documentation subagent for verified implementation results.
+* `doc-writer.toml` — Documentation subagent for related documentation work.
+* `explorer.toml` — Subagent for exploring code, docs, libs, tools... 
 
 ## Installation
 
@@ -90,14 +91,15 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 
 ### Restart codex after installation
 
-## What is a workflow route?
+### What is a workflow route?
 
 There are 3 work routes:
 - Light route: Default, for light and medium tasks. Original Codex, minimal context, no need for further explanation.
 - Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended. 
 - Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
 
-### How to use 
+## HOW TO USE
+
 - Normally, for simple work or general Q&A, you don't need to do anything.
 - When starting or continuing a plan in progress, just tell Codex in the prompt: "
 
@@ -109,9 +111,9 @@ Codex will switch to a full workflow with a medium/heavy route.  Codex will not 
 - When you want to end current session, clean up and update documents, commit, etc., tell Codex: 
 
 ```text
-end this session. [tell Codex more details if need]".
+end this session. [tell Codex more details if necessary]".
 ```
-`End-of-Session` handoff will be performed (see AGENTS.md for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
+`End-of-Session` handoff will be performed (see `heavy_rote.md`/ `medium_route.md` for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
 
 You can still continue the session after that message if needed. 
 
