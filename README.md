@@ -1,4 +1,5 @@
-# SIMPLE and EASY-to-use Codex workflow
+# SIMPLE ---- EASY ------- EFFICIENT
+(to use)  (to install) (token consumption)
 
 A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
 
@@ -78,7 +79,7 @@ You can describe requirements such as:
 
 ### 2. Frontend Project Profile (optional)
 
-The default workflow is designed primarily for backend work. If the current project is a frontend project, Codex will ask whether you want to minimize testing, modularization, or similar requirements for the project. If you agree, Codex will clarify which requirements should be minimized and add those project-specific instructions under `## Core Design Principles` in the project-level `AGENTS.md`.
+The default workflow is designed primarily for backend work (Very heavily focused on testing). If the current project is a frontend project, Codex will ask whether you want to minimize testing, modularization, or similar requirements for the project. 
 
 ### 3. Power Configuration
 
@@ -119,7 +120,7 @@ You can still continue the session after that message if needed.
 
 ### Customize the workflow
 
-- Customize the End-of-Session handoff to suit your needs in AGENTS.md
-- Add the custom subagents you want in ~/.codex/agents
+- Customize the End-of-Session handoff to suit your needs in `agent_docs/workflows/heavy_route.md` and `agent_docs/workflows/medium_route.md`.
+- Add the custom subagents you want in `~/.codex/agents`
 
 .... 

@@ -114,6 +114,8 @@ Report installed files, skipped files, conflicts, and unresolved issues.
 ## 2. Configure the workflow
 
 Read all `.md` and `.toml` files in the `codex_workflows/` after installation. 
+All the changes below will apply to the newly installed files, not the files inside the original `codex_workflows/` folder.
+
 Ask the following questions one at a time.
 
 ### Core design principles
@@ -138,19 +140,13 @@ Preserve existing project-specific instructions.
 
 ### Frontend project profile
 
-Explain that the default workflow is designed primarily for backend work. For a frontend project, ask:
+Explain that the default workflow is designed primarily for backend work (Very heavily focused on testing). For a frontend project, ask:
 
 > Would you like to minimize testing, modularization, or similar requirements for this frontend project?
 
 This is optional.
 
-If the user agrees, clarify which requirements should be minimized and add those project-specific instructions under:
-
-```text
-## Core Design Principles
-```
-
-in the project-level `AGENTS.md`.
+If the user agrees, edit the `## Core Design Principles` session in `AGENTS.md` to meet user requirements. If the user does not specify details, adjust automatically.
 
 ### Power profile
 
@@ -185,6 +181,5 @@ After applying the selected changes, verify and report the final values.
 
 Report that the workflow installation is complete and instruct the user to restart Codex so the custom agent definitions are reloaded.
 
-Do not automatically delete the downloaded `codex_workflows` directory.
+Automatically delete the downloaded `codex_workflows` directory and its contents after installation, then report the deletion to user as u did it based on this guide.
 
-Ask whether the user wants it removed. Delete it only if the user confirms.
