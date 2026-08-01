@@ -109,3 +109,20 @@ You can still continue the session after that message if needed.
 - Add the custom subagents you want in `~/.codex/agents`
 
 .... 
+
+
+--------------------------------------
+
+## BONUS - How the Workflow Works: A Simple Overview
+
+> This is for heavy route
+
+- Sol handles context, planning, task splitting, and supervision, while Luna subagents do the implementation. Each task is packaged into a small, self-contained work package with clear scope, context, and expected output, so each subagent only gets what it needs.
+
+- Sol still reads the main documentations and the important parts of the codebase — that’s the manager’s job. An explorer subagent helps reduce that load by looking into tools, dependencies, external libraries, etc. The goal is to minimize Sol’s token usage and keep it focused on the important stuff.
+
+- For really hard tasks, executor_luna can get stuck. In that case, Sol can spawn an executor_sol as a fallback, or use it from the start. Right now, the workflow limits this to max 1 executor_sol.
+
+- For handoff between sessions, project_progress.md and latest_session_work.md are managed by Sol as part of the main documentation structure. They’re there to keep long implementation plans moving smoothly across multiple sessions.
+
+- ... etc.
