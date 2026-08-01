@@ -113,7 +113,6 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 ## Platform-specific paths
 
 Paths in this workflow are written using `/` as a platform-neutral separator.
-
 When running filesystem commands, use paths appropriate for the current operating system and shell:
 
 * On Linux and macOS, use `/`.

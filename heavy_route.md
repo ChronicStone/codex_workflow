@@ -25,8 +25,9 @@ Do not write status documents for short-lived packages. Write `agent_docs/latest
 
 ## Delegation
 
-Use the fewest workers needed:
+Use a proportionate number of workers based on task scope, complexity, and opportunities for meaningful delegation:
 
+- `explorer`: read-only investigation of assigned code, tools, applications, libraries, or configuration; reports findings to the main agent.
 - `executor_luna`: default production implementation.
 - `executor_sol`: only for exceptionally difficult, broad, cross-cutting work that cannot be narrowed effectively; never more than one.
 - `tester`: focused independent tests and failure analysis.
@@ -36,12 +37,14 @@ Every role-agent spawn must use `fork_turns="none"`. The initial task capsule mu
 
 - documents to read;
 - source files, tests, interfaces, or call sites to inspect;
-- the expected edit surface;
+- the expected edit surface, or investigation scope for read-only roles;
 - important protected or out-of-scope areas.
 
-The task capsule defines the worker's strict context, working scope, acceptance criteria, and edit surface; the main agent owns all four. Do not repeat the conversation, stable role rules, project summaries, recorded requirements, or exhaustive test matrices in a capsule. Workers may inspect adjacent dependencies only to diagnose a blocker, but must not expand their edit scope themselves. They report the blocker, concrete evidence, and proposed files to the main agent, then wait for a re-coordinated next iteration that explicitly amends scope and ownership. The main agent is responsible for resolving overlap before issuing that iteration.
+The task capsule defines the worker's strict context, working scope, acceptance criteria, and assigned surface; the main agent owns all four. Do not repeat the conversation, stable role rules, project summaries, recorded requirements, or exhaustive test matrices in a capsule. Workers may inspect adjacent dependencies only to diagnose a blocker, but must not expand their edit scope themselves. They report the blocker, concrete evidence, and proposed files to the main agent, then wait for a re-coordinated next iteration that explicitly amends scope and ownership. The main agent is responsible for resolving overlap before issuing that iteration.
 
-Start only `executor_luna` initially. Spawn the tester only after the executor hands off completed implementation with its smallest relevant self-check, unless parallel test research has clear independent value. Delegate documentation after verification and only for durable architecture, structure, workflow, public behavior, decisions, or usage changes. Split executor packages only when modules and files are genuinely independent; do not maximize concurrency for its own sake. This worker-concurrency restriction does not prohibit local batching of independent tool calls inside the active agent thread.
+Use `explorer` when the main agent needs a bounded investigation of peripheral or unfamiliar code, tools, applications, libraries, or configuration. Core project documents, core modules, and components central to the current work must still be read directly by the main agent.
+
+Start only `executor_luna` initially for production implementation. Spawn the tester only after the executor hands off completed implementation with its smallest relevant self-check, unless parallel test research has clear independent value. Delegate documentation after verification and only for durable architecture, structure, workflow, public behavior, decisions, or usage changes. Split executor packages only when modules and files are genuinely independent; do not maximize concurrency for its own sake. This worker-concurrency restriction does not prohibit local batching of independent tool calls inside the active agent thread.
 
 Assignments and follow-ups must be deltas, normally no more than 120 words. Do not resend full test matrices, recorded requirements, old logs, the initial capsule, or the conversation. A follow-up should contain only work-package ID, iteration, changed files/state, new evidence, affected acceptance criterion, and next action.
 
@@ -88,7 +91,7 @@ Keep changes within plan boundaries. Avoid unrelated refactors, hard-coded confi
 
 Delegate durable documentation only when architecture, structure, workflow, public behavior, significant decisions, or module usage changes. Provide verified facts and exact target files.
 
-At the end of each shift, report back in a simple table format: which workers(specify names: executor_luna, executor_sol, tester, doc-writer) were called, and number of times each worker was called. 
+At the end of each shift, report back in a simple table format: which workers(specify names: explorer, executor_luna, executor_sol, tester, doc-writer) were called, and number of times each worker was called. 
 
 ## Blockers
 

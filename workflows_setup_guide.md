@@ -94,6 +94,7 @@ doc-writer.toml
 tester.toml
 executor_luna.toml
 executor_sol.toml
+explorer.toml
 ```
 
 Do not overwrite an existing agent definition without explicit user approval.
@@ -110,7 +111,7 @@ Verify that:
 
 Report installed files, skipped files, conflicts, and unresolved issues.
 
-## 2. Configure the project
+## 2. Configure the workflow
 
 Read all `.md` and `.toml` files in the `codex_workflows/` after installation. 
 Ask the following questions one at a time.
@@ -134,6 +135,22 @@ If the user provides instructions, add them under:
 in the project-level `AGENTS.md`.
 
 Preserve existing project-specific instructions.
+
+### Frontend project profile
+
+Explain that the default workflow is designed primarily for backend work. For a frontend project, ask:
+
+> Would you like to minimize testing, modularization, or similar requirements for this frontend project?
+
+This is optional.
+
+If the user agrees, clarify which requirements should be minimized and add those project-specific instructions under:
+
+```text
+## Core Design Principles
+```
+
+in the project-level `AGENTS.md`.
 
 ### Power profile
 
@@ -171,4 +188,3 @@ Report that the workflow installation is complete and instruct the user to resta
 Do not automatically delete the downloaded `codex_workflows` directory.
 
 Ask whether the user wants it removed. Delete it only if the user confirms.
-

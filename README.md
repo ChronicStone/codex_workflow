@@ -1,6 +1,6 @@
-# Codex Project Workflow
+# SIMPLE AND EASY-to-use Codex workflow
 
-A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
+A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
 
 The workflow is designed to reduce unnecessary token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation, and an End-of-Session handoff.
 
@@ -75,7 +75,11 @@ You can describe requirements such as:
 - Prioritize C/C++ and limit dynamic allocation;
 - Always run relevant tests after modifications.
 
-### 2. Power Configuration
+### 2. Frontend Project Profile (optional)
+
+The default workflow is designed primarily for backend work. If the current project is a frontend project, Codex will ask whether you want to minimize testing, modularization, or similar requirements for the project. If you agree, Codex will clarify which requirements should be minimized and add those project-specific instructions under `## Core Design Principles` in the project-level `AGENTS.md`.
+
+### 3. Power Configuration
 
 The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex will ask if you want to enable each advanced option individually.
 
