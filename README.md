@@ -2,9 +2,11 @@
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
 <hr>
 
-A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
+A project-scoped Codex workflows that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
 
-The workflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation, and an End-of-Session handoff.
+The workflows is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation.
+
+> note : For lightweight tasks, it won’t overdo things. The light route is the default in this workflow.
 
 > **Note:** The workflow is installed per project. Install it again when starting a new project.
 
@@ -58,6 +60,7 @@ You can describe requirements such as:
 - Do not change public APIs without prior approval;
 - Prioritize C/C++ and limit dynamic allocation;
 - Always run relevant tests after modifications.
+- etc.
 
 ### 2. Frontend Project Profile (optional)
 
@@ -77,13 +80,13 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 ### What is a workflow route?
 
 There are 3 work routes:
-- Light route: Default, for light and medium tasks. Original Codex, minimal context, no need for further explanation.
+- Light route: Default route, for light and medium tasks. Minimal context, no subagents, no workflow.
 - Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended. 
-- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
+- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.  
 
 ## HOW TO USE
 
-- Normally, for simple work or general Q&A, you don't need to do anything.
+- Normally, for simple work or general Q&A, you don't need to do anything. `light route` is the default route.
 - When starting or continuing a plan in progress, just tell Codex in the prompt: "
 
 ```text

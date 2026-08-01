@@ -99,7 +99,31 @@ explorer.toml
 
 Do not overwrite an existing agent definition without explicit user approval.
 
-### 1.5 Verify installation
+### 1.5 Codex multi-agent configuration
+
+Check the Codex configuration file at:
+
+```text
+~/.codex/config.toml
+```
+
+If the environment uses `/.codex` as the Codex directory, check:
+
+```text
+/.codex/config.toml
+```
+
+Add the following configuration if it is not already present. If the
+`[features.multi_agent_v2]` section already exists, add only the missing keys
+and preserve its existing values:
+
+```toml
+[features.multi_agent_v2]
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+```
+
+### 1.6 Verify installation
 
 Verify that:
 
@@ -182,4 +206,3 @@ After applying the selected changes, verify and report the final values.
 Report that the workflow installation is complete and instruct the user to restart Codex so the custom agent definitions are reloaded.
 
 Automatically delete the downloaded `codex_workflows` directory and its contents after installation, then report the deletion to user as u did it based on this guide.
-
