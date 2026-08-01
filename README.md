@@ -1,5 +1,7 @@
-# SIMPLE ---- EASY ------- EFFICIENT
-(to use)  (to install) (token consumption)
+<h3 align="center">
+  <strong>SIMPLE ─── EASY ──── EFFICIENT</strong><br>
+  <sub>  (to use)　         　 (to install)　　 (token consumption)</sub>
+</h3>
 
 A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent** on heavy tasks.
 
