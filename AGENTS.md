@@ -59,7 +59,7 @@ At any given time, we will be in one of two working states:
 The main project documents are stored under `agent_docs/`:
 
 - `agent_docs/project_overview.md`: goals, architecture, workflows, and major decisions.
-- `agent_docs/project_core_tech.md`: quantization, storage, tree, and adaptation contracts; edit only when explicitly requested.
+- `agent_docs/project_core_tech.md`:A brief summary of special technologies or architectures of project.
 - `agent_docs/project_structure.md`: directory layout, modules, components, and ownership boundaries.
 - `agent_docs/project_progress.md`: active implementation plan and cross-session execution status.
 - `agent_docs/project_diary.md`: durable architecture decisions, discarded approaches, and lessons.
@@ -109,3 +109,15 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 - Read only relevant module documentation. Expand source inspection only when repository evidence requires it.
 - Reconstruct active tasks, dependencies, verification state, and blockers. Resolve contradictions with targeted evidence.
 - Under the Heavy route, review only critical hunks and integration boundaries after delegation unless risk, missing evidence, or conflicting results require broader inspection.
+
+## Platform-specific paths
+
+Paths in this workflow are written using `/` as a platform-neutral separator.
+
+When running filesystem commands, use paths appropriate for the current operating system and shell:
+
+* On Linux and macOS, use `/`.
+* On Windows, use the equivalent Windows path format and `\` where required.
+
+Do not treat the example path separator as a literal requirement. Resolve every path using the conventions of the current environment.
+
