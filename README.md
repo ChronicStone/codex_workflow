@@ -20,7 +20,7 @@ This worflow is designed to optimize token usage and manage long-running impleme
 Open Codex CLI or the Codex app from your project directory and send:
 
 ```text
-Clone the repository [viettran-edgeAI/codex_workflow](https://github.com/viettran-edgeAI/codex_workflow) into a `codex_workflow` directory in this project, then read `codex_workflow/workflow_setup_guide.md` and automatically perform the complete installation process described in it.
+Clone https://github.com/viettran-edgeAI/codex_workflow.git , then read @workflow_setup_guide.md and automatically perform the complete installation process described in it.
 ```
 
 Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.

@@ -63,6 +63,15 @@ Initialize the main project documents required by `AGENTS.md` inside:
 agent_docs/
 ```
 
+Create these six main project documents:
+
+* `agent_docs/project_overview.md`
+* `agent_docs/project_core_tech.md`
+* `agent_docs/project_structure.md`
+* `agent_docs/project_progress.md`
+* `agent_docs/project_diary.md`
+* `agent_docs/latest_session_work.md`
+
 Do not overwrite existing project documents without explicit user approval.
 
 ### 1.3 Workflow routes
@@ -130,7 +139,7 @@ Verify that:
 * `AGENTS.md` exists in the project root.
 * Required project documents exist under `agent_docs/`.
 * `heavy_route.md` and `medium_route.md` exist under `agent_docs/workflow/`.
-* All four custom agent definitions exist under the Codex user-agent directory.
+* All 5 custom agent definitions exist under the Codex user-agent directory.
 * No unrelated project source files were modified.
 
 Report installed files, skipped files, conflicts, and unresolved issues.
@@ -205,4 +214,13 @@ After applying the selected changes, verify and report the final values.
 
 Report that this worflow installation is complete and instruct the user to restart Codex so the custom agent definitions are reloaded.
 
-Automatically delete the downloaded `codex_workflow` directory and its contents after installation, then report the deletion to user as u did it based on this guide.
+After the installation and verification steps are complete, automatically
+delete these temporary workflow files from the project root:
+
+* `codex_workflow/`
+* `README.md`
+* `illustration.png`
+* `workflow_setup_guide.md`
+
+Do not delete any other project files or directories. Report the deletion to
+the user after it is complete.
