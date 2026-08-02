@@ -13,7 +13,7 @@ When executing filesystem operations, automatically adapt paths and commands to 
 For example:
 
 ```text
-agent_docs/workflows/heavy_route.md
+agent_docs/workflow/heavy_route.md
 ```
 
 represents the same logical location regardless of platform.
@@ -35,7 +35,7 @@ Do not treat the path separator shown in this guide as a literal requirement.
 Copy:
 
 ```text
-codex_workflows/AGENTS.md
+codex_workflow/AGENTS.md
 ```
 
 to:
@@ -46,7 +46,7 @@ AGENTS.md
 
 in the current project root.
 
-If `AGENTS.md` already exists, do not overwrite it automatically. Ask the user whether to replace it, merge the workflow instructions into it, or skip this step.
+If `AGENTS.md` already exists, do not overwrite it automatically. Ask the user whether to replace it, merge this worflow instructions into it, or skip this step.
 
 ### 1.2 Project documentation
 
@@ -54,7 +54,7 @@ Create:
 
 ```text
 agent_docs/
-agent_docs/workflows/
+agent_docs/workflow/
 ```
 
 Initialize the main project documents required by `AGENTS.md` inside:
@@ -70,11 +70,11 @@ Do not overwrite existing project documents without explicit user approval.
 Copy:
 
 ```text
-codex_workflows/heavy_route.md
-→ agent_docs/workflows/heavy_route.md
+codex_workflow/heavy_route.md
+→ agent_docs/workflow/heavy_route.md
 
-codex_workflows/medium_route.md
-→ agent_docs/workflows/medium_route.md
+codex_workflow/medium_route.md
+→ agent_docs/workflow/medium_route.md
 ```
 
 If a destination file already exists, ask before replacing it.
@@ -129,16 +129,16 @@ Verify that:
 
 * `AGENTS.md` exists in the project root.
 * Required project documents exist under `agent_docs/`.
-* `heavy_route.md` and `medium_route.md` exist under `agent_docs/workflows/`.
+* `heavy_route.md` and `medium_route.md` exist under `agent_docs/workflow/`.
 * All four custom agent definitions exist under the Codex user-agent directory.
 * No unrelated project source files were modified.
 
 Report installed files, skipped files, conflicts, and unresolved issues.
 
-## 2. Configure the workflow
+## 2. Configure this worflow
 
-Read all `.md` and `.toml` files in the `codex_workflows/` after installation. 
-All the changes below will apply to the newly installed files, not the files inside the original `codex_workflows/` folder.
+Read all `.md` and `.toml` files in the `codex_workflow/` after installation. 
+All the changes below will apply to the newly installed files, not the files inside the original `codex_workflow/` folder.
 
 Ask the following questions one at a time.
 
@@ -191,18 +191,18 @@ If the user declines, keep the default configuration.
 
 Apply selected changes as follows:
 
-* **Option 1:** update `## Delegation` in `agent_docs/workflows/heavy_route.md`.
+* **Option 1:** update `## Delegation` in `agent_docs/workflow/heavy_route.md`.
 * **Option 2:** update `model_reasoning_effort` in:
 
   * `~/.codex/agents/executor_luna.toml`
   * `~/.codex/agents/tester.toml`
 * **Option 3:** update the Event and Final report limits in the relevant agent `.toml` files.
-* **Option 4:** update `## Thread Lifecycle and Waiting` in `agent_docs/workflows/heavy_route.md`.
+* **Option 4:** update `## Thread Lifecycle and Waiting` in `agent_docs/workflow/heavy_route.md`.
 
 After applying the selected changes, verify and report the final values.
 
 ## 3. Finish the installation
 
-Report that the workflow installation is complete and instruct the user to restart Codex so the custom agent definitions are reloaded.
+Report that this worflow installation is complete and instruct the user to restart Codex so the custom agent definitions are reloaded.
 
-Automatically delete the downloaded `codex_workflows` directory and its contents after installation, then report the deletion to user as u did it based on this guide.
+Automatically delete the downloaded `codex_workflow` directory and its contents after installation, then report the deletion to user as u did it based on this guide.

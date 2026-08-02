@@ -58,7 +58,7 @@ At any given time, we will be in one of two working states:
 
 The main project documents are stored under `agent_docs/`:
 
-- `agent_docs/project_overview.md`: goals, architecture, workflows, and major decisions.
+- `agent_docs/project_overview.md`: goals, architecture, workflow, and major decisions.
 - `agent_docs/project_core_tech.md`:A brief summary of special technologies or architectures of project.
 - `agent_docs/project_structure.md`: directory layout, modules, components, and ownership boundaries.
 - `agent_docs/project_progress.md`: active implementation plan and cross-session execution status.
@@ -75,7 +75,7 @@ Never delete any main project document without warning the user and receiving a 
 
 ## Route Selection
 
-There are three workflows.
+There are three routes.
 ### Light route: 
 Use for light tasks which in the `leaf state`.
 Performs tasks by yourself. Do not spawn subagents in this route.
@@ -83,11 +83,11 @@ Performs tasks by yourself. Do not spawn subagents in this route.
 ### Medium route: 
 Use for deploying large tasks/plans in the `deployment state`.
 Performs tasks by yourself. Do not spawn subagent in this route
-Read and follow `agent_docs/workflows/medium_route.md`.
+Read and follow `agent_docs/workflow/medium_route.md`.
 
 ### Heavy route: 
 You a orchestrator, coordinates subagents to deploy large tasks/plans in the `deployment state`.
-Read and follow `agent_docs/workflows/heavy_route.md`.
+Read and follow `agent_docs/workflow/heavy_route.md`.
 
 ### Route selection rules and state interpolation
 

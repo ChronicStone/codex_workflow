@@ -8,7 +8,7 @@ You are the main agent. Own direction, planning, work-package boundaries, subage
 
 Delegate production implementation, independent testing, and durable documentation to the specialized roles below. Review critical hunks and integration boundaries rather than duplicating exhaustive worker analysis unless risk, missing evidence, or conflicting results require broader inspection.
 
-In this route, for common queries, it's not necessary to implement complex workflows or call subagents for simple tasks. 
+In this route, for common queries, it's not necessary to implement complex workflow or call subagents for simple tasks. 
 
 ## Plans and Status Writes
 

@@ -2,13 +2,13 @@
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
 <hr>
 
-A project-scoped Codex workflows that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
+A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
 
-The workflows is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation.
+This worflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation.
 
 > note : For lightweight tasks, it won’t overdo things. The light route is the default in this workflow.
 
-> **Note:** The workflow is installed per project. Install it again when starting a new project.
+> **Note:** this worflow is installed per project. Install it again when starting a new project.
 
 
 ## Installation
@@ -20,12 +20,12 @@ Use either of these methods:
 * Select **Code → Download ZIP** on GitHub and extract it.
 * Clone the repository with Git.
 
-Place or rename the downloaded repository folder as `codex_workflows` inside your project directory:
+Place or rename the downloaded repository folder as `codex_workflow` inside your project directory:
 
 ```text
 my-project/
-├── codex_workflows/
-│   ├── workflows_setup_guide.md
+├── codex_workflow/
+│   ├── workflow_setup_guide.md
 │   ├── AGENTS.md
 │   ├── heavy_route.md
 │   ├── medium_route.md
@@ -36,12 +36,12 @@ my-project/
 └── ...
 ```
 
-### 2. Ask Codex to install the workflow
+### 2. Ask Codex to install this worflow
 
-Launch Codex CLI or the Codex app from your project directory and send:
+Launch Codex CLI or Codex app from your project directory and send:
 
 ```text
-Read `codex_workflows/workflows_setup_guide.md` and perform the complete installation process described in it.
+Read `codex_workflow/workflow_setup_guide.md` and perform the complete installation process described in it.
 ```
 
 Done! At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
@@ -79,7 +79,8 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 
 ### What is a workflow route?
 
-There are 3 work routes:
+This workflow has 3 routes:
+
 - Light route: Default route, for light and medium tasks. Minimal context, no subagents, no workflow.
 - Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended. 
 - Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.  
@@ -103,9 +104,9 @@ end this session. [tell Codex more details if necessary]".
 
 You can still continue the session after that message if needed. 
 
-### Customize the workflow
+### Customize this worflow
 
-- Customize the End-of-Session handoff to suit your needs in `agent_docs/workflows/heavy_route.md` and `agent_docs/workflows/medium_route.md`.
+- Customize the End-of-Session handoff to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
 - Add the custom subagents you want in `~/.codex/agents`
 
 .... 
@@ -113,15 +114,15 @@ You can still continue the session after that message if needed.
 
 --------------------------------------
 
-## BONUS - How the Workflow Works: A Simple Overview
+## BONUS - How this worflow Works: A Simple Overview
 
-> This is for heavy route
+> This is for heavy route in this workflow. 
 
 - Sol handles context, planning, task splitting, and supervision, while Luna subagents do the implementation. Each task is packaged into a small, self-contained work package with clear scope, context, and expected output, so each subagent only gets what it needs.
 
 - Sol still reads the main documentations and the important parts of the codebase — that’s the manager’s job. An explorer subagent helps reduce that load by looking into tools, dependencies, external libraries, etc. The goal is to minimize Sol’s token usage and keep it focused on the important stuff.
 
-- For really hard tasks, executor_luna can get stuck. In that case, Sol can spawn an executor_sol as a fallback, or use it from the start. Right now, the workflow limits this to max 1 executor_sol.
+- For really hard tasks, executor_luna can get stuck. In that case, Sol can spawn an executor_sol as a fallback, or use it from the start. Right now, this worflow limits this to max 1 executor_sol.
 
 - For handoff between sessions, project_progress.md and latest_session_work.md are managed by Sol as part of the main documentation structure. They’re there to keep long implementation plans moving smoothly across multiple sessions.
 
