@@ -2,11 +2,13 @@
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
 <hr>
 
-A Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as subagents**.
+A swarm orchestration system for **GPT-5.6 Luna** subagents.
 
 ![Workflow illustration](illustration.png)
 
-This worflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, etc.
+A workflow designed to be extremely simple to use.
+
+Beneath this simplicity is a tightly engineered agent orchestration system: a purpose-built documentation framework, strict responsibility boundaries, compact work-package communication, anti-stall and worker-replacement mechanisms, executor–tester repair loops, worker lifecycle management, and persistent project-state tracking. Everything is optimized to keep each agent focused on exactly what it needs & drastically reducing overall token usage.
 
 > For lightweight tasks, it won’t overdo things. Light route is default.
 
@@ -25,11 +27,11 @@ Clone https://github.com/viettran-edgeAI/codex_workflow.git , then read @workflo
 
 Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
 
-## Configuration Questions
+## Configuration questions
 
 You can answer the following questions or skip them. If you skip, the default settings will be used.
 
-### 1. Workflow Style and Design Principles (optinal)
+### 1. Workflow style and design principles (optinal)
 
 Codex will ask about the project's workflow style and core design principles.
 You can describe requirements such as:
@@ -39,11 +41,11 @@ You can describe requirements such as:
 - Do not change public APIs without prior approval;
 - ...
 
-### 2. Frontend Project Profile (optional)
+### 2. Frontend project profile (optional)
 
 The default workflow is designed primarily for backend work (Very heavily focused on testing). If the current project is a frontend project, Codex will ask whether you want to minimize testing, modularization, or similar requirements for the project. 
 
-### 3. Power Configuration
+### 3. Power configuration
 
 The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex will ask if you want to enable each advanced option individually.
 
@@ -82,9 +84,7 @@ end this session. [tell Codex more details if necessary]".
 `End-of-Session` handoff will be performed. This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
 > You can still continue the session after that message if needed. 
 
-### Tips for further use and customization
-
-* Customize the End-of-Session handoff to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
+## Tips for further use and customization
 
 * For very large codebases, you can ask Codex to modify the workflow to use a dedicated codebase management/navigation tool such as `Graphify` instead of relying on `project_progress.md`.
 
@@ -94,17 +94,19 @@ end this session. [tell Codex more details if necessary]".
 
   to files such as `executor_luna.toml`, `tester.toml`, etc. 
   
-> At the moment, the speed/usage multipliers on subscription plans are still around x1.5/x2.5 rather than the x2.5/x2 behavior used by the API.
+> At the moment, the speed/usage multipliers on subscription plans are still x1.5/x2.5 rather than the x2.5/x2 in the API.
 
 * Add custom subagents such as an `investigator` for researching solutions on the web, especially if your project is niche or highly specialized. Ask Codex to structure it consistently with the other subagents in this workflow and integrate it into `heavy_route`.
+
+* Customize the `End-of-Session handoff` to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
 
 .... 
 
 --------------------------------------
 
-## BONUS - How this worflow Works: A Simple Overview
+## BONUS - How this worflow works: a simple overview
 
-> This is for heavy route in this workflow. 
+> These things are about heavy route.
 
 - Sol handles context, planning, task splitting, and supervision, while Luna subagents do the implementation. Each task is packaged into a small, self-contained work package with clear scope, context, and expected output, so each subagent only gets what it needs.
 
