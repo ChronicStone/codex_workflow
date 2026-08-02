@@ -15,12 +15,18 @@ This worflow is designed to optimize token usage and manage long-running impleme
 
 ### 1. Download the repository
 
-Use either of these methods:
+Use one of these methods:
 
-* Select **Code → Download ZIP** on GitHub and extract it.
-* Clone the repository with Git.
+* Clone the repository:
 
-Place or rename the downloaded repository folder as `codex_workflow` inside your project directory:
+  ```bash
+  cd /path/to/my-project
+  git clone https://github.com/viettran-edgeAI/codex_workflow.git codex_workflow
+  ```
+
+* If you are not familiar with command-line tools, select **Code → Download ZIP** on GitHub and extract it.
+
+Whichever method you choose, ensure the repository folder is named `codex_workflow` and placed inside your project directory:
 
 ```text
 my-project/
@@ -36,19 +42,19 @@ my-project/
 └── ...
 ```
 
-### 2. Ask Codex to install this worflow
+### 2. Launch Codex CLI or Codex app from your project directory
 
-Launch Codex CLI or Codex app from your project directory and send:
+Send :
 
 ```text
 Read `codex_workflow/workflow_setup_guide.md` and perform the complete installation process described in it.
 ```
 
-Done! At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
+Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
 
 ## Configuration Questions
 
-After basic installation, Codex will ask the following advanced configuration questions. You can answer them or skip them. If you skip, the default settings will be used.
+You can answer the following questions or skip them. If you skip, the default settings will be used.
 
 ### 1. Workflow Style and Design Principles (optinal)
 
