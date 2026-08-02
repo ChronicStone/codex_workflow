@@ -78,7 +78,7 @@ The default workflow is designed primarily for backend work (Very heavily focuse
 
 The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex will ask if you want to enable each advanced option individually.
 
-- Allow more subagents (currently a maximum of 3) and allow more than one `executor_sol` call.
+- Allow more subagents (currently a maximum of 5) and allow more than one `executor_sol` call.
 - Set `executor_luna` and `tester` to the `max` model_reasoning_effort. Currently `xhigh`. 
 - Allow subagents to send more detailed report packets to the main agent (event and final report are currently limited to 150 & 250 words).
 - Allow subagents to retry more times when stuck/blocked before replacing them (currently 2). The new subagent will have to reload the context packet, but this will reduce the risk of getting stuck; consider this.
@@ -89,7 +89,7 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 
 This workflow has 3 routes:
 
-- Light route: Default route, for light and medium tasks. Minimal context, no subagents, no workflow.
+- Light route: For light and medium tasks. Minimal context, no subagents, no workflow.
 - Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended.
 - Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
 
@@ -103,7 +103,7 @@ This workflow has 3 routes:
 ```text
 use medium route / use heavy route. [your task description]".
 ```
-Codex will switch to a full workflow with a medium/heavy route.  Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt.
+Codex will switch to a full workflow with a medium/heavy route.  Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt and have full route control proactively.
 
 - When you want to end current session, clean up and update documents, commit, etc., tell Codex: 
 

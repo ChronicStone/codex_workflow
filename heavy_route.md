@@ -25,7 +25,7 @@ Do not write status documents for short-lived packages. Write `agent_docs/latest
 
 ## Delegation
 
-Use a proportionate number of workers based on task scope, complexity, and opportunities for meaningful delegation:
+Use a proportionate number of workers based on task scope, complexity, and opportunities for meaningful delegation, but limit to maximum 5 concurrent subagents:
 
 - `explorer`: read-only investigation of assigned code, tools, applications, libraries, or configuration; reports findings to the main agent.
 - `executor_luna`: default production implementation.

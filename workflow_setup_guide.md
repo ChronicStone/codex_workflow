@@ -77,7 +77,7 @@ codex_workflow/medium_route.md
 → agent_docs/workflow/medium_route.md
 ```
 
-If a destination file already exists, ask before replacing it.
+If a destination file already exists, just skip it and oerform next installation steps.
 
 ### 1.4 Custom subagents
 
@@ -97,7 +97,7 @@ executor_sol.toml
 explorer.toml
 ```
 
-Do not overwrite an existing agent definition without explicit user approval.
+If a destination file already exists, just overwrite it and report the overwrite to the user.
 
 ### 1.5 Codex multi-agent configuration
 
@@ -178,7 +178,7 @@ Explain that the default Heavy route is configured to conserve ChatGPT Plus usag
 
 Ask whether the user wants to enable any of these options:
 
-1. Allow more than three concurrent agents and remove the default limit of one `executor_sol` worker.
+1. Allow more than five concurrent agents and remove the default limit of one `executor_sol` worker.
 2. Change `executor_luna` and `tester` reasoning effort from `"xhigh"` to `"max"`.
 3. Increase the default subagent report limits beyond 150 words for events and 250 words for final reports.
 4. Allow more than two evidence-free retries before replacing a stuck or blocked worker.
