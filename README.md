@@ -8,48 +8,19 @@ A Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **
 
 This worflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, etc.
 
-> note : For lightweight tasks, it won’t overdo things. The light route is the default in this workflow.
+> For lightweight tasks, it won’t overdo things. Light route is default.
 
 > **Note:** this worflow is installed per project. Install it again when starting a new project.
 
 
 ## Installation
 
-### 1. Download the repository
+### Launch Codex from your project directory
 
-Use one of these methods:
-
-* Clone the repository:
-
-  ```bash
-  cd /path/to/my-project
-  git clone https://github.com/viettran-edgeAI/codex_workflow.git codex_workflow
-  ```
-
-* If you are not familiar with command-line tools, select **Code → Download ZIP** on GitHub and extract it.
-
-Whichever method you choose, ensure the repository folder is named `codex_workflow` and placed inside your project directory:
+Open Codex CLI or the Codex app from your project directory and send:
 
 ```text
-my-project/
-├── codex_workflow/
-│   ├── workflow_setup_guide.md
-│   ├── AGENTS.md
-│   ├── heavy_route.md
-│   ├── medium_route.md
-│   ├── executor_luna.toml
-│   ├── executor_sol.toml
-│   ├── tester.toml
-│   └── doc-writer.toml
-└── ...
-```
-
-### 2. Launch Codex CLI or Codex app from your project directory
-
-Send :
-
-```text
-Read `codex_workflow/workflow_setup_guide.md` and perform the complete installation process described in it.
+Clone the repository [viettran-edgeAI/codex_workflow](https://github.com/viettran-edgeAI/codex_workflow) into a `codex_workflow` directory in this project, then read `codex_workflow/workflow_setup_guide.md` and automatically perform the complete installation process described in it.
 ```
 
 Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
@@ -66,9 +37,7 @@ You can describe requirements such as:
 - Prioritize modular design;
 - Keep dependencies low;
 - Do not change public APIs without prior approval;
-- Prioritize C/C++ and limit dynamic allocation;
-- Always run relevant tests after modifications.
-- etc.
+- ...
 
 ### 2. Frontend Project Profile (optional)
 
@@ -103,16 +72,15 @@ This workflow has 3 routes:
 ```text
 use medium route / use heavy route. [your task description]".
 ```
-Codex will switch to a full workflow with a medium/heavy route.  Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt and have full route control proactively.
+> Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt and have full route control proactively.
 
 - When you want to end current session, clean up and update documents, commit, etc., tell Codex: 
 
 ```text
 end this session. [tell Codex more details if necessary]".
 ```
-`End-of-Session` handoff will be performed (see `heavy_rote.md`/ `medium_route.md` for details about the handoff). This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
-
-You can still continue the session after that message if needed. 
+`End-of-Session` handoff will be performed. This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
+> You can still continue the session after that message if needed. 
 
 ### Tips for further use and customization
 
