@@ -50,12 +50,15 @@ If `AGENTS.md` already exists, do not overwrite it automatically. Ask the user w
 
 ### 1.2 Project documentation
 
-Create:
+Check whether these directories already exist:
 
 ```text
 agent_docs/
 agent_docs/workflow/
 ```
+
+Create only the directories that are missing. Do not overwrite or replace an
+existing directory.
 
 Initialize the main project documents required by `AGENTS.md` inside:
 
@@ -72,7 +75,7 @@ Create these six main project documents:
 * `agent_docs/project_diary.md`
 * `agent_docs/latest_session_work.md`
 
-Do not overwrite existing project documents without explicit user approval.
+If any of these files already exist, just skip them and perform the next installation steps.
 
 ### 1.3 Workflow routes
 
@@ -86,7 +89,7 @@ codex_workflow/medium_route.md
 → agent_docs/workflow/medium_route.md
 ```
 
-If a destination file already exists, just skip it and oerform next installation steps.
+If a destination file already exists, overwrite it.
 
 ### 1.4 Custom subagents
 
