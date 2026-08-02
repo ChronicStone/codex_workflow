@@ -114,13 +114,23 @@ end this session. [tell Codex more details if necessary]".
 
 You can still continue the session after that message if needed. 
 
-### Customize this worflow
+### Tips for further use and customization
 
-- Customize the End-of-Session handoff to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
-- Add the custom subagents you want in `~/.codex/agents`
+* Customize the End-of-Session handoff to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
+
+* For very large codebases, you can ask Codex to modify the workflow to use a dedicated codebase management/navigation tool such as `Graphify` instead of relying on `project_progress.md`.
+
+* If the Luna Max subagents feel too slow, you can enable `fast_mode` for them by adding:
+
+  `service_tier = "fast"`
+
+  to files such as `executor_luna.toml`, `tester.toml`, etc. 
+  
+> At the moment, the speed/usage multipliers on subscription plans are still around x1.5/x2.5 rather than the x2.5/x2 behavior used by the API.
+
+* Add custom subagents such as an `investigator` for researching solutions on the web, especially if your project is niche or highly specialized. Ask Codex to structure it consistently with the other subagents in this workflow and integrate it into `heavy_route`.
 
 .... 
-
 
 --------------------------------------
 
