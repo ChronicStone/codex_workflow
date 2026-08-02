@@ -2,9 +2,11 @@
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
 <hr>
 
-A project-scoped Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as the default subagent**.
+A Codex workflow that configures **GPT-5.6 Sol as the main orchestrator** and **GPT-5.6 Luna as subagents**.
 
-This worflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, protected documentation.
+![Workflow illustration](illustration.png)
+
+This worflow is designed to optimize token usage and manage long-running implementation plans across multiple Codex sessions. It includes bounded subagent context, executor–tester repair loops, worker lifecycle management, project-state tracking, etc.
 
 > note : For lightweight tasks, it won’t overdo things. The light route is the default in this workflow.
 
@@ -88,8 +90,10 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 This workflow has 3 routes:
 
 - Light route: Default route, for light and medium tasks. Minimal context, no subagents, no workflow.
-- Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended. 
-- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.  
+- Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended.
+- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
+
+> Since Luna is very cheap now, the medium route is not strongly recommended.
 
 ## HOW TO USE
 
