@@ -2,30 +2,28 @@
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
 <hr>
 
-A swarm orchestration system for **GPT-5.6 Luna** subagents.
-
 ![Workflow illustration](illustration.png)
 
-A workflow designed to be extremely simple to use.
+A workflow designed to drastically reduce overall token usage, extremely simple to use.
 
-Beneath this simplicity is a tightly engineered agent orchestration system: a purpose-built documentation framework, strict responsibility boundaries, compact work-package communication, anti-stall and worker-replacement mechanisms, executor–tester repair loops, worker lifecycle management, and persistent project-state tracking. Everything is optimized to keep each agent focused on exactly what it needs & drastically reducing overall token usage.
+Beneath this simplicity is a tightly engineered agent orchestration system: a purpose-built documentation framework, strict responsibility boundaries, compact work-package communication, anti-stall and worker-replacement mechanisms, executor–tester repair loops, worker lifecycle management, and persistent project-state tracking. Everything is optimized to keep each agent focused on exactly what it needs.
 
-> For lightweight tasks, it won’t overdo things. Light route is default.
+> ▸ For lightweight tasks, it won’t overdo things. Light route is default.
 
-> **Note:** this worflow is installed per project. Install it again when starting a new project.
+> **ℹ Note:** this worflow is installed per project. Install it again when starting a new project.
 
 
-## Installation
+## ⚙ Installation
 
-### Launch Codex from your project directory
+### Open Codex CLI or the Codex app from your project directory 
 
-Open Codex CLI or the Codex app from your project directory and send:
+▶ Send:
 
 ```text
 Clone https://github.com/viettran-edgeAI/codex_workflow.git , then read @workflow_setup_guide.md and automatically perform the complete installation process described in it.
 ```
 
-Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
+✓ Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
 
 ## Configuration questions
 
@@ -54,9 +52,9 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 - Allow subagents to send more detailed report packets to the main agent (event and final report are currently limited to 150 & 250 words).
 - Allow subagents to retry more times when stuck/blocked before replacing them (currently 2). The new subagent will have to reload the context packet, but this will reduce the risk of getting stuck; consider this.
 
-### Restart codex after installation
+### ↻ Restart Codex after installation
 
-### What is a workflow route?
+### ◇ What is a workflow route?
 
 This workflow has 3 routes:
 
@@ -66,7 +64,7 @@ This workflow has 3 routes:
 
 > Since Luna is very cheap now, the medium route is not strongly recommended.
 
-## HOW TO USE
+## ▶ HOW TO USE
 
 - Normally, for simple work or general Q&A, you don't need to do anything. `light route` is the default route.
 - When starting or continuing a plan in progress, just tell Codex in the prompt: "
@@ -74,9 +72,11 @@ This workflow has 3 routes:
 ```text
 use medium route / use heavy route. [your task description]".
 ```
-> Codex will not automatically switch to other routes and will be maintained throughout the work session unless you actively change the route, so u dont need to repeat the route selection in every prompt and have full route control proactively.
+> Codex stays on the selected route until you change it, so you don’t need to repeat it in every prompt.
 
-- When you want to end current session, clean up and update documents, commit, etc., tell Codex: 
+> **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities while minimizing token usage.
+
+- When you want to end current session, clean up and update documents, commit, ...: 
 
 ```text
 end this session. [tell Codex more details if necessary]".
@@ -84,7 +84,7 @@ end this session. [tell Codex more details if necessary]".
 `End-of-Session` handoff will be performed. This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
 > You can still continue the session after that message if needed. 
 
-## Tips for further use and customization
+## ✦ Tips for further customization
 
 * For very large codebases, you can ask Codex to modify the workflow to use a dedicated codebase management/navigation tool such as `Graphify` instead of relying on `project_progress.md`.
 
@@ -104,9 +104,9 @@ end this session. [tell Codex more details if necessary]".
 
 --------------------------------------
 
-## BONUS - How this worflow works: a simple overview
+## BONUS · How this worflow works: a simple overview
 
-> These things are about heavy route.
+> ▸ These things are about heavy route.
 
 - Sol handles context, planning, task splitting, and supervision, while Luna subagents do the implementation. Each task is packaged into a small, self-contained work package with clear scope, context, and expected output, so each subagent only gets what it needs.
 
