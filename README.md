@@ -108,7 +108,7 @@ end this session. [tell Codex more details if necessary]".
 
 - Sol handles context, planning, task splitting, and supervision, while Luna subagents do the implementation. Each task is packaged into a small, self-contained work package with clear scope, context, and expected output, so each subagent only gets what it needs.
 
-- Sol still reads the main documentations and the important parts of the codebase — that’s the manager’s job. An explorer subagent helps reduce that load by looking into tools, dependencies, external libraries, etc. The goal is to minimize Sol’s token usage and keep it focused on the important stuff.
+- Sol still reads the main documentations and the important parts of the codebase — that’s the manager’s job. In the medium and heavy routes, a single session-long explorer works alongside Sol as a read-only secretary and second brain, handling supplementary context such as tools, dependencies, external libraries, etc. It is not counted as a worker subagent. The goal is to minimize Sol’s token usage and keep it focused on the important stuff.
 
 - For really hard tasks, executor_luna can get stuck. In that case, Sol can spawn an executor_sol as a fallback, or use it from the start. Right now, this worflow limits this to max 1 executor_sol.
 

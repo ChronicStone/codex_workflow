@@ -82,11 +82,12 @@ Performs tasks by yourself. Do not spawn subagents in this route.
 
 ### Medium route: 
 Use for deploying large tasks/plans in the `deployment state`.
-Performs tasks by yourself. Do not spawn subagent in this route
+Perform implementation, verification, and documentation by yourself. Do not spawn worker subagents in this route. The deployment session's persistent `explorer` companion is the only exception and is not counted as a subagent.
 Read and follow `agent_docs/workflow/medium_route.md`.
 
 ### Heavy route: 
 You a orchestrator, coordinates subagents to deploy large tasks/plans in the `deployment state`.
+Reuse the deployment session's persistent `explorer` companion to absorb bounded supplementary context and return concise findings to the main agent. It is not counted as a worker subagent.
 Read and follow `agent_docs/workflow/heavy_route.md`.
 
 ### Route selection rules and state interpolation
@@ -99,7 +100,9 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 ## Context Loading
 
 - In the Light route (`leaf state`), read only the files relevant to the current task.
-- On first entering the `deployment state`, load the foundational project context in one bounded read-only batch:
+- On first entering the `deployment state`, immediately initialize exactly one session-long `explorer` companion. Reuse the same thread for every later bounded context investigation, including across Medium/Heavy route changes within the session. Do not spawn a new explorer for each request; replace it only when the applicable lifecycle rules require it. The explorer is a read-only second brain for the main agent and is excluded from worker/subagent counts.
+- An explorer assignment defines the investigation focus, not a hard reading boundary. The explorer may follow directly related files, symbols, call sites, documentation, dependencies, and configuration when needed, while remaining read-only and avoiding unrelated repository-wide exploration.
+- Load the foundational project context in one bounded read-only batch:
   1. `agent_docs/project_overview.md`
   2. `agent_docs/project_structure.md`
   3. `agent_docs/project_progress.md`
@@ -109,6 +112,7 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 - Read only relevant module documentation. Expand source inspection only when repository evidence requires it.
 - Reconstruct active tasks, dependencies, verification state, and blockers. Resolve contradictions with targeted evidence.
 - Under the Heavy route, review only critical hunks and integration boundaries after delegation unless risk, missing evidence, or conflicting results require broader inspection.
+- In final agent-usage statistics for a deployment session, always include the explorer's call count and label it as a `companion`, even though it is excluded from worker/subagent counts.
 
 ## Platform-specific paths
 
@@ -119,4 +123,3 @@ When running filesystem commands, use paths appropriate for the current operatin
 * On Windows, use the equivalent Windows path format and `\` where required.
 
 Do not treat the example path separator as a literal requirement. Resolve every path using the conventions of the current environment.
-
