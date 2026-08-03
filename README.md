@@ -59,10 +59,8 @@ The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex
 This workflow has 3 routes:
 
 - Light route: For light and medium tasks. Minimal context, no subagents, no workflow.
-- Heavy route: For the deployment of heavy plans and tasks. The main agent will coordinate the workers. Sol medium -> Sol xhigh is recommended.
-- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. Sol medium is recommended.
-
-> Since Luna is very cheap now, the medium route is not strongly recommended.
+- Heavy route: For the deployment of heavy plans and tasks. Deploy subagents, full workflow. 
+- Medium route: Coordinating multiple sub-agents for a medium-sized task can sometimes cost more tokens and be slower than letting the main agent perform the work independently. No subagents, full workflow. 
 
 ## ▶️ HOW TO USE
 
@@ -74,7 +72,7 @@ use medium route / use heavy route. [your task description]".
 ```
 > Codex stays on the selected route until you change it, so you don’t need to repeat it in every prompt.
 
-> **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities while minimizing token usage.
+> **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities and maximize token usage savings.
 
 - When you want to end current session, clean up and update documents, commit, ...: 
 
