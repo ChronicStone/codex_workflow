@@ -27,4 +27,4 @@ Batching does not alter pass criteria: any failed required gate still prevents a
 
 Event (≤150 words): event; task ID/iteration; evidence; risk/blocker if relevant; next action.
 Final (≤250 words): task ID/iteration; `passed`, `failed`, `partial`, or `blocked`; tests/coverage added; validation and actual result; production defect or uncovered risk; next action.
-
+"""

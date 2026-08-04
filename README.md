@@ -1,5 +1,7 @@
+<!-- codex-workflow-version: 1.0.0 -->
 <h3 align="center"><big><big><strong>SIMPLE&emsp;&emsp;───&emsp;&emsp;EASY&emsp;&emsp;───&emsp;&emsp;EFFICIENT</strong></big></big></h3>
 <p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
+<p align="center"><strong>Version 1.0.0</strong></p>
 <hr>
 
 ![Workflow illustration](illustration.png)
@@ -10,7 +12,8 @@ Beneath this simplicity is a tightly engineered agent orchestration system: a pu
 
 > 💡 For lightweight tasks, it won’t overdo things. Light route is default.
 
-> **ℹ️ Note:** this worflow is installed per project. Install it again when starting a new project.
+> **ℹ️ Note:** project instructions and documentation are installed per project.
+> Shared workflow runtime and agent definitions are stored under `~/.codex/`.
 
 
 ## 1. Installation ⚙️
@@ -20,37 +23,37 @@ Beneath this simplicity is a tightly engineered agent orchestration system: a pu
 ▶️ Send:
 
 ```text
-Clone https://github.com/viettran-edgeAI/codex_workflow.git , then read @workflow_setup_guide.md and automatically perform the complete installation process described in it.
+Clone https://github.com/viettran-edgeAI/codex_workflow.git, then read @codex_workflow/install.md and automatically perform the complete installation process described in it.
 ```
 
-✅ Done. At this point, the basic installation process is complete. Codex will ask some additional optional advanced questions below to further optimize the current project.
+✅ Done. The user-level workflow and the current project framework are now
+installed. During this first installation, Codex can ask optional
+personalization questions below.
 
-## Configuration questions
+## Configuration and personalization
 
-You can answer the following questions or skip them. If you skip, the default settings will be used.
+During the first README installation, Codex asks the optional workflow
+questions one at a time.
+The answers are stored per project in:
 
-### 1. Workflow style and design principles (optinal)
+```text
+agent_docs/workflow_personalization.md
+```
 
-Codex will ask about the project's workflow style and core design principles.
-You can describe requirements such as:
+The workflow procedure for recording and reapplying these decisions is stored
+in `~/.codex/codex_workflow/personalization.md`. Updates reuse this record to
+rebuild `AGENTS.md`, route settings, and agent configuration without asking the
+same questions again.
 
-- Prioritize modular design;
-- Keep dependencies low;
-- Do not change public APIs without prior approval;
-- ...
+For another project after the user-level installation is complete, open Codex in
+that project and send:
 
-### 2. Frontend project profile (optional)
+```text
+codex_workflow --install
+```
 
-The default workflow is designed primarily for backend work (Very heavily focused on testing). If the current project is a frontend project, Codex will ask whether you want to minimize testing, modularization, or similar requirements for the project. 
-
-### 3. Power configuration
-
-The default workflow is designed to save tokens for the ChatGPT Plus plan. Codex will ask if you want to enable each advanced option individually.
-
-- Allow more subagents (currently a maximum of 5) and allow more than one `executor_sol` call.
-- Set `executor_luna` and `tester` to the `max` model_reasoning_effort. Currently `xhigh`. 
-- Allow subagents to send more detailed report packets to the main agent (event and final report are currently limited to 150 & 250 words).
-- Allow subagents to retry more times when stuck/blocked before replacing them (currently 2). The new subagent will have to reload the context packet, but this will reduce the risk of getting stuck; consider this.
+This creates only the default project `AGENTS.md` and the main `agent_docs/`
+framework. It does not reinstall the user-level workflow.
 
 ### 🔄 Restart Codex after installation
 
@@ -82,6 +85,18 @@ end this session. [tell Codex more details if necessary]".
 `End-of-Session` handoff will be performed. This process updates the main document framework so that subsequent sessions can seamlessly continue the ongoing work.
 > You can still continue the session after that message if needed. 
 
+## Update the workflow 🔄
+
+From a project already using this workflow, send:
+
+```text
+codex_workflow --update
+```
+
+The user-level workflow version and agent definitions are updated first. The current
+project's personalization record and project-specific `AGENTS.md` content are
+then reapplied.
+
 ## ✨ Tips for further customization
 
 * For very large codebases, you can ask Codex to modify the workflow to use a dedicated codebase management/navigation tool such as `Graphify` instead of relying on `project_progress.md`.
@@ -90,13 +105,13 @@ end this session. [tell Codex more details if necessary]".
 
   `service_tier = "fast"`
 
-  to files such as `executor_luna.toml`, `tester.toml`, etc. 
+  to installed files such as `~/.codex/agents/executor_luna.toml`, `~/.codex/agents/tester.toml`, etc.
   
 > At the moment, the speed/usage multipliers on subscription plans are still x1.5/x2.5 rather than the x2.5/x2 in the API.
 
 * Add custom subagents such as an `investigator` for researching solutions on the web, especially if your project is niche or highly specialized. Ask Codex to structure it consistently with the other subagents in this workflow and integrate it into `heavy_route`.
 
-* Customize the `End-of-Session handoff` to suit your needs in `agent_docs/workflow/heavy_route.md` and `agent_docs/workflow/medium_route.md`.
+* Customize the `End-of-Session handoff` to suit your needs in `~/.codex/codex_workflow/heavy_route.md` and `~/.codex/codex_workflow/medium_route.md`.
 
 .... 
 
@@ -110,7 +125,7 @@ end this session. [tell Codex more details if necessary]".
 
 - Sol still reads the main documentations and the important parts of the codebase — that’s the manager’s job. In the medium and heavy routes, a single session-long explorer works alongside Sol as a read-only secretary and second brain, handling supplementary context such as tools, dependencies, external libraries, etc. It is not counted as a worker subagent. The goal is to minimize Sol’s token usage and keep it focused on the important stuff.
 
-- For really hard tasks, executor_luna can get stuck. In that case, Sol can spawn an executor_sol as a fallback, or use it from the start. Right now, this worflow limits this to max 1 executor_sol.
+- For mathematically or logically demanding core work, Sol can proactively use an executor_sol from the start. It also remains a fallback when executor_luna gets stuck. This workflow still limits executor_sol to a maximum of 1.
 
 - For handoff between sessions, project_progress.md and latest_session_work.md are managed by Sol as part of the main documentation structure. They’re there to keep long implementation plans moving smoothly across multiple sessions.
 

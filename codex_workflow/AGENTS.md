@@ -1,3 +1,4 @@
+<!-- codex-workflow-id: viettran-edgeAI/codex_workflow -->
 # AGENTS.md
 
 ## Project Context
@@ -64,14 +65,32 @@ The main project documents are stored under `agent_docs/`:
 - `agent_docs/project_progress.md`: active implementation plan and cross-session execution status.
 - `agent_docs/project_diary.md`: durable architecture decisions, discarded approaches, and lessons.
 - `agent_docs/latest_session_work.md`: Summarizing previous sessions along with any unfinished tasks.
+- `agent_docs/workflow_personalization.md`: project-specific answers and workflow configuration decisions, preserved across workflow updates.
 - Module-specific documents, when present.
+
+The shared workflow runtime is installed under `~/.codex/codex_workflow/`:
+
+- `~/.codex/codex_workflow/explorer_companion.md`: runtime lifecycle, usage,
+  communication, and closure rules for the deployment-session explorer.
+- `~/.codex/codex_workflow/personalization.md`: installation and update rules
+  for applying project-specific workflow decisions.
 
 --------
 `agent_docs/project_progress.md` and `agent_docs/latest_session_work.md` are two documents designed to ensure smooth and seamless deployment between multiple sessions in deployment mode. These two files can only be edited in `deployment state` or when the user explicitly requests it. The main agent is responsible for updating these two files, while subagents are not allowed to edit them.
 
 Update documentation only with verified facts. Keep temporary reasoning, raw logs, and short-lived checkpoints out of durable project documents.
 
+The main agent owns `agent_docs/workflow_personalization.md` during workflow
+installation and update. Worker subagents must not edit it.
+
 Never delete any main project document without warning the user and receiving a second explicit confirmation.
+
+## Workflow Configuration
+
+Project-specific workflow choices are recorded in
+`agent_docs/workflow_personalization.md`. The effective configuration is
+summarized here by the installation and update procedure; keep this section
+consistent with that project record.
 
 ## Route Selection
 
@@ -82,13 +101,12 @@ Performs tasks by yourself. Do not spawn subagents in this route.
 
 ### Medium route: 
 Use for deploying large tasks/plans in the `deployment state`.
-Perform implementation, verification, and documentation by yourself. Do not spawn worker subagents in this route. The deployment session's persistent `explorer` companion is the only exception and is not counted as a subagent.
-Read and follow `agent_docs/workflow/medium_route.md`.
+Perform implementation, verification, and documentation by yourself. Do not spawn worker subagents in this route.
+Read and follow `~/.codex/codex_workflow/medium_route.md`.
 
 ### Heavy route: 
 You a orchestrator, coordinates subagents to deploy large tasks/plans in the `deployment state`.
-Reuse the deployment session's persistent `explorer` companion to absorb bounded supplementary context and return concise findings to the main agent. It is not counted as a worker subagent.
-Read and follow `agent_docs/workflow/heavy_route.md`.
+Read and follow `~/.codex/codex_workflow/heavy_route.md`.
 
 ### Route selection rules and state interpolation
 
@@ -100,8 +118,7 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 ## Context Loading
 
 - In the Light route (`leaf state`), read only the files relevant to the current task.
-- On first entering the `deployment state`, immediately initialize exactly one session-long `explorer` companion. Reuse the same thread for every later bounded context investigation, including across Medium/Heavy route changes within the session. Do not spawn a new explorer for each request; replace it only when the applicable lifecycle rules require it. The explorer is a read-only second brain for the main agent and is excluded from worker/subagent counts.
-- An explorer assignment defines the investigation focus, not a hard reading boundary. The explorer may follow directly related files, symbols, call sites, documentation, dependencies, and configuration when needed, while remaining read-only and avoiding unrelated repository-wide exploration.
+- On first entering the `deployment state`, read and follow `~/.codex/codex_workflow/explorer_companion.md`, then initialize the explorer as directed there.
 - Load the foundational project context in one bounded read-only batch:
   1. `agent_docs/project_overview.md`
   2. `agent_docs/project_structure.md`
@@ -112,7 +129,6 @@ If the medium route/heavy route is specified, it means we will proceed to the `d
 - Read only relevant module documentation. Expand source inspection only when repository evidence requires it.
 - Reconstruct active tasks, dependencies, verification state, and blockers. Resolve contradictions with targeted evidence.
 - Under the Heavy route, review only critical hunks and integration boundaries after delegation unless risk, missing evidence, or conflicting results require broader inspection.
-- In final agent-usage statistics for a deployment session, always include the explorer's call count and label it as a `companion`, even though it is excluded from worker/subagent counts.
 
 ## Platform-specific paths
 
