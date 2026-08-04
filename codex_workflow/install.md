@@ -6,12 +6,14 @@ This document defines installation at two scopes:
 - Project: the current project, installed once per project.
 
 Do not inspect or edit the project's source code files during installation.
-Source paths below are relative to the cloned workflow repository root.
+Source paths below are relative to the extracted release package root.
+`README.md` is presentation-only and must not be read or used as an
+installation source.
 
 ## Installation modes
 
-- The README installation prompt runs the user-level phase and then the project
-  phase for the current project.
+- The manual release-installation prompt runs the user-level phase and then the
+  project phase for the current project.
 - `codex_workflow --install` runs only the project phase. It assumes the user-level
   phase is already complete.
 - `codex_workflow --update` is handled by `update.md`: update the user-level phase
@@ -34,15 +36,22 @@ platform.
 
 ## Release and project identity
 
-The source package version is the `codex-workflow-version` marker in
-`codex_workflow/user_AGENTS.md`. It must match the marker in `README.md`.
-Stop and report an inconsistent release if they differ.
+The release version is the semantic version in the GitHub Release tag. It must
+match the plain-text version in `codex_workflow/VERSION` inside the extracted
+package. The `codex-workflow-version` marker in `user_AGENTS.md` is synchronized
+metadata and should also match `VERSION`. Do not use `README.md` as a version or
+installation source. Stop and report an inconsistent release if these values
+differ. `VERSION` must contain one version only, in `MAJOR.MINOR.PATCH` form
+without a leading `v`; normalize an optional leading `v` in the Release tag
+before comparing.
 
-The installed user-level version is the `codex-workflow-version` marker in:
+The authoritative installed user-level version is the plain-text value in:
 
 ```text
-~/.codex/AGENTS.md
+~/.codex/codex_workflow/VERSION
 ```
+
+The version marker in `~/.codex/AGENTS.md` is synchronized metadata.
 
 The project workflow marker is:
 
@@ -57,14 +66,15 @@ transfer existing personalization automatically.
 
 ## 1. User-level installation — once per user environment
 
-Run this phase during the README installation prompt or an explicit workflow
-update. Never run it for `codex_workflow --install`.
+Run this phase during the manual release-installation prompt or an explicit
+workflow update. Never run it for `codex_workflow --install`.
 
 ### 1.1 User-level workflow bundle
 
-Copy the six runtime documents into the Codex user directory:
+Copy the runtime payload into the Codex user directory:
 
 ```text
+codex_workflow/VERSION
 codex_workflow/install.md
 codex_workflow/personalization.md
 codex_workflow/update.md
@@ -75,8 +85,9 @@ codex_workflow/explorer_companion.md
 ```
 
 This creates or replaces the workflow-owned directory
-`~/.codex/codex_workflow/`. Replace the workflow-owned runtime documents so the
-installed set matches the source set. Report each replacement.
+`~/.codex/codex_workflow/`. Replace the workflow-owned runtime payload so the
+installed set, including `VERSION`, matches the source set. Report each
+replacement.
 
 ### 1.2 User-level agent definitions
 
@@ -131,10 +142,12 @@ automatically; ask whether to replace or merge it.
 
 Verify that:
 
-- `~/.codex/AGENTS.md` contains the user-level workflow marker and source version.
-- `~/.codex/codex_workflow/` contains the six runtime documents from
-  `codex_workflow/`, including `install.md`, `personalization.md`, and
-  `update.md`.
+- `~/.codex/AGENTS.md` contains the user-level workflow marker and synchronized
+  version metadata.
+- `~/.codex/codex_workflow/VERSION` exists and contains the release version.
+- `~/.codex/codex_workflow/` contains the runtime payload from `codex_workflow/`,
+  including `VERSION`, `install.md`, `personalization.md`, and `update.md`.
+- The version marker in `~/.codex/AGENTS.md` matches the installed `VERSION`.
 - Every TOML in `codex_workflow/agents/` exists under `~/.codex/agents/`.
 - The required multi-agent configuration is present.
 - No unrelated user-level files were modified.
@@ -155,8 +168,9 @@ Require these existing user-level files:
 - `~/.codex/codex_workflow/`;
 - `~/.codex/agents/` with the workflow agent definitions.
 
-If they are missing, stop and tell the user to run the README installation
-prompt first. Do not silently perform user-level installation from `--install`.
+If they are missing, stop and tell the user to run the manual release
+installation first. Do not silently perform user-level installation from
+`--install`.
 
 ### 2.2 Project AGENTS.md
 
@@ -207,7 +221,7 @@ Read and follow:
 ~/.codex/codex_workflow/personalization.md
 ```
 
-This phase is part of the initial README installation and workflow update. It
+This phase is part of the initial release installation and workflow update. It
 is not part of the minimal `codex_workflow --install` command.
 
 The personalization procedure owns `agent_docs/workflow_personalization.md`,
@@ -226,13 +240,8 @@ Report the user-level and project scopes separately, including versions,
 personalization status, conflicts, and unresolved issues. Instruct the user to
 restart Codex after user-level agent definitions change.
 
-When running from a temporary clone of the workflow repository, delete only
-that temporary package and its presentation files after verification:
+When running from an extracted release package, delete only that temporary
+package after verification. Do not delete any project file.
 
-- `codex_workflow/`
-- `README.md`
-- `illustration.png`
-
-Do not delete `agent_docs/`, `AGENTS.md`, the personalization record, or any
-other project file. A normal `codex_workflow --install` run has no temporary
-package to delete.
+A normal `codex_workflow --install` run has no temporary release package to
+delete.

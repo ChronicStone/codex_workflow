@@ -23,7 +23,7 @@ Beneath this simplicity is a tightly engineered agent orchestration system: a pu
 ▶️ Send:
 
 ```text
-Clone https://github.com/viettran-edgeAI/codex_workflow.git, then read @codex_workflow/install.md and automatically perform the complete installation process described in it.
+Download and extract the latest release package from https://github.com/viettran-edgeAI/codex_workflow/releases/latest, then read the bundled `codex_workflow/install.md` and automatically perform the complete installation process described in it. Do not read `README.md`.
 ```
 
 ✅ Done. The user-level workflow and the current project framework are now
@@ -32,7 +32,7 @@ personalization questions below.
 
 ## Configuration and personalization
 
-During the first README installation, Codex asks the optional workflow
+During the initial release installation, Codex asks the optional workflow
 questions one at a time.
 The answers are stored per project in:
 

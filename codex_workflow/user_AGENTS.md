@@ -4,8 +4,15 @@
 
 ## Workflow Update
 
-This is the user-level control plane for the Codex workflow. The installed workflow
-version is the `codex-workflow-version` marker in this file.
+This is the user-level control plane for the Codex workflow. The authoritative
+installed workflow version is stored in:
+
+```text
+~/.codex/codex_workflow/VERSION
+```
+
+The `codex-workflow-version` marker in this file is synchronized metadata for
+compatibility and human inspection.
 
 When the user's trimmed message is exactly:
 
