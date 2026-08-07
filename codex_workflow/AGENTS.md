@@ -20,34 +20,8 @@ Nested modules are allowed when they make responsibilities clearer. Avoid placin
 - Define proportionate acceptance and verification requirements before implementation.
 - Keep related tests cohesive enough to avoid fragmented micro-tests, but never reduce meaningful coverage, weaken assertions, or hide failures merely to save tokens or execution time.
 
-
-## Tool Execution and Batching
-
-For each bounded work stage, identify independent, already-known, non-conflicting tool calls before invoking tools. When practical, execute them through one outer `functions.exec` or Code Mode `exec` call.
-
-Use `Promise.allSettled()` when successful results remain useful even if another call fails. Inspect and attribute every returned result. Use `Promise.all()` only when any individual failure invalidates the entire batch.
-
-Prefer batching for:
-
-- Read-only file inspection.
-- Independent symbol, text, and call-site searches.
-- Repository metadata and status collection.
-- Independent log or artifact inspection.
-- Validation commands that do not share mutable state.
-
-Keep operations sequential when they involve:
-
-- A result that determines the next operation.
-- Adaptive investigation where the next target is not yet known.
-- Approvals or permission boundaries.
-- Agent spawn, wait, resume, message, or replacement operations.
-- Overlapping or order-sensitive writes.
-- Git staging, commits, resets, or other Git-state mutations.
-- Builds or tests sharing a build directory, generated output, database, port, fixture, device, or other mutable resource.
-
-Do not split an otherwise batchable inspection across repeated outer tool calls. Do not create extra work, broaden scope, obscure failure attribution, or increase worker count merely to fill a batch.
-
-Tool-call concurrency is local to one agent thread. It does not change route selection, worker ownership, scope boundaries, verification requirements, or subagent-concurrency limits. A stage requiring only one useful tool call should remain one call.
+<!-- codex-workflow-project-personalization-start -->
+<!-- codex-workflow-project-personalization-end -->
 
 ## Working State
 
@@ -65,32 +39,22 @@ The main project documents are stored under `agent_docs/`:
 - `agent_docs/project_progress.md`: active implementation plan and cross-session execution status.
 - `agent_docs/project_diary.md`: durable architecture decisions, discarded approaches, and lessons.
 - `agent_docs/latest_session_work.md`: Summarizing previous sessions along with any unfinished tasks.
-- `agent_docs/workflow_personalization.md`: project-specific answers and workflow configuration decisions, preserved across workflow updates.
 - Module-specific documents, when present.
 
 The shared workflow runtime is installed under `~/.codex/codex_workflow/`:
 
-- `~/.codex/codex_workflow/explorer_companion.md`: runtime lifecycle, usage,
-  communication, and closure rules for the deployment-session explorer.
-- `~/.codex/codex_workflow/personalization.md`: installation and update rules
-  for applying project-specific workflow decisions.
+- `~/.codex/codex_workflow/explorer_companion.md`: role, scope, lifecycle, and
+  usage rules for the deployment-session explorer.
+- `~/.codex/codex_workflow/end_of_session.md`: shared Medium/Heavy
+  End-of-Session handoff procedure.
 
 --------
-`agent_docs/project_progress.md` and `agent_docs/latest_session_work.md` are two documents designed to ensure smooth and seamless deployment between multiple sessions in deployment mode. These two files can only be edited in `deployment state` or when the user explicitly requests it. The main agent is responsible for updating these two files, while subagents are not allowed to edit them.
+`agent_docs/project_progress.md` and `agent_docs/latest_session_work.md` ensure smooth deployment across multiple sessions. During runtime, they may be edited only in `deployment state` or when the user explicitly requests it. The main agent owns both files; subagents must not edit them.
 
 Update documentation only with verified facts. Keep temporary reasoning, raw logs, and short-lived checkpoints out of durable project documents.
 
-The main agent owns `agent_docs/workflow_personalization.md` during workflow
-installation and update. Worker subagents must not edit it.
-
 Never delete any main project document without warning the user and receiving a second explicit confirmation.
 
-## Workflow Configuration
-
-Project-specific workflow choices are recorded in
-`agent_docs/workflow_personalization.md`. The effective configuration is
-summarized here by the installation and update procedure; keep this section
-consistent with that project record.
 
 ## Route Selection
 

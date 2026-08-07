@@ -1,48 +1,35 @@
 <!-- codex-workflow-user-id: viettran-edgeAI/codex_workflow -->
-<!-- codex-workflow-version: 1.0.0 -->
+<!-- codex-workflow-version: 1.1.0 -->
+<!-- codex-workflow-user-managed-start -->
 # AGENTS.md
 
-## Workflow Update
+When the user's trimmed message matches one of the following command forms,
+read and follow the corresponding guide. Forms without placeholders must match
+exactly.
 
-This is the user-level control plane for the Codex workflow. The authoritative
-installed workflow version is stored in:
+- codex_workflow --install
+  Guide:  ~/.codex/codex_workflow/install.md.
 
-```text
-~/.codex/codex_workflow/VERSION
-```
+- codex_workflow --update
+  Guide:  ~/.codex/codex_workflow/update.md.
 
-The `codex-workflow-version` marker in this file is synchronized metadata for
-compatibility and human inspection.
+- codex_workflow --update --source <PACKAGE>
+  Match only when `<PACKAGE>` is one non-empty local path, optionally quoted.
+  Pass that path to ~/.codex/codex_workflow/update.md as the selected local
+  source. Reject missing paths or additional arguments.
 
-When the user's trimmed message is exactly:
+- codex_workflow --check-update
+  Guide:  ~/.codex/codex_workflow/check_update.md.
 
-```text
-codex_workflow --update
-```
+- codex_workflow --configure
+  Guide: ~/.codex/codex_workflow/configuration_guide.md.
 
-read and follow:
+- codex_workflow --personal
+  Guide: ~/.codex/codex_workflow/personalization_guide.md.
 
-```text
-~/.codex/codex_workflow/update.md
-```
+- codex_workflow --disable
+  Guide: ~/.codex/codex_workflow/disable.md.
 
-Update the user-level workflow bundle and agent definitions first, then update the
-current project and reapply its `agent_docs/workflow_personalization.md` when it
-exists.
-
-When the user's trimmed message is exactly:
-
-```text
-codex_workflow --install
-```
-
-read and follow the project-installation section of:
-
-```text
-~/.codex/codex_workflow/install.md
-```
-
-This command assumes the user-level workflow is already installed. It must only
-create the current project's default `AGENTS.md` and main `agent_docs/`
-framework. It must not reinstall the user-level bundle, agent definitions, or
-user-level Codex configuration.
+- codex_workflow --enable
+  Guide: ~/.codex/codex_workflow/enable.md.
+<!-- codex-workflow-user-managed-end -->

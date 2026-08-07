@@ -1,88 +1,62 @@
 # Medium Route
 
-Use this workflow only after the Medium route has been selected under `AGENTS.md`.
+Use after the Medium route is selected under `AGENTS.md`.
 
 ## Main-Agent Role
 
-You are the main agent and perform implementation, verification, and documentation directly without spawning or delegating to worker subagents.
+Perform planning, implementation, verification, and documentation directly.
+Do not delegate to worker subagents. Explorer remains available as the
+deployment-session companion defined by
+`~/.codex/codex_workflow/explorer_companion.md`.
 
-Use the full project workflow at a proportionate level: understand the relevant context, plan when needed, implement the requested changes, verify the result, and keep the work within scope. Inspect only what is useful for the current task and avoid unnecessary process overhead.
+Keep process proportional; simple tasks do not need the full workflow.
 
-In this route, for common queries, it's not necessary to implement complex workflow for simple tasks.
+## Execution
 
-## Stage Execution and Tool Batching
+- Work in bounded stages: context, inspection, implementation, verification,
+  and final review.
+- Batch independent, known, non-conflicting reads, searches, metadata checks,
+  and isolated validation.
+- Keep dependent or overlapping edits sequential.
+- Run validation concurrently only when commands share no build output,
+  generated files, fixtures, databases, ports, devices, or other mutable state.
+- Do not create extra stages or commands merely to batch them.
 
-Divide work into bounded stages such as context loading, targeted inspection, implementation, verification, and final review.
+## Plans and Status
 
-Before each stage, collect all independent, already-known, non-conflicting tool operations and apply the shared batching rules from `AGENTS.md`. Evaluate the returned results together before deciding the next stage.
+When the user says **"plan the implementation for..."** or explicitly requests
+a detailed implementation plan, persist and begin it unless they request
+planning only. Record:
 
-Typical Medium-route batches include:
+- Goal, scope, constraints, and acceptance criteria.
+- Major steps, dependencies, and protected areas.
+- Verification, blockers, and next action.
 
-- Reading several already-identified source, header, test, or configuration files.
-- Searching several known symbols or call sites.
-- Collecting independent repository metadata.
-- Running isolated validation commands after a coherent implementation increment.
+For durable or multi-session work, update
+`agent_docs/project_progress.md` at most twice:
 
-Keep implementation edits sequential when one edit depends on another, files overlap, or intermediate results determine subsequent changes.
+1. Activate the bounded plan.
+2. Reconcile final status, evidence, blockers, and next action.
 
-Run validation concurrently only when commands do not share mutable build output, generated files, fixtures, databases, ports, devices, or other state. Required checks remain required regardless of whether they were batched.
-
-Do not manufacture stages or extra commands merely to create a batch. Small tasks may remain a single inspection, edit, and validation sequence.
-
-## Plans and Status Writes
-
-When the user says **"plan the implementation for..."** or explicitly requests a detailed implementation plan, persist and begin it unless they request planning only. 
-
-Record:
-
-* Goal and scope.
-* Constraints and protected areas.
-* Acceptance criteria.
-* Major implementation steps when useful.
-* Dependencies, verification approach, known blockers, and next action.
-
-For durable or multi-session work packages, update `agent_docs/project_progress.md` at most twice:
-
-1. Mark the package active and record its bounded plan.
-2. Reconcile final status, verification evidence, blockers, and next action.
-
-Do not update it after every checkpoint. Keep significant changes to the plan understandable and traceable.
-
-## Documentation
-
-Update durable documentation only when architecture, structure, workflow, public behavior, significant decisions, or module usage changes.
-
-Use verified implementation and test results as the source of truth. Update `agent_docs/project_diary.md` only for decisions, discarded approaches, or lessons with lasting architectural value.
+Do not update it after every checkpoint. Keep plan changes traceable.
 
 ## Working Rules
 
-Keep changes focused and preserve unrelated user work. Perform verification appropriate to the risk and scope of the task. Do not claim unrun checks passed, hide blockers, or broaden the task without a clear need.
+- Keep changes focused and preserve unrelated user work.
+- Verify in proportion to risk; never claim unrun checks passed.
+- Reinspect only after a change, failure, or newly discovered dependency.
+- Update durable documentation only for lasting architecture, structure,
+  workflow, public behavior, significant decisions, or module usage changes.
+- Use verified implementation and tests as documentation sources.
+- Update `agent_docs/project_diary.md` only for lasting decisions, discarded
+  approaches, or architectural lessons.
 
-Prefer one targeted inspection batch over a sequence of independent single-file or single-search outer calls. After implementation begins, repeat inspection only when a changed state, failure, or newly discovered dependency provides a concrete reason.
+For a blocker, record the failed step, evidence, suspected cause, completed
+changes and repository state, affected criterion, and required input. Preserve a
+clear continuation point and never present partial work as complete.
 
-## Blockers
+## Session End
 
-When blocked, record:
-
-- The failed step and exact evidence.
-- The suspected cause.
-- Completed changes and current repository state.
-- The affected acceptance criterion.
-- The decision, dependency, or external input required.
-
-Do not disguise partial work as completion. Adjust the plan and preserve a clear continuation point.
-
-## End-of-Session Handoff
-
-Run this section only when the user directly commands the exact phrase `end this session`, ignoring capitalization and surrounding punctuation.
-
-1. Confirm verification occurred after the last relevant code or test change; do not rerun solely because the session is ending.
-2. Run the explorer closure audit from `~/.codex/codex_workflow/explorer_companion.md` when applicable.
-3. Empty `project_progress.md` content if the plan is complete, otherwise , reconcile it with the final status, verification evidence, blockers, and next action if its recorded state has changed.
-4. Replace `latest_session_work.md` once with changes, verification, pending work, blockers, and the next entry point.
-5. Update durable docs only when warranted and `project_diary.md` only for significant decisions or lessons.
-6. If meaningful project files changed, run `git add .` and commit with `git commit -m "[auto commit] <summary>"`.
-
-If no meaningful project files changed, there is no need to refresh `latest_session_work.md`.
-
-Every completed session must leave honest status, bounded changes, current verification, preserved user work, and a clear continuation point.
+When the user says the exact phrase `end this session`, ignoring capitalization
+and surrounding punctuation, follow
+`~/.codex/codex_workflow/end_of_session.md` under the Medium branch.

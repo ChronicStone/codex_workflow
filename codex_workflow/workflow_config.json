@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "default_executor": "executor_luna",
+  "max_concurrent_workers": 5,
+  "max_executor_sol_instances": 1,
+  "report_package_size": 250,
+  "enabled_workers": [
+    "executor_luna",
+    "executor_sol",
+    "tester",
+    "doc-writer",
+    "explorer"
+  ]
+}
