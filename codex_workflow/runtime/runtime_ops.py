@@ -7,13 +7,14 @@ from pathlib import Path
 from .config import (
     WorkflowConfig,
     patch_codex_config,
+    remove_workflow_owned_config,
     render_handoff_contract,
     render_heavy_route,
     render_worker_template,
 )
 from .errors import ValidationError
 from .layout import USER_STATE, WORKER_MARKER, PackageLayout, RuntimePaths
-from .markers import USER_MANAGED, append_region, extract, replace
+from .markers import USER_MANAGED, append_region, extract, remove_region, replace
 from .plan import read_json, read_string_list, text_mutation
 from .transaction import Mutation
 
@@ -148,3 +149,85 @@ def validate_worker_owner(path: Path, worker: str) -> None:
     match = WORKER_MARKER.search(text)
     if match is None or match.group(1) != worker:
         raise ValidationError(f"refusing to remove non-owned worker file: {path}")
+
+
+def plan_runtime_remove(
+    runtime: RuntimePaths,
+) -> tuple[list[Mutation], list[Path], list[str]]:
+    """Plan removal of workflow-owned user-level runtime files."""
+
+    mutations: list[Mutation] = []
+    cleanup_dirs: list[Path] = []
+    warnings = [
+        "unrelated content in the user AGENTS.md and config.toml will be preserved",
+        "unrelated worker TOMLs will be preserved",
+    ]
+
+    if runtime.user_agents.is_symlink() or (
+        runtime.user_agents.exists() and not runtime.user_agents.is_file()
+    ):
+        raise ValidationError(f"user AGENTS path is not a regular file: {runtime.user_agents}")
+    if runtime.user_agents.is_file():
+        current = runtime.user_agents.read_text(encoding="utf-8")
+        if USER_MANAGED.start in current or USER_MANAGED.end in current:
+            rendered = remove_region(current, USER_MANAGED)
+            mutations.append(
+                Mutation(
+                    runtime.user_agents,
+                    rendered.encode("utf-8") if rendered else None,
+                )
+            )
+
+    if runtime.config_toml.is_symlink() or (
+        runtime.config_toml.exists() and not runtime.config_toml.is_file()
+    ):
+        raise ValidationError(f"Codex config path is not a regular file: {runtime.config_toml}")
+    if runtime.config_toml.is_file():
+        current = runtime.config_toml.read_text(encoding="utf-8")
+        rendered = remove_workflow_owned_config(current)
+        if rendered != current:
+            mutations.append(
+                Mutation(
+                    runtime.config_toml,
+                    rendered.encode("utf-8") if rendered else None,
+                )
+            )
+
+    if runtime.agents.is_symlink() or (
+        runtime.agents.exists() and not runtime.agents.is_dir()
+    ):
+        raise ValidationError(f"worker directory is not a directory: {runtime.agents}")
+    if runtime.agents.is_dir():
+        for target in sorted(runtime.agents.glob("*.toml")):
+            if target.is_symlink() or not target.is_file():
+                raise ValidationError(f"worker path is not a regular file: {target}")
+            match = WORKER_MARKER.search(target.read_text(encoding="utf-8"))
+            if match is None:
+                continue
+            if match.group(1) != target.stem:
+                raise ValidationError(
+                    f"worker ownership marker does not match file name: {target}"
+                )
+            mutations.append(Mutation(target, None))
+        cleanup_dirs.append(runtime.agents)
+
+    if runtime.runtime.is_symlink() or (
+        runtime.runtime.exists() and not runtime.runtime.is_dir()
+    ):
+        raise ValidationError(f"workflow runtime path is not a directory: {runtime.runtime}")
+    if runtime.runtime.is_dir():
+        for path in sorted(runtime.runtime.rglob("*")):
+            if path.is_symlink():
+                raise ValidationError(f"refusing to remove symlink in workflow runtime: {path}")
+            if path.is_dir():
+                cleanup_dirs.append(path)
+            elif path.is_file():
+                mutations.append(Mutation(path, None))
+            elif path.exists():
+                raise ValidationError(f"workflow runtime contains a non-file entry: {path}")
+        cleanup_dirs.append(runtime.runtime)
+        warnings.append(
+            f"all files under {runtime.runtime} (including source and update backups) will be permanently deleted"
+        )
+
+    return mutations, cleanup_dirs, warnings

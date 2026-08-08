@@ -7,7 +7,7 @@ from typing import Any
 
 from . import RUNTIME_SCHEMA_VERSION
 from .backup import append_backup_mutations
-from .config import WorkflowConfig, load_config, load_migrated_config
+from .config import WorkflowConfig, load_config
 from .layout import USER_STATE, PackageLayout, ProjectPaths, RuntimePaths
 from .personalization import materialize_personalization
 from .plan import (
@@ -22,24 +22,17 @@ from .project_ops import (
     plan_enable,
     plan_personalize,
     plan_project_install,
+    plan_project_remove,
     plan_project_update,
 )
-from .runtime_ops import plan_materialized_config, plan_runtime_files
+from .runtime_ops import plan_materialized_config, plan_runtime_files, plan_runtime_remove
 from .transaction import Mutation
 
 
 def plan_bootstrap(
     package: PackageLayout, runtime: RuntimePaths, project: ProjectPaths
 ) -> OperationPlan:
-    config_path = runtime.runtime / "workflow_config.json"
-    if config_path.is_file():
-        config = load_migrated_config(
-            config_path,
-            defaults=package.default_config,
-            templates=package.agent_templates,
-        )
-    else:
-        config = load_config(package.default_config, templates=package.agent_templates)
+    config = load_config(package.default_config, templates=package.agent_templates)
     mutations, owned_runtime = plan_runtime_files(
         package, runtime, config, config.to_json().encode()
     )
@@ -123,6 +116,32 @@ def plan_auto_check_update_setting(
         [],
         {"auto_check_update": enabled},
     )
+
+
+def plan_remove(
+    runtime: RuntimePaths,
+    project: ProjectPaths,
+) -> OperationPlan:
+    runtime_mutations, runtime_dirs, runtime_warnings = plan_runtime_remove(runtime)
+    project_mutations, project_dirs, project_warnings = plan_project_remove(project)
+    return OperationPlan(
+        "remove",
+        deduplicate(runtime_mutations + project_mutations),
+        runtime_warnings + project_warnings,
+        [],
+        {
+            "confirmation_required": True,
+            "preserves": [
+                "project agent_docs/ files",
+                "unrelated user AGENTS.md content",
+                "unrelated Codex config.toml keys",
+                "unrelated worker TOMLs",
+            ],
+        },
+        cleanup_dirs=runtime_dirs + project_dirs,
+    )
+
+
 def plan_update(
     incoming: PackageLayout,
     runtime: RuntimePaths,
@@ -131,11 +150,7 @@ def plan_update(
     legacy_local_instructions: str | None = None,
 ) -> OperationPlan:
     installed = PackageLayout.resolve(runtime.runtime, allow_legacy=True)
-    config = load_migrated_config(
-        runtime.runtime / "workflow_config.json",
-        defaults=incoming.default_config,
-        templates=incoming.agent_templates,
-    )
+    config = load_config(incoming.default_config, templates=incoming.agent_templates)
     backup_root = (
         runtime.runtime
         / ".backups"

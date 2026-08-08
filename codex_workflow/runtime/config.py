@@ -270,3 +270,66 @@ def _patch_section(lines: list[str], section: str, values: dict[str, str]) -> li
     missing = [key for key in values if key not in found]
     result[end:end] = [f"{key} = {values[key]}" for key in missing]
     return result
+
+
+_WORKFLOW_OWNED_KEYS: dict[str, set[str]] = {
+    "agents": {"enabled"},
+    "features.multi_agent_v2": {
+        "enabled",
+        "max_concurrent_threads_per_session",
+        "hide_spawn_agent_metadata",
+        "tool_namespace",
+        "min_wait_timeout_ms",
+        "default_wait_timeout_ms",
+        "max_wait_timeout_ms",
+    },
+}
+
+
+def remove_workflow_owned_config(text: str) -> str:
+    """Remove only the Codex settings owned by this workflow."""
+    if not text.strip():
+        return ""
+    try:
+        tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        raise ValidationError(f"existing Codex config is invalid TOML: {error}") from error
+
+    lines = text.splitlines()
+    result: list[str] = []
+    index = 0
+    while index < len(lines):
+        header = _SECTION.match(lines[index])
+        if header is None or header.group(1) not in _WORKFLOW_OWNED_KEYS:
+            result.append(lines[index])
+            index += 1
+            continue
+
+        section = header.group(1)
+        end = next(
+            (
+                position
+                for position in range(index + 1, len(lines))
+                if _SECTION.match(lines[position])
+            ),
+            len(lines),
+        )
+        owned = _WORKFLOW_OWNED_KEYS[section]
+        retained: list[str] = []
+        for line in lines[index + 1 : end]:
+            match = _KEY.match(line)
+            if match is None or match.group(1) not in owned:
+                retained.append(line)
+        if any(line.strip() for line in retained):
+            result.append(lines[index])
+            result.extend(retained)
+        index = end
+
+    rendered = "\n".join(result).rstrip()
+    if rendered:
+        rendered += "\n"
+    try:
+        tomllib.loads(rendered)
+    except tomllib.TOMLDecodeError as error:
+        raise ValidationError(f"generated Codex config is invalid TOML: {error}") from error
+    return rendered

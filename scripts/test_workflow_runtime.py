@@ -21,6 +21,7 @@ sys.path.insert(0, str(PACKAGE))
 from runtime.config import (
     WorkflowConfig,
     patch_codex_config,
+    remove_workflow_owned_config,
     render_handoff_contract,
     render_heavy_route,
 )
@@ -55,7 +56,10 @@ class MarkerTests(unittest.TestCase):
     def test_user_command_contract_uses_automatic_check_opt_out(self) -> None:
         instructions = (PACKAGE / "user_AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("auto-check-update --json", instructions)
+        self.assertIn("codex_workflow --enable_auto_update", instructions)
+        self.assertIn("codex_workflow --disable_auto_update", instructions)
         self.assertIn("codex_workflow --disable_auto_check_update", instructions)
+        self.assertIn("codex_workflow --remove", instructions)
         self.assertNotIn("codex_workflow --check-update", instructions)
 
     def test_template_renders_independent_project_regions(self) -> None:
@@ -106,6 +110,27 @@ class MarkerTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertNotIn("--source", completed.stdout)
+        self.assertNotIn("--apply", completed.stdout)
+
+    def test_explicit_auto_update_commands_are_available(self) -> None:
+        for command in ("enable-auto-update", "disable-auto-update"):
+            completed = subprocess.run(
+                [sys.executable, "-B", str(PACKAGE / "workflow.py"), command, "--help"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_remove_help_hides_internal_confirmation_flag(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, "-B", str(PACKAGE / "workflow.py"), "remove", "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertNotIn("--confirm", completed.stdout)
 
 
 class SafetyTests(unittest.TestCase):
@@ -135,6 +160,15 @@ class SafetyTests(unittest.TestCase):
 
 
 class ConfigTests(unittest.TestCase):
+    def test_package_default_disables_automatic_update_checks(self) -> None:
+        raw = json.loads(
+            (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertFalse(raw["auto_check_update"])
+        self.assertFalse(WorkflowConfig.from_mapping(raw).auto_check_update)
+
     def test_newer_persistent_schema_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
             migrate_config_resource(
@@ -177,6 +211,25 @@ class ConfigTests(unittest.TestCase):
         self.assertIn('model = "custom"', rendered)
         self.assertIn("other = 7", rendered)
         self.assertIn("max_concurrent_threads_per_session = 20", rendered)
+
+    def test_toml_remove_preserves_unrelated_content(self) -> None:
+        original = (
+            'model = "custom"\n\n'
+            "[agents]\n"
+            "enabled = true\n"
+            "keep_agent = true\n\n"
+            "[features.multi_agent_v2]\n"
+            "enabled = true\n"
+            "max_concurrent_threads_per_session = 20\n"
+            'keep_feature = "keep"\n'
+        )
+        rendered = remove_workflow_owned_config(original)
+        self.assertIn('model = "custom"', rendered)
+        self.assertIn("keep_agent = true", rendered)
+        self.assertIn('keep_feature = "keep"', rendered)
+        self.assertNotIn("max_concurrent_threads_per_session", rendered)
+        self.assertIn("[agents]", rendered)
+        self.assertNotIn("enabled = true", rendered)
 
     def test_heavy_snapshot_is_rendered_from_config(self) -> None:
         config = WorkflowConfig.from_mapping(
@@ -342,10 +395,15 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.bootstrap(existing_agents="Local policy.\n")
         installed_config_path = self.runtime.runtime / "workflow_config.json"
         installed_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
+        installed_config["default_executor"] = "executor_terra"
+        installed_config["max_concurrent_workers"] = 7
         del installed_config["default_executor_reasoning_effort"]
         del installed_config["auto_check_update"]
         installed_config_path.write_text(
             json.dumps(installed_config, indent=2) + "\n", encoding="utf-8"
+        )
+        (self.runtime.agents / "executor_luna.toml").write_text(
+            "# local worker override\n", encoding="utf-8"
         )
         incoming_root = self.root / "incoming" / "codex_workflow"
         shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
@@ -360,10 +418,119 @@ class LifecycleIntegrationTests(unittest.TestCase):
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
         self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "1.1.1\n")
-        migrated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
-        self.assertEqual(migrated_config["default_executor_reasoning_effort"], "xhigh")
-        self.assertTrue(migrated_config["auto_check_update"])
+        updated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
+        self.assertEqual(updated_config["default_executor"], "executor_luna")
+        self.assertEqual(updated_config["max_concurrent_workers"], 20)
+        self.assertEqual(updated_config["default_executor_reasoning_effort"], "xhigh")
+        self.assertFalse(updated_config["auto_check_update"])
+        self.assertNotIn(
+            "local worker override",
+            (self.runtime.agents / "executor_luna.toml").read_text(encoding="utf-8"),
+        )
         self.assertTrue(any((self.runtime.runtime / ".backups").iterdir()))
+
+    def test_update_preserves_disabled_project_state(self) -> None:
+        self.bootstrap()
+        plan_enable(self.project, enable=False).apply()
+        plan_update(
+            self.incoming_package("disabled-incoming"),
+            self.runtime,
+            self.project,
+        ).apply()
+        self.assertFalse(self.project.active.exists())
+        self.assertTrue(self.project.disabled.exists())
+        state = json.loads(self.project.state.read_text(encoding="utf-8"))
+        self.assertFalse(state["enabled"])
+
+    def test_cli_install_applies_without_confirmation_flag(self) -> None:
+        project_root = self.root / "cli-project"
+        project_root.mkdir()
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(PACKAGE / "workflow.py"),
+                "install",
+                "--package-root",
+                str(PACKAGE),
+                "--codex-home",
+                str(self.codex_home),
+                "--project",
+                str(project_root),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(json.loads(completed.stdout)["applied"])
+        self.assertTrue((project_root / "AGENTS.md").is_file())
+
+    def test_remove_requires_second_confirmation_and_cleans_owned_files(self) -> None:
+        self.bootstrap(existing_agents="Local policy.\n")
+        user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.runtime.user_agents.write_text(
+            "# Keep this user policy.\n\n" + user_agents,
+            encoding="utf-8",
+        )
+        config = self.runtime.config_toml.read_text(encoding="utf-8")
+        config = config.replace(
+            "[agents]\nenabled = true",
+            "[agents]\nenabled = true\nkeep_agent = true",
+        )
+        config = config.replace(
+            "[features.multi_agent_v2]\nenabled = true",
+            '[features.multi_agent_v2]\nenabled = true\nkeep_feature = "keep"',
+        )
+        self.runtime.config_toml.write_text(
+            'model = "keep"\n\n' + config,
+            encoding="utf-8",
+        )
+        unrelated_worker = self.runtime.agents / "unrelated.toml"
+        unrelated_worker.write_text('model = "keep"\n', encoding="utf-8")
+
+        command = [
+            sys.executable,
+            "-B",
+            str(self.runtime.runtime / "workflow.py"),
+            "remove",
+            "--codex-home",
+            str(self.codex_home),
+            "--project",
+            str(self.project_root),
+            "--json",
+        ]
+        planned = subprocess.run(command, check=False, capture_output=True, text=True)
+        self.assertEqual(planned.returncode, 0, planned.stderr)
+        planned_summary = json.loads(planned.stdout)
+        self.assertFalse(planned_summary["applied"])
+        self.assertTrue(planned_summary["confirmation_required"])
+        self.assertTrue(self.project.active.is_file())
+        self.assertTrue(self.runtime.runtime.is_dir())
+
+        confirmed = subprocess.run(
+            [*command[:-1], "--confirm", "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(confirmed.returncode, 0, confirmed.stderr)
+        self.assertTrue(json.loads(confirmed.stdout)["applied"])
+        self.assertFalse(self.project.active.exists())
+        self.assertFalse(self.project.hidden_dir.exists())
+        self.assertTrue((self.project.docs / "project_overview.md").is_file())
+        self.assertFalse(self.runtime.runtime.exists())
+        self.assertTrue(unrelated_worker.is_file())
+        self.assertEqual(
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+            "# Keep this user policy.\n",
+        )
+        remaining_config = self.runtime.config_toml.read_text(encoding="utf-8")
+        self.assertIn('model = "keep"', remaining_config)
+        self.assertIn("keep_agent = true", remaining_config)
+        self.assertIn('keep_feature = "keep"', remaining_config)
+        self.assertNotIn("max_concurrent_threads_per_session", remaining_config)
 
     def test_update_allows_missing_optional_codex_config(self) -> None:
         self.bootstrap()
@@ -416,6 +583,52 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(json.loads(completed.stdout)["status"], "disabled")
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(self.runtime.runtime / "workflow.py"),
+                "enable-auto-update",
+                "--codex-home",
+                str(self.codex_home),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(
+            json.loads(
+                (self.runtime.runtime / "workflow_config.json").read_text(
+                    encoding="utf-8"
+                )
+            )["auto_check_update"]
+        )
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(self.runtime.runtime / "workflow.py"),
+                "disable-auto-update",
+                "--codex-home",
+                str(self.codex_home),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertFalse(
+            json.loads(
+                (self.runtime.runtime / "workflow_config.json").read_text(
+                    encoding="utf-8"
+                )
+            )["auto_check_update"]
+        )
 
     def test_legacy_entry_with_edits_requires_reviewed_local_instructions(self) -> None:
         self.bootstrap()
@@ -496,7 +709,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         summary = json.loads(completed.stdout)
         self.assertEqual(summary["details"]["to_version"], "1.1.1")
-        self.assertFalse(summary["applied"])
+        self.assertTrue(summary["applied"])
 
 
 class PersonalizationTests(unittest.TestCase):

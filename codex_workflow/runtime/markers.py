@@ -68,6 +68,16 @@ def replace(text: str, marker: Marker, body: str) -> str:
     return text[:start] + replacement + text[end:]
 
 
+def remove_region(text: str, marker: Marker) -> str:
+    start, end = _bounds(text, marker)
+    start -= len(marker.start)
+    end += len(marker.end)
+    remaining = text[:start] + text[end:]
+    if not remaining.strip():
+        return ""
+    return remaining.rstrip("\n") + "\n"
+
+
 def append_region(text: str, marker: Marker, body: str) -> str:
     if marker.start in text or marker.end in text:
         raise ValidationError(f"partial or unexpected marker already present: {marker.start}")

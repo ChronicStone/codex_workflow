@@ -217,6 +217,58 @@ def plan_project_update(
     return mutations, []
 
 
+def plan_project_remove(
+    project: ProjectPaths,
+) -> tuple[list[Mutation], list[Path], list[str]]:
+    """Plan removal of the workflow-owned project surface."""
+
+    if project.active.is_symlink() or project.disabled.is_symlink():
+        raise ValidationError("refusing to remove a symlinked project entry point")
+    active_exists = project.active.exists()
+    disabled_exists = project.disabled.exists()
+    if active_exists and disabled_exists:
+        raise ValidationError("both active and disabled project entry points exist")
+    for entry in (project.active, project.disabled):
+        if entry.exists() and not entry.is_file():
+            raise ValidationError(f"project entry point is not a regular file: {entry}")
+
+    mutations: list[Mutation] = []
+    warnings = [
+        "project agent_docs/ files are project documentation and will be preserved",
+    ]
+    entry = project.active if active_exists else project.disabled if disabled_exists else None
+    if entry is not None:
+        current = entry.read_text(encoding="utf-8")
+        if PROJECT_ID not in current:
+            raise ValidationError(f"refusing to remove unrecognized project entry point: {entry}")
+        mutations.append(Mutation(entry, None))
+        warnings.append(f"{entry} will be permanently deleted")
+
+    if project.hidden_dir.is_symlink() or (
+        project.hidden_dir.exists() and not project.hidden_dir.is_dir()
+    ):
+        raise ValidationError(f"project hidden resource is not a directory: {project.hidden_dir}")
+
+    for path in (project.personalization, project.state):
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            raise ValidationError(f"project workflow resource is not a regular file: {path}")
+        if path.is_file():
+            mutations.append(Mutation(path, None))
+
+    cleanup_dirs: list[Path] = []
+    if project.hidden_dir.is_dir():
+        for path in sorted(project.hidden_dir.rglob("*")):
+            if path.is_symlink():
+                raise ValidationError(f"refusing to remove symlink in project resource: {path}")
+            if path.is_dir():
+                cleanup_dirs.append(path)
+            elif path.exists() and not path.is_file():
+                raise ValidationError(f"project resource contains a non-file entry: {path}")
+        cleanup_dirs.append(project.hidden_dir)
+
+    return mutations, cleanup_dirs, warnings
+
+
 def recognized_entry(project: ProjectPaths) -> Path:
     if project.active.exists() and project.disabled.exists():
         raise ValidationError("both active and disabled project entry points exist")

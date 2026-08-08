@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic codex_workflow lifecycle CLI.
 
-Commands are dry-run by default. Pass ``--apply`` only after the user has
-confirmed the emitted plan.
+Lifecycle commands validate and apply their mutations directly. The destructive
+``remove`` command is the exception: it plans first and applies only with its
+hidden confirmation flag. The hidden ``--apply`` option remains accepted for
+compatibility with older launchers.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from runtime.lifecycle import (
     plan_enable,
     plan_personalize,
     plan_project_install,
+    plan_remove,
     plan_update,
 )
 from runtime.release import acquire, parse_semver, select_latest
@@ -41,7 +44,7 @@ def _add_common(parser: argparse.ArgumentParser, *, project: bool = True) -> Non
     parser.add_argument("--codex-home", type=Path, default=_default_codex_home())
     if project:
         parser.add_argument("--project", type=Path, default=Path.cwd())
-    parser.add_argument("--apply", action="store_true", help="apply the validated plan")
+    parser.add_argument("--apply", action="store_true", default=True, help=argparse.SUPPRESS)
     parser.add_argument("--json", action="store_true", help="emit compact JSON")
 
 
@@ -64,9 +67,20 @@ def parse_args() -> argparse.Namespace:
         help="reviewed local instructions extracted from a legacy merged entry point",
     )
 
+    remove = commands.add_parser("remove")
+    _add_common(remove)
+    remove.add_argument("--confirm", action="store_true", help=argparse.SUPPRESS)
+
     auto_check = commands.add_parser("auto-check-update")
     _add_common(auto_check, project=False)
 
+    enable_auto_update = commands.add_parser("enable-auto-update")
+    _add_common(enable_auto_update, project=False)
+
+    disable_auto_update = commands.add_parser("disable-auto-update")
+    _add_common(disable_auto_update, project=False)
+
+    # Compatibility with releases that exposed the longer internal command.
     disable_auto_check = commands.add_parser("disable-auto-check-update")
     _add_common(disable_auto_check, project=False)
 
@@ -79,7 +93,9 @@ def parse_args() -> argparse.Namespace:
     configure.add_argument("--report-size", type=int)
     configure.add_argument("--handoff-context-turns", type=int)
     configure.add_argument(
-        "--auto-check-update", choices=["enabled", "disabled"]
+        "--auto-check-update",
+        choices=["enabled", "disabled"],
+        help=argparse.SUPPRESS,
     )
 
     personalize = commands.add_parser("personalize")
@@ -111,9 +127,8 @@ def _emit(value: dict[str, object], *, compact: bool) -> None:
 
 def _finish(plan: OperationPlan, args: argparse.Namespace) -> int:
     summary = plan.summary()
-    summary["applied"] = bool(args.apply)
-    if args.apply:
-        plan.apply()
+    summary["applied"] = True
+    plan.apply()
     _emit(summary, compact=args.json)
     return 0
 
@@ -188,9 +203,27 @@ def main() -> int:
                 compact=args.json,
             )
             return 0
-        if args.command == "disable-auto-check-update":
+        if args.command == "remove":
+            assert project is not None
+            plan = plan_remove(runtime, project)
+            if not args.confirm:
+                summary = plan.summary()
+                summary["applied"] = False
+                summary["confirmation_required"] = True
+                _emit(summary, compact=args.json)
+                return 0
+            return _finish(plan, args)
+        if args.command in {
+            "enable-auto-update",
+            "disable-auto-update",
+            "disable-auto-check-update",
+        }:
             return _finish(
-                plan_auto_check_update_setting(runtime, enabled=False), args
+                plan_auto_check_update_setting(
+                    runtime,
+                    enabled=args.command == "enable-auto-update",
+                ),
+                args,
             )
         if args.command == "install":
             assert project is not None

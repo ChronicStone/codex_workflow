@@ -8,8 +8,8 @@ The lifecycle CLI is:
 
     ~/.codex/codex_workflow/workflow.py
 
-It requires Python 3.11 or newer. It is dry-run by default and writes only with
-`--apply`.
+It requires Python 3.11 or newer and applies the validated configuration
+directly.
 
 ## Questions
 
@@ -27,9 +27,12 @@ must not be edited as user configuration.
 4. Maximum concurrent `executor_sol` instances.
 5. Maximum worker final-report size in words.
 6. End-of-Session context turns: a positive integer; default `200`.
-7. Automatic session-start update check: enabled or disabled.
+The automatic session-start update check is controlled explicitly by
+`codex_workflow --enable_auto_update` and
+`codex_workflow --disable_auto_update`; do not change it in this questionnaire.
 
-Ask only the follow-up needed for a valid value. Do not edit any live file.
+Ask only the follow-up needed for a valid value. Do not edit any live file
+directly.
 
 ## Plan and apply
 
@@ -43,12 +46,10 @@ changed flags:
 --max-sol <count>
 --report-size <words>
 --handoff-context-turns <count>
---auto-check-update <enabled|disabled>
 ```
 
-First run it with `--json` and no `--apply`. Present the complete proposed
-values and file summary, then request one confirmation. On confirmation, rerun
-the same command with `--apply --json`. If the user cancels, change nothing.
+Run it with `--json` after collecting the requested values. The command
+validates and applies the complete configuration in one operation.
 
 The script validates the configuration, keeps `doc-writer` and
 `end_of_session` enabled as required system roles, renders the Heavy snapshot

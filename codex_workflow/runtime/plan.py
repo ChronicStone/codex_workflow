@@ -18,6 +18,7 @@ class OperationPlan:
     warnings: list[str]
     agent_actions: list[dict[str, Any]]
     details: dict[str, Any] = field(default_factory=dict)
+    cleanup_dirs: list[Path] = field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -30,6 +31,13 @@ class OperationPlan:
 
     def apply(self) -> None:
         apply_transaction(self.mutations)
+        for directory in sorted(
+            set(self.cleanup_dirs), key=lambda path: len(path.parts), reverse=True
+        ):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
 
 
 def text_mutation(path: Path, text: str) -> Mutation:

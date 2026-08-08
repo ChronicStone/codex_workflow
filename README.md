@@ -6,8 +6,6 @@
 
 A workflow designed to drastically reduce overall token usage, support seamless deployment across multiple sessions, and remain extremely simple to use.
 
-Beneath the simplicity is a tightly engineered agent orchestration system: a purpose-built documentation framework, strict responsibility boundaries, main agent's second brain, compact work-package communication, anti-stall and worker-replacement mechanisms, executor–tester repair loops, worker lifecycle management, persistent project-state tracking. Everything is optimized to keep each agent focused on exactly what it needs. 
-
 > ⭐ For lightweight tasks, it won’t overdo things. Light route is default.
 
 ## 1. Quick installation ⚙️
@@ -25,8 +23,12 @@ Download and extract the latest GitHub Release from https://github.com/viettran-
 
 🔄 Restart Codex after installation
 
-New sessions automatically check for a newer workflow release. To opt out,
-send `codex_workflow --disable_auto_check_update`.
+New sessions do not check for a newer workflow release by default. To enable
+the check, send `codex_workflow --enable_auto_update`. To disable it again,
+send `codex_workflow --disable_auto_update`.
+
+To remove the workflow, send `codex_workflow --remove`. It first shows a
+destructive dry-run summary and requires a second explicit confirmation.
 
 ## 2. Workflow usage 
 

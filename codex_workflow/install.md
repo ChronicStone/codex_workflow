@@ -23,29 +23,29 @@ Stop on any validation error.
 
 ## First bootstrap
 
-From the project being installed, create a dry-run plan:
+From the project being installed, run the lifecycle CLI directly:
 
 ```text
 python3 <extracted>/codex_workflow/workflow.py install \
   --package-root <extracted>/codex_workflow \
-  --project <project> --json
+  --project <project>
 ```
-
-Report the mutation summary and warnings, then request one confirmation. On
-confirmation, rerun the identical command with `--apply --json`.
 
 The script:
 
 - installs the shared runtime, templates, source backup, user command block,
-  active worker TOMLs, and workflow-owned Codex settings;
-- preserves a valid existing workflow configuration and adds supported missing
-  defaults;
+  package-default configuration, active worker TOMLs, and workflow-owned Codex
+  settings;
 - creates the project entry point and missing project documents;
 - imports an existing unrecognized project `AGENTS.md` verbatim into the
   project-local marker region;
 - creates the default personalization resource and project/user state
   manifests;
-- stages and validates all outputs before applying a compensating transaction.
+- validates all outputs and applies them in one compensating transaction.
+
+If the project already has a workflow entry point, its enabled or disabled
+state is preserved automatically. Configuration and distributed worker TOMLs
+are replaced by the package versions without asking configuration questions.
 
 An existing `AGENTS.md` containing reserved workflow markers is a conflict and
 must not be rewritten automatically.
@@ -56,11 +56,11 @@ Use the installed CLI:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py install \
-  --project <project> --json
+  --project <project>
 ```
 
-Confirm the dry-run, then rerun with `--apply --json`. This command changes only
-the current project.
+This command changes only the current project. It does not rewrite the shared
+user-level runtime configuration or worker TOMLs.
 
 ## Agent completion action
 

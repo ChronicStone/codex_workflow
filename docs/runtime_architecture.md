@@ -24,25 +24,29 @@ state, generated outputs, and project-owned content.
 - `runtime_ops.py`: user-level runtime and generated outputs.
 - `backup.py`: persistent update backups.
 - `transaction.py`: atomic file writes and compensating rollback.
-- `plan.py`: dry-run plans and compact summaries.
+- `plan.py`: validated mutation plans and compact summaries.
 - `lifecycle.py`: composition only; it owns no low-level transformation.
 - `release.py`: release selection, checksum, and safe extraction.
-- `workflow.py`: CLI parsing, confirmation boundary, and incoming-runtime
-  delegation.
+- `workflow.py`: CLI parsing, direct application, two-phase removal, and
+  incoming-runtime delegation.
+
+The removal plan deletes the recognized project entry point and private
+workflow resource, strips only the marked workflow region from the user-level
+`AGENTS.md`, removes workflow-owned Codex settings and worker files, and
+cleans the dedicated runtime directory. It deliberately preserves
+`agent_docs/` and unrelated user-level content.
 
 ## Upgrade contract
 
 1. The installed launcher selects and verifies the incoming release.
-2. The verified incoming CLI prepares and applies the update, so migrations
-   ship with the target version.
-3. Persistent resources pass through explicit schema migrations.
-4. Generated surfaces are rendered from incoming templates and preserved
-   persistent state.
-5. Project-local regions and unrelated user files are preserved as opaque data.
-6. Marker drift, missing migrations, or ambiguous legacy content stops before
-   live writes.
-7. Every write command is dry-run by default and uses one validated mutation
-   plan for apply and rollback.
+2. The verified incoming CLI validates and applies the update using the target
+   version's runtime.
+3. The incoming package default replaces the workflow configuration and
+   generated worker surfaces.
+4. Project-local regions, personalization, unrelated user files, and the
+   enabled/disabled entry-point state are preserved as opaque data.
+5. Marker drift or ambiguous legacy content stops before live writes.
+6. Every write command validates and applies one mutation plan with rollback.
 
 Add a new migration without changing callers: register the transformation from
 schema `N` to `N+1`, add fixtures for both versions, and keep the incoming

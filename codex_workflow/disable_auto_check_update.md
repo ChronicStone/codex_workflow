@@ -1,22 +1,16 @@
-# Disable Automatic Update Checks
+# Legacy Alias: Disable Automatic Update Checks
 
-Run this procedure only for the exact command:
+Use the canonical prompt `codex_workflow --disable_auto_update`. This guide is
+kept so installations that still recognize the former
+`codex_workflow --disable_auto_check_update` prompt remain compatible.
 
-    codex_workflow --disable_auto_check_update
-
-The command itself is explicit authorization to disable the session-start
-check; do not request another confirmation.
-
-Run a dry-run first:
+Run the lifecycle CLI directly:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py \
-  disable-auto-check-update --json
+  disable-auto-update --json
 ```
 
-If the plan is valid, immediately rerun it with `--apply --json`. Report the
-final `auto_check_update` value. The script changes only the mutable installed
-`workflow_config.json`; it does not rewrite routes, workers, project files, or
-package defaults.
-
-The setting can be enabled again through `codex_workflow --configure`.
+Report the final `auto_check_update` value. The script changes only the mutable
+installed `workflow_config.json`; it does not rewrite routes, workers, project
+files, or package defaults.

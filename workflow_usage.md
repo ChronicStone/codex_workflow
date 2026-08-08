@@ -19,7 +19,7 @@ This guide is organized into five parts:
 Open Codex from the project directory and send this prompt:
 
 ```text
-Download the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Download its universal `codex_workflow-<version>.zip` asset and `SHA256SUMS`, verify the ZIP checksum, and extract it to a temporary directory. Do not clone the repository or use a source-code archive. Then read the extracted `codex_workflow/install.md` and follow it to run the bundled lifecycle CLI.
+Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/install.md` and follow it exactly.
 ```
 
 The release package is a universal ZIP for Linux, macOS, and Windows. Its
@@ -34,8 +34,8 @@ follow-up commands.
 
 ### Exact command prompts
 
-Send each command as its own prompt. Codex handles questions and confirmation;
-the installed lifecycle CLI performs deterministic filesystem operations.
+Send each command as its own prompt. The installed lifecycle CLI performs the
+validated filesystem operation directly.
 
 #### `codex_workflow --configure`
 
@@ -48,8 +48,8 @@ Interactively change the persistent user-level workflow configuration:
 - final-report package size;
 - End-of-Session recent-context turns.
 
-The command shows the current values, proposes a complete new JSON snapshot,
-and writes only after confirmation. It then synchronizes the Heavy route,
+The command shows the current values, builds a complete new JSON snapshot, and
+then synchronizes the Heavy route,
 End-of-Session spawn contract, active workflow worker TOMLs, and workflow-owned
 Codex platform settings. It does not change project personalization or project
 documents.
@@ -95,22 +95,35 @@ eligible semantic-versioned release with the matching ZIP and checksum,
 downloads the asset, verifies it, and extracts it into a temporary directory.
 It never clones or pulls the repository.
 
-The update preserves valid configuration, project personalization,
-project-local instructions, project documents, unrelated workers and settings,
-source backups, and the project's enabled or disabled state. It replaces only
-owned/generated surfaces and stops on marker drift or legacy edits requiring a
-one-time reviewed migration.
+The update replaces the workflow configuration and distributed worker TOMLs
+from the incoming package. It preserves project personalization, project-local
+instructions, project documents, unrelated Codex settings, source backups, and
+the project's enabled or disabled state. It stops only on marker drift or
+legacy edits requiring a one-time reviewed migration.
+
+#### `codex_workflow --remove`
+
+Remove the installed workflow in two phases. The first invocation creates a
+read-only destructive summary and warns the user. Only after one explicit
+second confirmation does the lifecycle CLI delete the project workflow entry
+point, project workflow resource, user-managed workflow region, workflow-owned
+Codex settings and workers, and the complete installed runtime including
+backups. It preserves `agent_docs/` and unrelated user-level content. A
+non-affirmative response performs no changes.
 
 #### Automatic update check
 
 At the start of each new session, Codex runs the lifecycle CLI's read-only
 `auto-check-update` command once. When enabled, it compares the installed
 version with the highest usable GitHub Release and reports an available update.
-It stays quiet when the workflow is current or the check is disabled.
+It stays quiet when the workflow is current or the check is disabled. The
+package default is disabled.
 
-Send `codex_workflow --disable_auto_check_update` to persistently disable the
-session-start check. The command changes only the mutable installed
-configuration. It can be enabled again through `codex_workflow --configure`.
+Send `codex_workflow --enable_auto_update` to explicitly enable the
+session-start check, or `codex_workflow --disable_auto_update` to disable it
+again. Each command changes only the mutable installed configuration. The
+former `codex_workflow --disable_auto_check_update` prompt remains a
+compatibility alias.
 
 #### `codex_workflow --disable`
 
@@ -190,7 +203,7 @@ and the current project as follows:
     ├── VERSION                             # installed workflow version
     ├── user_AGENTS.md                      # managed command marker and command prompts
     ├── workflow_config.json                # persistent workflow configuration
-    ├── workflow.py                         # dry-run/apply lifecycle CLI
+    ├── workflow.py                         # validated lifecycle CLI
     ├── runtime/                            # validation, rendering, release, and transaction modules
     ├── resources/                          # immutable package defaults
     │   ├── personalization.md
@@ -202,7 +215,10 @@ and the current project as follows:
     ├── end_of_session.md                   # shared handoff spawn contract
     ├── install.md                          # installation procedure
     ├── update.md                           # Release-based update procedure
-    ├── disable_auto_check_update.md        # disable automatic session check
+    ├── remove.md                            # two-phase removal procedure
+    ├── enable_auto_update.md               # enable automatic session check
+    ├── disable_auto_update.md              # disable automatic session check
+    ├── disable_auto_check_update.md        # legacy disable alias
     ├── configuration_guide.md               # --configure procedure
     ├── personalization_guide.md            # --personal procedure
     ├── disable.md                          # --disable procedure
@@ -246,8 +262,8 @@ The six files under `agent_docs/` have different ownership and purposes:
 
 ## Part 3 — Scripted configuration and customization
 
-Command prompts collect intent and confirmation. The lifecycle CLI validates
-and materializes all generated surfaces from their source resources.
+Command prompts select an operation. The lifecycle CLI validates and
+materializes all generated surfaces from their source resources.
 
 ### User-level configuration
 
@@ -258,9 +274,10 @@ The persistent configuration is:
 ```
 
 This mutable installed state is distinct from the immutable package default at
-`~/.codex/codex_workflow/resources/workflow_config.default.json`. Bootstrap
-copies the default; update preserves and migrates the installed state using the
-incoming default.
+`~/.codex/codex_workflow/resources/workflow_config.default.json`. Bootstrap and
+update load the incoming package default and replace the mutable workflow
+configuration. The project entry point's enabled/disabled state is preserved
+separately.
 
 The current default snapshot is:
 
@@ -269,7 +286,7 @@ The current default snapshot is:
   "schema_version": 3,
   "default_executor": "executor_luna",
   "default_executor_reasoning_effort": "xhigh",
-  "auto_check_update": true,
+  "auto_check_update": false,
   "end_of_session_context_turns": 200,
   "max_concurrent_workers": 20,
   "max_executor_sol_instances": 1,
@@ -291,7 +308,7 @@ The configuration contract is:
 2. set `default_executor` to `executor_luna` or `executor_terra` and keep it
    inside `enabled_workers`;
 3. set `default_executor_reasoning_effort` to `high`, `xhigh`, or `max`;
-4. keep `auto_check_update` boolean; it defaults to `true`;
+4. keep `auto_check_update` boolean; it defaults to `false`;
 5. keep `end_of_session_context_turns` a positive integer; it defaults to `200`;
 6. keep `doc-writer` enabled because project installation depends on it and
    keep `end_of_session` enabled because both deployment routes require it;
@@ -301,9 +318,9 @@ The configuration contract is:
    default executor;
 9. keep `max_executor_sol_instances` between zero and the concurrency limit.
 
-Do not edit generated surfaces directly. `codex_workflow --configure` runs a
-dry-run, requests confirmation, then synchronizes the Heavy snapshot, handoff
-contract, active worker TOMLs, and workflow-owned `config.toml` keys.
+Do not edit generated surfaces directly. `codex_workflow --configure`
+synchronizes the Heavy snapshot, handoff contract, active worker TOMLs, and
+workflow-owned `config.toml` keys.
 
 The concurrency values must stay synchronized: the confirmed
 `max_concurrent_workers` in `workflow_config.json` is also written to
@@ -550,7 +567,7 @@ The resource currently contains:
 
 1. `default_executor`: currently `executor_luna`;
 2. `default_executor_reasoning_effort`: currently `xhigh`;
-3. `auto_check_update`: currently `true`;
+3. `auto_check_update`: currently `false`;
 4. `end_of_session_context_turns`: currently `200`;
 5. `max_concurrent_workers`: currently `20`;
 6. `max_executor_sol_instances`: currently `1`;
@@ -598,15 +615,17 @@ Location: `~/.codex/codex_workflow/`
 
 - `user_AGENTS.md` contains the workflow marker, installed version marker,
   session-start update-check instruction, and exact command prompts for
-  `--install`, `--update`, `--disable_auto_check_update`,
-  `--configure`, `--personal`, `--disable`, and `--enable`.
+  `--install`, `--update`, `--remove`, `--enable_auto_update`,
+  `--disable_auto_update`, `--configure`, `--personal`, `--disable`, and
+  `--enable`.
 - `install.md`, `configuration_guide.md`, and `personalization_guide.md`
   describe bootstrap, configuration, and personalization.
 - `update.md`, `disable.md`, and `enable.md` describe update and activation
   lifecycle operations.
-- `disable_auto_check_update.md` describes the persistent opt-out operation.
-- `workflow.py` and `runtime/` implement validated dry-run/apply lifecycle
-  operations.
+- `remove.md` describes the destructive two-phase removal procedure.
+- `enable_auto_update.md` and `disable_auto_update.md` describe the explicit
+  update-check controls; `disable_auto_check_update.md` remains a legacy alias.
+- `workflow.py` and `runtime/` implement validated lifecycle operations.
 - `VERSION` identifies the installed workflow version.
 - `templates/` stores the project entry-point, worker, and project-document
   templates used for installation and update.
@@ -614,8 +633,8 @@ Location: `~/.codex/codex_workflow/`
   recovery; update-time `.backups/` preserve replaced installed state.
 
 This block is the command and lifecycle control plane. Guides define intent and
-confirmation; the runtime performs deterministic mutations. It is not project
-context or the active worker execution layer.
+the runtime performs deterministic mutations. It is not project context or the
+active worker execution layer.
 
 These five blocks are logical ownership boundaries, not five disjoint
 directories. For example, `~/.codex/codex_workflow/` hosts routes, guidance,

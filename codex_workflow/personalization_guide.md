@@ -8,7 +8,8 @@ The persistent resource is:
 
     .codex_workflow_hidden_resource/personalization.md
 
-The lifecycle CLI is dry-run by default and requires Python 3.11 or newer:
+The lifecycle CLI applies a validated resource directly and requires Python
+3.11 or newer:
 
     ~/.codex/codex_workflow/workflow.py
 
@@ -33,9 +34,9 @@ python3 ~/.codex/codex_workflow/workflow.py personalize \
   --project <project> --resource <candidate> --json
 ```
 
-Present the proposed decisions and mutation summary, then request one
-confirmation. On confirmation, rerun with `--apply --json`. Delete the temporary
-candidate afterward. Cancellation changes no live file.
+Run the command once with the complete candidate and `--json`. Delete the
+temporary candidate afterward. A missing or invalid candidate changes no live
+file.
 
 The script validates all three sections and atomically updates the resource and
 the generated personalization region. It preserves the workflow-managed and

@@ -23,7 +23,10 @@ codex_workflow/
 ├── AGENTS.md
 ├── install.md
 ├── update.md
-├── disable_auto_check_update.md
+├── remove.md
+├── enable_auto_update.md
+├── disable_auto_update.md
+├── disable_auto_check_update.md       # legacy alias
 ├── workflow.py
 ├── runtime/
 ├── resources/                              # immutable package defaults
@@ -112,12 +115,18 @@ same tagged commit.
 ## Consumer commands
 
 - `codex_workflow --install` reads the extracted release package's
-  `codex_workflow/install.md`; Codex collects confirmation and the bundled
-  lifecycle CLI performs the installation transaction.
+  `codex_workflow/install.md`; the bundled lifecycle CLI validates and applies
+  the installation transaction directly.
 - At session start, the installed runtime checks GitHub Releases once when
   `auto_check_update` is enabled and reports an available update.
-- `codex_workflow --disable_auto_check_update` disables that check in mutable
-  installed configuration.
+- `codex_workflow --enable_auto_update` explicitly enables that check in
+  mutable installed configuration.
+- `codex_workflow --disable_auto_update` disables it again; the former
+  `codex_workflow --disable_auto_check_update` prompt remains a compatibility
+  alias.
 - `codex_workflow --update` selects the latest appropriate ZIP asset, downloads
   it from its GitHub Release URL, verifies it, and follows the package's update
   procedure. It never clones the repository.
+- `codex_workflow --remove` first displays a destructive dry-run summary and
+  requires one explicit second confirmation before deleting workflow-owned
+  files.
