@@ -1,49 +1,26 @@
 # End-of-Session Handoff
 
-Run this procedure only when the user directly commands the exact phrase
+Use this handoff only when the user directly commands the exact phrase
 `end this session`, ignoring capitalization and surrounding punctuation. It is
 shared by Medium and Heavy routes.
 
-## Procedure
+Spawn one fresh worker with:
 
-1. In Heavy route, collect checkpoints only from running or incomplete
-   workers. Medium route has no worker checkpoint step.
-2. Confirm that verification occurred after the last relevant code or test
-   change. Do not rerun checks solely because the session is ending.
-3. Complete warranted durable documentation before the handoff. In Heavy
-   route, an existing `doc-writer` thread may perform compact read-only
-   integrity checks; do not spawn one solely for status checks. Update
-   `agent_docs/project_diary.md` only for significant decisions or durable
-   lessons.
-4. If meaningful files changed and the Explorer companion is available, ask it
-   for a compact read-only closure brief covering changed files and line totals,
-   diff errors, unexpected changed surfaces, blockers or deferrals, verification
-   evidence invalidated by later changes, and a handoff outline when the plan is
-   incomplete. It must not rerun tests or replace central correctness review.
-   Keep the brief within 200 words. If Explorer is unavailable, perform the
-   necessary checks directly and report the limitation.
-5. Determine the deployment-plan state before updating the two main-owned
-   status files:
-   - when the plan is complete, with no pending work, blockers, or next action,
-     record any lasting decisions in `agent_docs/project_diary.md`, then clear
-     both `agent_docs/project_progress.md` and
-     `agent_docs/latest_session_work.md`; keep both files present and empty;
-   - when the plan is incomplete, reconcile
-     `agent_docs/project_progress.md` with final status, verification evidence,
-     blockers, and the next action when its recorded state changed, then
-     replace `agent_docs/latest_session_work.md` once with changes,
-     verification, pending work, blockers, and the next entry point;
-   - when there is no active deployment plan, do not infer completion or clear
-     existing status content without an explicit user request.
-6. After those predictable documentation writes, run only compact checks that
-   cover them. Broaden inspection only on failure or unexpected scope.
-7. If meaningful project files changed, run `git add .`, then commit quietly
-   with `git commit --quiet -m "[auto commit] <summary>"`. Report the one-line
-   commit identity and any remaining dirty state.
+- `agent_type="end_of_session"`
+- `task_name="end_of_session_handoff"`
+<!-- codex-workflow-handoff-config-start -->
+- `fork_turns="200"`
+<!-- codex-workflow-handoff-config-end -->
 
-If no meaningful project files changed and no completed-plan cleanup is
-required, do not refresh `agent_docs/latest_session_work.md` and do not create
-an empty commit.
+Tell it the active route and pass through any extra handoff details from the
+user. Do not summarize the session or build a task capsule. The finite fork
+passes the configured number of recent turns so the worker can use its own Luna
+xhigh model; its TOML contains the full procedure.
 
-Leave honest status, bounded changes, current verification, preserved user
-work, and a clear continuation point.
+The worker owns the entire handoff, including status reconciliation,
+documentation updates, compact closing checks, Git staging and commit, and the
+final handoff report. The main agent must not duplicate those steps. Wait for
+the worker, then relay its result to the user.
+
+If the worker cannot be created or is blocked, report that limitation. Do not
+silently transfer the handoff to Explorer or another role.

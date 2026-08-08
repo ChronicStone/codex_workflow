@@ -3,12 +3,10 @@
 
 No active deployment plan.
 
-## Active Goal
+## Goal
 
-## Tasks and Dependencies
+## Overall Progress
 
-## Verification State
+## Current Position
 
-## Blockers
-
-## Next Action
+## Next Milestone

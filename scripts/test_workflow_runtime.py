@@ -1,0 +1,514 @@
+"""Regression tests for the lifecycle runtime."""
+
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PACKAGE = ROOT / "codex_workflow"
+
+import sys
+
+sys.path.insert(0, str(PACKAGE))
+
+from runtime.config import (
+    WorkflowConfig,
+    patch_codex_config,
+    render_handoff_contract,
+    render_heavy_route,
+)
+from runtime.backup import append_backup_mutations
+from runtime.errors import TransactionError, ValidationError
+from runtime.lifecycle import (
+    PackageLayout,
+    ProjectPaths,
+    RuntimePaths,
+    materialize_personalization,
+    plan_bootstrap,
+    plan_auto_check_update_setting,
+    plan_configure,
+    plan_enable,
+    plan_personalize,
+    plan_project_install,
+    plan_update,
+)
+from runtime.markers import (
+    PROJECT_LOCAL,
+    PROJECT_PERSONALIZATION,
+    USER_MANAGED,
+    extract,
+    render_project_entry,
+)
+from runtime.migrations import migrate_config_resource
+from runtime.plan import read_string_list, resolve_owned_runtime_path
+from runtime.transaction import Mutation, apply
+
+
+class MarkerTests(unittest.TestCase):
+    def test_user_command_contract_uses_automatic_check_opt_out(self) -> None:
+        instructions = (PACKAGE / "user_AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("auto-check-update --json", instructions)
+        self.assertIn("codex_workflow --disable_auto_check_update", instructions)
+        self.assertNotIn("codex_workflow --check-update", instructions)
+
+    def test_template_renders_independent_project_regions(self) -> None:
+        template = (PACKAGE / "AGENTS.md").read_text(encoding="utf-8")
+        rendered = render_project_entry(
+            template,
+            personalization="Personal rule.",
+            local_instructions="# Existing\nKeep this.",
+        )
+        self.assertEqual(extract(rendered, PROJECT_PERSONALIZATION), "Personal rule.")
+        self.assertEqual(extract(rendered, PROJECT_LOCAL), "# Existing\nKeep this.")
+
+    def test_reserved_marker_collision_is_rejected_during_import(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "project"
+            project.mkdir()
+            (project / "AGENTS.md").write_text(PROJECT_LOCAL.start, encoding="utf-8")
+            with self.assertRaises(ValidationError):
+                plan_bootstrap(
+                    PackageLayout.resolve(PACKAGE),
+                    RuntimePaths(root / "home"),
+                    ProjectPaths(project),
+                )
+
+    def test_package_requires_exact_user_managed_region(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "codex_workflow"
+            shutil.copytree(
+                PACKAGE,
+                root,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
+            path = root / "user_AGENTS.md"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                text.replace(USER_MANAGED.start, "", 1), encoding="utf-8"
+            )
+            with self.assertRaises(ValidationError):
+                PackageLayout.resolve(root)
+
+    def test_update_help_does_not_publish_local_source_option(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, "-B", str(PACKAGE / "workflow.py"), "update", "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertNotIn("--source", completed.stdout)
+
+
+class SafetyTests(unittest.TestCase):
+    def test_owned_runtime_manifest_is_confined_and_typed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            runtime_root = Path(temporary) / "runtime"
+            with self.assertRaises(ValidationError):
+                resolve_owned_runtime_path(runtime_root, "../../outside.txt")
+            with self.assertRaises(ValidationError):
+                resolve_owned_runtime_path(runtime_root, "/tmp/outside.txt")
+        with self.assertRaises(ValidationError):
+            read_string_list({"owned_runtime_files": None}, "owned_runtime_files")
+
+    def test_backup_skips_missing_optional_user_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "project"
+            project.mkdir()
+            mutations: list[Mutation] = []
+            append_backup_mutations(
+                mutations,
+                root / "backup",
+                RuntimePaths(root / "home"),
+                ProjectPaths(project),
+            )
+            self.assertEqual(mutations, [])
+
+
+class ConfigTests(unittest.TestCase):
+    def test_newer_persistent_schema_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            migrate_config_resource(
+                {"schema_version": 4},
+                {"schema_version": 3},
+            )
+
+    def test_v2_config_migration_enables_handoff_worker(self) -> None:
+        migrated = migrate_config_resource(
+            {
+                "schema_version": 2,
+                "enabled_workers": ["executor_luna", "doc-writer", "explorer"],
+            },
+            {"schema_version": 3},
+        )
+        self.assertEqual(migrated["schema_version"], 3)
+        self.assertIn("end_of_session", migrated["enabled_workers"])
+        self.assertEqual(migrated["end_of_session_context_turns"], 200)
+
+    def test_worker_limit_above_platform_limit_is_rejected(self) -> None:
+        raw = json.loads(
+            (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        raw["max_concurrent_workers"] = 21
+        with self.assertRaises(ValidationError):
+            WorkflowConfig.from_mapping(raw)
+
+    def test_toml_patch_preserves_unrelated_content(self) -> None:
+        config = WorkflowConfig.from_mapping(
+            json.loads(
+                (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        )
+        original = 'model = "custom"\n\n[agents]\nenabled = false\nother = 7\n'
+        rendered = patch_codex_config(original, config)
+        self.assertIn('model = "custom"', rendered)
+        self.assertIn("other = 7", rendered)
+        self.assertIn("max_concurrent_threads_per_session = 20", rendered)
+
+    def test_heavy_snapshot_is_rendered_from_config(self) -> None:
+        config = WorkflowConfig.from_mapping(
+            json.loads(
+                (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        )
+        rendered = render_heavy_route(
+            (PACKAGE / "heavy_route.md").read_text(encoding="utf-8"), config
+        )
+        self.assertIn("Maximum concurrent child workers: `20`", rendered)
+        self.assertIn("Default executor: `executor_luna` (`xhigh`", rendered)
+
+        handoff = render_handoff_contract(
+            (PACKAGE / "end_of_session.md").read_text(encoding="utf-8"), config
+        )
+        self.assertIn('fork_turns="200"', handoff)
+
+
+class TransactionTests(unittest.TestCase):
+    def test_failed_transaction_restores_all_targets(self) -> None:
+        from runtime import transaction
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = root / "first"
+            second = root / "second"
+            first.write_bytes(b"old")
+            original_write = transaction._atomic_write
+            calls = 0
+
+            def fail_once(path: Path, content: bytes, mode: int) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("injected failure")
+                original_write(path, content, mode)
+
+            with mock.patch("runtime.transaction._atomic_write", side_effect=fail_once):
+                with self.assertRaises(TransactionError):
+                    apply([Mutation(first, b"new"), Mutation(second, b"created")])
+            self.assertEqual(first.read_bytes(), b"old")
+            self.assertFalse(second.exists())
+
+
+class LifecycleIntegrationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.codex_home = self.root / "codex-home"
+        self.project_root = self.root / "project"
+        self.project_root.mkdir()
+        self.runtime = RuntimePaths(self.codex_home)
+        self.project = ProjectPaths(self.project_root)
+        self.package = PackageLayout.resolve(PACKAGE)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def bootstrap(self, *, existing_agents: str | None = None) -> None:
+        if existing_agents is not None:
+            self.project.active.write_text(existing_agents, encoding="utf-8")
+        plan = plan_bootstrap(self.package, self.runtime, self.project)
+        self.assertFalse(self.codex_home.exists())
+        plan.apply()
+
+    def incoming_package(self, directory: str, version: str = "1.1.1") -> PackageLayout:
+        incoming_root = self.root / directory / "codex_workflow"
+        shutil.copytree(
+            PACKAGE,
+            incoming_root,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        (incoming_root / "VERSION").write_text(f"{version}\n", encoding="utf-8")
+        user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
+        (incoming_root / "user_AGENTS.md").write_text(
+            user_agents.replace(
+                "codex-workflow-version: 1.1.0",
+                f"codex-workflow-version: {version}",
+            ),
+            encoding="utf-8",
+        )
+        return PackageLayout.resolve(incoming_root)
+
+    def test_bootstrap_imports_existing_agents_and_materializes_runtime(self) -> None:
+        self.bootstrap(existing_agents="# Existing instructions\nKeep local policy.\n")
+        entry = self.project.active.read_text(encoding="utf-8")
+        self.assertEqual(
+            extract(entry, PROJECT_LOCAL),
+            "# Existing instructions\nKeep local policy.",
+        )
+        self.assertTrue((self.runtime.runtime / "workflow.py").is_file())
+        self.assertTrue((self.runtime.runtime / "templates" / "AGENTS.md").is_file())
+        self.assertTrue((self.runtime.agents / "executor_luna.toml").is_file())
+        self.assertTrue((self.runtime.agents / "end_of_session.toml").is_file())
+        self.assertIn(
+            "max_concurrent_threads_per_session = 20",
+            self.runtime.config_toml.read_text(encoding="utf-8"),
+        )
+
+    def test_configure_switches_default_executor_without_touching_local_region(self) -> None:
+        self.bootstrap(existing_agents="Local policy.\n")
+        plan = plan_configure(
+            self.runtime,
+            {
+                "default_executor": "executor_terra",
+                "default_executor_reasoning_effort": "max",
+                "max_concurrent_workers": 7,
+                "end_of_session_context_turns": 150,
+            },
+        )
+        plan.apply()
+        configured = json.loads(
+            (self.runtime.runtime / "workflow_config.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(configured["default_executor"], "executor_terra")
+        self.assertEqual(configured["max_concurrent_workers"], 7)
+        self.assertEqual(configured["end_of_session_context_turns"], 150)
+        self.assertIn(
+            'fork_turns="150"',
+            (self.runtime.runtime / "end_of_session.md").read_text(encoding="utf-8"),
+        )
+        self.assertFalse((self.runtime.agents / "executor_luna.toml").exists())
+        terra = (self.runtime.agents / "executor_terra.toml").read_text(encoding="utf-8")
+        self.assertIn('model_reasoning_effort = "max"', terra)
+        self.assertEqual(extract(self.project.active.read_text(), PROJECT_LOCAL), "Local policy.")
+
+    def test_personalize_and_enable_disable_preserve_regions(self) -> None:
+        self.bootstrap(existing_agents="Local policy.\n")
+        customized = (PACKAGE / "resources" / "personalization.md").read_text(
+            encoding="utf-8"
+        ).replace(
+            "Status: default\nDecision: Preserve the workflow-managed default Design Principles.",
+            "Status: customized\nDecision: Prefer explicit ports and adapters.",
+        )
+        plan_personalize(self.project, customized).apply()
+        entry = self.project.active.read_text(encoding="utf-8")
+        self.assertEqual(extract(entry, PROJECT_PERSONALIZATION), "Prefer explicit ports and adapters.")
+        self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
+        plan_enable(self.project, enable=False).apply()
+        self.assertFalse(self.project.active.exists())
+        self.assertTrue(self.project.disabled.exists())
+        plan_enable(self.project, enable=True).apply()
+        self.assertTrue(self.project.active.exists())
+        self.assertFalse(self.project.disabled.exists())
+
+    def test_install_rejects_personalization_resource_drift(self) -> None:
+        self.bootstrap()
+        resource = self.project.personalization.read_text(encoding="utf-8")
+        self.project.personalization.write_text(
+            resource.replace(
+                "Status: default\nDecision: Preserve the workflow-managed default Design Principles.",
+                "Status: customized\nDecision: Prefer explicit ports and adapters.",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ValidationError):
+            plan_project_install(self.package, self.project)
+
+    def test_update_replaces_managed_content_and_preserves_local_content(self) -> None:
+        self.bootstrap(existing_agents="Local policy.\n")
+        installed_config_path = self.runtime.runtime / "workflow_config.json"
+        installed_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
+        del installed_config["default_executor_reasoning_effort"]
+        del installed_config["auto_check_update"]
+        installed_config_path.write_text(
+            json.dumps(installed_config, indent=2) + "\n", encoding="utf-8"
+        )
+        incoming_root = self.root / "incoming" / "codex_workflow"
+        shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        (incoming_root / "VERSION").write_text("1.1.1\n", encoding="utf-8")
+        user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
+        (incoming_root / "user_AGENTS.md").write_text(
+            user_agents.replace("codex-workflow-version: 1.1.0", "codex-workflow-version: 1.1.1"),
+            encoding="utf-8",
+        )
+        incoming = PackageLayout.resolve(incoming_root)
+        plan_update(incoming, self.runtime, self.project).apply()
+        entry = self.project.active.read_text(encoding="utf-8")
+        self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "1.1.1\n")
+        migrated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
+        self.assertEqual(migrated_config["default_executor_reasoning_effort"], "xhigh")
+        self.assertTrue(migrated_config["auto_check_update"])
+        self.assertTrue(any((self.runtime.runtime / ".backups").iterdir()))
+
+    def test_update_allows_missing_optional_codex_config(self) -> None:
+        self.bootstrap()
+        self.runtime.config_toml.unlink()
+        plan = plan_update(
+            self.incoming_package("missing-config-incoming"),
+            self.runtime,
+            self.project,
+        )
+        self.assertEqual(plan.operation, "update")
+
+    def test_update_rejects_unsafe_owned_runtime_state(self) -> None:
+        self.bootstrap()
+        outside = self.root / "outside.txt"
+        outside.write_text("keep", encoding="utf-8")
+        state_path = self.runtime.runtime / "install_state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["owned_runtime_files"] = ["../../outside.txt"]
+        state_path.write_text(json.dumps(state) + "\n", encoding="utf-8")
+        with self.assertRaises(ValidationError):
+            plan_update(
+                self.incoming_package("unsafe-state-incoming"),
+                self.runtime,
+                self.project,
+            )
+        self.assertTrue(outside.is_file())
+
+    def test_disable_auto_check_is_scoped_and_skips_network_check(self) -> None:
+        self.bootstrap()
+        plan = plan_auto_check_update_setting(self.runtime, enabled=False)
+        self.assertEqual(len(plan.mutations), 1)
+        plan.apply()
+        configured = json.loads(
+            (self.runtime.runtime / "workflow_config.json").read_text(encoding="utf-8")
+        )
+        self.assertFalse(configured["auto_check_update"])
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(self.runtime.runtime / "workflow.py"),
+                "auto-check-update",
+                "--codex-home",
+                str(self.codex_home),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(json.loads(completed.stdout)["status"], "disabled")
+
+    def test_legacy_entry_with_edits_requires_reviewed_local_instructions(self) -> None:
+        self.bootstrap()
+        installed_template_path = self.runtime.runtime / "templates" / "AGENTS.md"
+        legacy_template = installed_template_path.read_text(encoding="utf-8")
+        legacy_template = legacy_template.replace(
+            "<!-- codex-workflow-managed-start -->\n", ""
+        ).replace("<!-- codex-workflow-managed-end -->\n\n", "")
+        legacy_template = legacy_template.replace(
+            "\n<!-- codex-workflow-project-local-instructions-start -->\n"
+            "<!-- codex-workflow-project-local-instructions-end -->\n",
+            "\n",
+        )
+        installed_template_path.write_text(legacy_template, encoding="utf-8")
+        self.project.active.write_text(
+            legacy_template + "\nLocal legacy addition.\n", encoding="utf-8"
+        )
+        incoming = self.incoming_package("legacy-incoming")
+        with self.assertRaises(ValidationError):
+            plan_update(incoming, self.runtime, self.project)
+        plan_update(
+            incoming,
+            self.runtime,
+            self.project,
+            legacy_local_instructions="Local legacy addition.",
+        ).apply()
+        self.assertEqual(
+            extract(self.project.active.read_text(encoding="utf-8"), PROJECT_LOCAL),
+            "Local legacy addition.",
+        )
+
+    def test_update_rejects_drift_in_workflow_managed_region(self) -> None:
+        self.bootstrap()
+        entry = self.project.active.read_text(encoding="utf-8")
+        self.project.active.write_text(
+            entry.replace("## Working State", "## Locally Changed Working State"),
+            encoding="utf-8",
+        )
+        incoming = self.incoming_package("drift-incoming")
+        with self.assertRaises(ValidationError):
+            plan_update(incoming, self.runtime, self.project)
+
+    def test_installed_launcher_delegates_to_incoming_update_runtime(self) -> None:
+        self.bootstrap()
+        incoming_root = self.root / "delegated-incoming" / "codex_workflow"
+        shutil.copytree(
+            PACKAGE,
+            incoming_root,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        (incoming_root / "VERSION").write_text("1.1.1\n", encoding="utf-8")
+        user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
+        (incoming_root / "user_AGENTS.md").write_text(
+            user_agents.replace(
+                "codex-workflow-version: 1.1.0",
+                "codex-workflow-version: 1.1.1",
+            ),
+            encoding="utf-8",
+        )
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(self.runtime.runtime / "workflow.py"),
+                "update",
+                "--source",
+                str(incoming_root),
+                "--codex-home",
+                str(self.codex_home),
+                "--project",
+                str(self.project_root),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        summary = json.loads(completed.stdout)
+        self.assertEqual(summary["details"]["to_version"], "1.1.1")
+        self.assertFalse(summary["applied"])
+
+
+class PersonalizationTests(unittest.TestCase):
+    def test_only_customized_decisions_are_materialized(self) -> None:
+        text = (PACKAGE / "resources" / "personalization.md").read_text(encoding="utf-8")
+        self.assertEqual(materialize_personalization(text), "")
+        customized = text.replace(
+            "Status: default\nDecision: No additional frontend profile.",
+            "Status: customized\nDecision: Use the frontend profile.",
+        )
+        self.assertEqual(materialize_personalization(customized), "Use the frontend profile.")
+
+
+if __name__ == "__main__":
+    unittest.main()

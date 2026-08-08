@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import subprocess
+import sys
 import zipfile
 from dataclasses import dataclass
 from functools import total_ordering
@@ -23,6 +25,9 @@ VERSION_FILE = "VERSION"
 USER_AGENTS_FILE = "user_AGENTS.md"
 VERSION_MARKER = re.compile(r"codex-workflow-version:\s*([^\s<]+)")
 IDENTIFIER = re.compile(r"^[0-9A-Za-z-]+$")
+USER_ID_MARKER = "<!-- codex-workflow-user-id: viettran-edgeAI/codex_workflow -->"
+USER_MANAGED_START = "<!-- codex-workflow-user-managed-start -->"
+USER_MANAGED_END = "<!-- codex-workflow-user-managed-end -->"
 
 
 class ReleaseError(ValueError):
@@ -166,11 +171,46 @@ def validate_source(package_root: Path) -> tuple[str, SemVer]:
         raise ReleaseError(
             f"VERSION ({version_text}) does not match the user marker ({marker_text})"
         )
+    _validate_user_agents_text(user_agents.read_text(encoding="utf-8"), version_text)
 
     entries = list(_source_entries(package_root))
     if not entries:
         raise ReleaseError(f"package directory is empty: {package_root}")
+    _validate_runtime(package_root)
     return version_text, version
+
+
+def _validate_user_agents_text(text: str, version_text: str) -> None:
+    if USER_ID_MARKER not in text:
+        raise ReleaseError("user_AGENTS.md is missing its workflow identity marker")
+    if f"<!-- codex-workflow-version: {version_text} -->" not in text:
+        raise ReleaseError("user_AGENTS.md version marker does not match VERSION")
+    if text.count(USER_MANAGED_START) != 1 or text.count(USER_MANAGED_END) != 1:
+        raise ReleaseError("user_AGENTS.md must contain exactly one managed marker pair")
+
+
+def _validate_runtime(package_root: Path) -> None:
+    command = [
+        sys.executable,
+        "-B",
+        str(package_root / "workflow.py"),
+        "validate",
+        "--package-root",
+        str(package_root),
+        "--json",
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as error:
+        raise ReleaseError(f"could not run workflow package validation: {error}") from error
+    if completed.returncode:
+        detail = (completed.stderr or completed.stdout).strip()
+        raise ReleaseError(f"workflow package validation failed: {detail}")
 
 
 def _source_entries(package_root: Path) -> Iterator[tuple[Path, str, bool]]:
@@ -181,6 +221,8 @@ def _source_entries(package_root: Path) -> Iterator[tuple[Path, str, bool]]:
     for path in paths:
         if path.is_symlink():
             raise ReleaseError(f"symlinks are not allowed in release payload: {path}")
+        if "__pycache__" in path.parts or path.suffix == ".pyc":
+            raise ReleaseError(f"generated Python cache is not allowed in release payload: {path}")
         relative = path.relative_to(package_root.parent).as_posix()
         if path.is_dir():
             entries.append((path, relative + "/", True))
@@ -234,8 +276,26 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
         f"{PACKAGE_DIR_NAME}/{USER_AGENTS_FILE}",
         f"{PACKAGE_DIR_NAME}/install.md",
         f"{PACKAGE_DIR_NAME}/update.md",
-        f"{PACKAGE_DIR_NAME}/check_update.md",
+        f"{PACKAGE_DIR_NAME}/disable_auto_check_update.md",
         f"{PACKAGE_DIR_NAME}/end_of_session.md",
+        f"{PACKAGE_DIR_NAME}/agents/end_of_session.toml",
+        f"{PACKAGE_DIR_NAME}/workflow.py",
+        f"{PACKAGE_DIR_NAME}/runtime/__init__.py",
+        f"{PACKAGE_DIR_NAME}/runtime/backup.py",
+        f"{PACKAGE_DIR_NAME}/runtime/config.py",
+        f"{PACKAGE_DIR_NAME}/runtime/errors.py",
+        f"{PACKAGE_DIR_NAME}/runtime/layout.py",
+        f"{PACKAGE_DIR_NAME}/runtime/lifecycle.py",
+        f"{PACKAGE_DIR_NAME}/runtime/markers.py",
+        f"{PACKAGE_DIR_NAME}/runtime/migrations.py",
+        f"{PACKAGE_DIR_NAME}/runtime/personalization.py",
+        f"{PACKAGE_DIR_NAME}/runtime/plan.py",
+        f"{PACKAGE_DIR_NAME}/runtime/project_ops.py",
+        f"{PACKAGE_DIR_NAME}/runtime/release.py",
+        f"{PACKAGE_DIR_NAME}/runtime/runtime_ops.py",
+        f"{PACKAGE_DIR_NAME}/runtime/transaction.py",
+        f"{PACKAGE_DIR_NAME}/resources/personalization.md",
+        f"{PACKAGE_DIR_NAME}/resources/workflow_config.default.json",
     }
     missing = sorted(required.difference(normalized))
     if missing:
@@ -253,6 +313,7 @@ def verify_archive(archive_path: Path, expected_version: SemVer | None = None) -
             user_agents = archive.read(f"{PACKAGE_DIR_NAME}/{USER_AGENTS_FILE}").decode(
                 "utf-8"
             )
+            _validate_user_agents_text(user_agents, version_text)
     else:
         raise ReleaseError(f"unsupported archive type: {archive_path}")
 

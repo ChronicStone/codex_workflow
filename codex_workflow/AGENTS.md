@@ -1,10 +1,11 @@
 <!-- codex-workflow-id: viettran-edgeAI/codex_workflow -->
+<!-- codex-workflow-managed-start -->
 # AGENTS.md
 
 ## Project Context
 
 
-## Core Design Principles
+## Design Principles
 
 The project must strictly follow modular design.
 
@@ -20,8 +21,9 @@ Nested modules are allowed when they make responsibilities clearer. Avoid placin
 - Define proportionate acceptance and verification requirements before implementation.
 - Keep related tests cohesive enough to avoid fragmented micro-tests, but never reduce meaningful coverage, weaken assertions, or hide failures merely to save tokens or execution time.
 
-<!-- codex-workflow-project-personalization-start -->
-<!-- codex-workflow-project-personalization-end -->
+Project personalization and project-local instructions appear in protected
+regions at the end of this file. They override conflicting workflow defaults
+for this project but do not override higher-level instructions.
 
 ## Working State
 
@@ -36,20 +38,20 @@ The main project documents are stored under `agent_docs/`:
 - `agent_docs/project_overview.md`: goals, architecture, workflow, and major decisions.
 - `agent_docs/project_core_tech.md`:A brief summary of special technologies or architectures of project.
 - `agent_docs/project_structure.md`: directory layout, modules, components, and ownership boundaries.
-- `agent_docs/project_progress.md`: active implementation plan and cross-session execution status.
+- `agent_docs/project_progress.md`: concise overall deployment progress, current position, and next milestone.
 - `agent_docs/project_diary.md`: durable architecture decisions, discarded approaches, and lessons.
-- `agent_docs/latest_session_work.md`: Summarizing previous sessions along with any unfinished tasks.
+- `agent_docs/latest_session_work.md`: detailed latest-session state, evidence, unfinished work, and continuation point.
 - Module-specific documents, when present.
 
 The shared workflow runtime is installed under `~/.codex/codex_workflow/`:
 
 - `~/.codex/codex_workflow/explorer_companion.md`: role, scope, lifecycle, and
   usage rules for the deployment-session explorer.
-- `~/.codex/codex_workflow/end_of_session.md`: shared Medium/Heavy
-  End-of-Session handoff procedure.
+- `~/.codex/codex_workflow/end_of_session.md`: shared Medium/Heavy trigger and
+  delegation contract for the dedicated handoff worker.
 
 --------
-`agent_docs/project_progress.md` and `agent_docs/latest_session_work.md` ensure smooth deployment across multiple sessions. During runtime, they may be edited only in `deployment state` or when the user explicitly requests it. The main agent owns both files; subagents must not edit them.
+`agent_docs/project_progress.md` and `agent_docs/latest_session_work.md` ensure smooth deployment across multiple sessions. During runtime, they may be edited only in `deployment state` or when the user explicitly requests it. The main agent owns both files during normal execution. The dedicated `end_of_session` worker owns them during an invoked handoff; no other subagent may edit them.
 
 Update documentation only with verified facts. Keep temporary reasoning, raw logs, and short-lived checkpoints out of durable project documents.
 
@@ -65,7 +67,7 @@ Performs tasks by yourself. Do not spawn subagents in this route.
 
 ### Medium route: 
 Use for deploying large tasks/plans in the `deployment state`.
-Perform implementation, verification, and documentation by yourself. Do not spawn worker subagents in this route.
+Perform implementation, verification, and documentation by yourself. Do not spawn implementation workers in this route. Explorer and the dedicated End-of-Session worker are the only subagent exceptions.
 Read and follow `~/.codex/codex_workflow/medium_route.md`.
 
 ### Heavy route: 
@@ -103,3 +105,10 @@ When running filesystem commands, use paths appropriate for the current operatin
 * On Windows, use the equivalent Windows path format and `\` where required.
 
 Do not treat the example path separator as a literal requirement. Resolve every path using the conventions of the current environment.
+<!-- codex-workflow-managed-end -->
+
+<!-- codex-workflow-project-personalization-start -->
+<!-- codex-workflow-project-personalization-end -->
+
+<!-- codex-workflow-project-local-instructions-start -->
+<!-- codex-workflow-project-local-instructions-end -->

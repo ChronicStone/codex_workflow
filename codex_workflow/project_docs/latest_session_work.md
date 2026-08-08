@@ -3,7 +3,9 @@
 
 No previous workflow session has been recorded.
 
-## Changes
+## Detailed Current State
+
+## Session Changes
 
 ## Verification
 

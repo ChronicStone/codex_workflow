@@ -42,6 +42,10 @@ jobs:
           else
             release_tag="$MANUAL_TAG"
           fi
+          python -B scripts/test_workflow_runtime.py -v
+          python -B codex_workflow/workflow.py validate \
+            --package-root codex_workflow \
+            --json
           python scripts/package_release.py \
             --release-tag "$release_tag" \
             --output-dir dist

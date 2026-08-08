@@ -3,6 +3,14 @@
 <!-- codex-workflow-user-managed-start -->
 # AGENTS.md
 
+Once at the start of every new session, before normal task work, run
+`python3 ~/.codex/codex_workflow/workflow.py auto-check-update --json`, using
+the equivalent Python 3.11+ invocation and path for the current platform. Run
+it at most once per session.
+If it reports `update available`, notify the user briefly with the installed
+and available versions. Stay quiet for `current` or `disabled`. Treat a check
+failure as a non-blocking warning and continue the user's task.
+
 When the user's trimmed message matches one of the following command forms,
 read and follow the corresponding guide. Forms without placeholders must match
 exactly.
@@ -13,13 +21,8 @@ exactly.
 - codex_workflow --update
   Guide:  ~/.codex/codex_workflow/update.md.
 
-- codex_workflow --update --source <PACKAGE>
-  Match only when `<PACKAGE>` is one non-empty local path, optionally quoted.
-  Pass that path to ~/.codex/codex_workflow/update.md as the selected local
-  source. Reject missing paths or additional arguments.
-
-- codex_workflow --check-update
-  Guide:  ~/.codex/codex_workflow/check_update.md.
+- codex_workflow --disable_auto_check_update
+  Guide:  ~/.codex/codex_workflow/disable_auto_check_update.md.
 
 - codex_workflow --configure
   Guide: ~/.codex/codex_workflow/configuration_guide.md.

@@ -1,0 +1,150 @@
+"""User-level runtime and generated-configuration operations."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from .config import (
+    WorkflowConfig,
+    patch_codex_config,
+    render_handoff_contract,
+    render_heavy_route,
+    render_worker_template,
+)
+from .errors import ValidationError
+from .layout import USER_STATE, WORKER_MARKER, PackageLayout, RuntimePaths
+from .markers import USER_MANAGED, append_region, extract, replace
+from .plan import read_json, read_string_list, text_mutation
+from .transaction import Mutation
+
+
+def plan_runtime_files(
+    package: PackageLayout,
+    runtime: RuntimePaths,
+    config: WorkflowConfig,
+    config_bytes: bytes,
+) -> tuple[list[Mutation], set[str]]:
+    mutations: list[Mutation] = []
+    owned: set[str] = set()
+    excluded = {
+        "AGENTS.md",
+        "workflow_config.json",
+        "agents",
+        "project_docs",
+        "templates",
+        ".source_backup",
+        ".backups",
+        USER_STATE,
+    }
+    for source in sorted(package.root.rglob("*")):
+        relative = source.relative_to(package.root)
+        if (
+            relative.parts[0] in excluded
+            or "__pycache__" in relative.parts
+            or source.suffix == ".pyc"
+            or not source.is_file()
+        ):
+            continue
+        target = runtime.runtime / relative
+        content = source.read_bytes()
+        if relative.as_posix() == "heavy_route.md":
+            content = render_heavy_route(content.decode(), config).encode()
+        elif relative.as_posix() == "end_of_session.md":
+            content = render_handoff_contract(content.decode(), config).encode()
+        mutations.append(Mutation(target, content))
+        owned.add(relative.as_posix())
+    template_targets = [(package.project_template, runtime.runtime / "templates" / "AGENTS.md")]
+    template_targets.extend(
+        (source, runtime.runtime / "templates" / "agents" / source.name)
+        for source in package.agent_templates.glob("*.toml")
+    )
+    template_targets.extend(
+        (source, runtime.runtime / "templates" / "project_docs" / source.name)
+        for source in package.project_docs.glob("*.md")
+    )
+    for source, target in template_targets:
+        mutations.append(Mutation(target, source.read_bytes()))
+        owned.add(target.relative_to(runtime.runtime).as_posix())
+    mutations.append(Mutation(runtime.runtime / "workflow_config.json", config_bytes))
+    owned.add("workflow_config.json")
+    mutations.extend(plan_user_agents(package, runtime))
+    mutations.extend(plan_materialized_config(runtime, config, package=package))
+    backup = runtime.runtime / ".source_backup" / package.version
+    for source in sorted(package.root.rglob("*")):
+        if (
+            source.is_file()
+            and "__pycache__" not in source.parts
+            and source.suffix != ".pyc"
+            and ".source_backup" not in source.parts
+            and ".backups" not in source.parts
+        ):
+            mutations.append(
+                Mutation(backup / source.relative_to(package.root), source.read_bytes())
+            )
+    return mutations, owned
+
+
+def plan_user_agents(package: PackageLayout, runtime: RuntimePaths) -> list[Mutation]:
+    source = (package.root / "user_AGENTS.md").read_text(encoding="utf-8")
+    managed = extract(source, USER_MANAGED)
+    if runtime.user_agents.is_file():
+        current = runtime.user_agents.read_text(encoding="utf-8")
+        if USER_MANAGED.start in current or USER_MANAGED.end in current:
+            rendered = replace(current, USER_MANAGED, managed)
+        else:
+            rendered = append_region(current, USER_MANAGED, managed)
+    else:
+        rendered = append_region("", USER_MANAGED, managed)
+    return [text_mutation(runtime.user_agents, rendered)]
+
+
+def plan_materialized_config(
+    runtime: RuntimePaths,
+    config: WorkflowConfig,
+    *,
+    package: PackageLayout | None = None,
+) -> list[Mutation]:
+    templates = package.agent_templates if package else runtime.runtime / "templates" / "agents"
+    heavy_source = package.root / "heavy_route.md" if package else runtime.runtime / "heavy_route.md"
+    heavy = render_heavy_route(heavy_source.read_text(encoding="utf-8"), config)
+    handoff_source = (
+        package.root / "end_of_session.md"
+        if package
+        else runtime.runtime / "end_of_session.md"
+    )
+    handoff = render_handoff_contract(
+        handoff_source.read_text(encoding="utf-8"), config
+    )
+    mutations = [
+        text_mutation(runtime.runtime / "heavy_route.md", heavy),
+        text_mutation(runtime.runtime / "end_of_session.md", handoff),
+    ]
+    current_state = read_json(runtime.runtime / USER_STATE, default={})
+    previous_owned = set(read_string_list(current_state, "owned_workers"))
+    for worker in config.enabled_workers:
+        source = templates / f"{worker}.toml"
+        rendered = render_worker_template(
+            source.read_text(encoding="utf-8"), worker=worker, config=config
+        )
+        mutations.append(text_mutation(runtime.agents / f"{worker}.toml", rendered))
+    for worker in previous_owned - set(config.enabled_workers):
+        target = runtime.agents / f"{worker}.toml"
+        if target.exists():
+            validate_worker_owner(target, worker)
+            mutations.append(Mutation(target, None))
+    config_text = (
+        runtime.config_toml.read_text(encoding="utf-8")
+        if runtime.config_toml.is_file()
+        else ""
+    )
+    mutations.append(
+        text_mutation(runtime.config_toml, patch_codex_config(config_text, config))
+    )
+    return mutations
+
+
+def validate_worker_owner(path: Path, worker: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    match = WORKER_MARKER.search(text)
+    if match is None or match.group(1) != worker:
+        raise ValidationError(f"refusing to remove non-owned worker file: {path}")

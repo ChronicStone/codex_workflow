@@ -1,36 +1,13 @@
 # Disable the Project Workflow
 
-## Operation
+Run the installed lifecycle CLI from the project directory:
 
-Target: the project's active workflow entry point.
+```text
+python3 ~/.codex/codex_workflow/workflow.py disable --project <project> --json
+```
 
-Source:
-
-    AGENTS.md
-
-Target path:
-
-    .codex_workflow_hidden_resource/.AGENTS.md
-
-Perform these actions:
-
-1. Confirm that `AGENTS.md` has the exact project marker.
-2. Refuse to continue if `.codex_workflow_hidden_resource/.AGENTS.md` already
-   exists or both entry points exist.
-3. Record a checksum of `AGENTS.md`.
-4. Create `.codex_workflow_hidden_resource/` when needed, then move
-   `AGENTS.md` to `.codex_workflow_hidden_resource/.AGENTS.md` without editing
-   its contents.
-5. Confirm that the checksum is unchanged.
-6. Verify that the project personalization resource, entry-point contents,
-   project documents, workflow payload, and user-level workers remain intact.
-
-If the project is already disabled with a recognized hidden entry point,
-report a safe no-op. An unmarked file is a conflict and must not be replaced.
-
-The state transition is:
-
-    AGENTS.md -> .codex_workflow_hidden_resource/.AGENTS.md
-
-Do not delete the resource, project documents, runtime payload, workers, source
-package, or backups.
+The command is a dry-run. Report its plan and rerun with `--apply --json` after
+confirmation. It atomically moves the recognized `AGENTS.md` to the hidden entry
+point, updates project state, and preserves its exact contents. An already
+disabled project is a safe no-op; conflicted or unrecognized entry points are a
+hard error.

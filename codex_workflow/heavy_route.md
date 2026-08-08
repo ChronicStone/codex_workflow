@@ -6,10 +6,11 @@ Use after the Heavy route is selected under `AGENTS.md`.
 ## Effective Workflow Configuration
 
 - Default executor: `executor_luna` (`xhigh` reasoning effort).
-- Enabled workers: `executor_luna`, `executor_sol`, `tester`, `doc-writer`, `explorer`.
+- Enabled workers: `executor_luna`, `executor_sol`, `tester`, `doc-writer`, `explorer`, `end_of_session`.
 - Maximum concurrent child workers: `20`.
 - Maximum `executor_sol` workers: `1`.
 - Maximum worker final-report package: `250` words.
+- End-of-Session context fork: `200` recent turns.
 
 Create only enabled workers and obey these limits.
 <!-- codex-workflow-effective-config-end -->
@@ -25,8 +26,9 @@ The main agent owns:
 - Direction, scope, acceptance criteria, plan, and task IDs.
 - Package boundaries, dependencies, ownership, and strategic coordination.
 - Critical review, integration decisions, verification gates, and completion.
-- Git state, user communication, and official status in
-  `agent_docs/project_progress.md` and `agent_docs/latest_session_work.md`.
+- Git state, user communication, and official status during normal execution.
+  The dedicated handoff worker takes ownership of Git state and the two status
+  documents only during End-of-Session.
 
 Read foundational context, critical interfaces, and decision-driving evidence.
 Delegate supporting context to Explorer and package-local discovery,
@@ -43,21 +45,22 @@ When the user says **"plan the implementation for..."** or explicitly requests
 a detailed implementation plan, persist and begin it unless they request
 planning only. Record:
 
-- Goal, scope, constraints, and acceptance criteria.
-- Ordered tasks, roles, dependencies, and parallel boundaries.
-- Verification gates, blockers, and next action.
+- Goal and major milestones.
+- Overall progress and current position.
+- Next milestone.
 
 For durable or multi-session work, update
 `agent_docs/project_progress.md` at most twice:
 
 1. Activate the bounded plan.
-2. Reconcile final status, evidence, blockers, and next action.
+2. Reconcile overall progress, current position, and next milestone.
 
-Do not write status for short-lived work or after every checkpoint. Write
-`agent_docs/latest_session_work.md` only for a durable cross-session handoff or
-`end this session`; replace its content and never use it as scratch space. These
-two files remain main-agent owned. Workers may prepare compact verified inputs
-or drafts; the main agent approves and writes the official state.
+Do not write status for short-lived work or after every checkpoint. Put detailed
+current work, verification, blockers, and the exact continuation point in
+`agent_docs/latest_session_work.md` only for a durable cross-session handoff;
+replace its content and never use it as scratch space. The main agent owns both
+files during normal execution. The `end_of_session` worker owns them during an
+invoked handoff; all other workers may only provide compact verified inputs.
 
 ## Delegation
 
@@ -76,10 +79,16 @@ to increase worker count or concurrency.
 - `doc-writer`: after verification, for durable architecture, structure,
   workflow, public behavior, decisions, or usage; never the two status files.
 - `explorer`: follow `~/.codex/codex_workflow/explorer_companion.md`; it is a
-  companion, not a worker.
+  companion rather than a task worker, but its live thread consumes platform
+  child-agent capacity.
+- `end_of_session`: fresh handoff owner for Medium and Heavy routes; follow
+  `~/.codex/codex_workflow/end_of_session.md`.
 
-Every initial worker capsule must use `fork_turns="none"`, normally stay within
-200 words, and never exceed 400 words. Include only:
+Every initial task-worker capsule must use `fork_turns="none"`, normally stay
+within 200 words, and never exceed 400 words. The dedicated End-of-Session
+worker instead uses the configured finite recent-turn fork and receives no
+capsule beyond the route and extra user handoff details. Task-worker capsules
+include only:
 
 - Task ID/iteration and bounded outcome.
 - Ownership and expected edit surface.
@@ -101,7 +110,8 @@ updated advice, and next action. Do not resend unchanged context or old logs.
 Expect one concise, evidence-backed completion report per package. Workers
 contact the main agent earlier only for scope expansion, ownership conflicts, or
 decision-blocking ambiguity. Obey configured worker limits. Keep cross-package
-lifecycle gates sequential and evidence-driven.
+lifecycle gates sequential and evidence-driven. Keep one child-agent slot
+available for the required End-of-Session worker.
 
 ## Handoff and Verification
 
@@ -111,7 +121,8 @@ lifecycle gates sequential and evidence-driven.
 4. Test/fixture defects stay with tester; production defects return to the same
    executor, then to the same tester.
 5. Delegate durable documentation only after relevant behavior is verified.
-6. Main agent reconciles final evidence and status.
+6. Main agent reconciles final evidence during normal execution; an invoked
+   End-of-Session delegates final status and Git handoff to its dedicated worker.
 
 Rules:
 
@@ -146,9 +157,9 @@ Rules:
 
 At the end of each shift and in the final report, use a compact table with call
 counts for the selected default executor (`executor_luna` or `executor_terra`),
-`executor_sol`, `tester`, and `doc-writer`; add
+`executor_sol`, `tester`, `doc-writer`, and `end_of_session`; add
 companion usage from `~/.codex/codex_workflow/explorer_companion.md`.
 
 When the user says the exact phrase `end this session`, ignoring capitalization
-and surrounding punctuation, follow
-`~/.codex/codex_workflow/end_of_session.md` under the Heavy branch.
+and surrounding punctuation, follow the delegation contract in
+`~/.codex/codex_workflow/end_of_session.md`.

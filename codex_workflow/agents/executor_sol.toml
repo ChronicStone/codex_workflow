@@ -1,3 +1,4 @@
+# codex-workflow-worker: executor_sol
 name = "executor_sol"
 description = "Advanced executor for mathematically or logically demanding core work and exceptionally difficult cross-cutting production changes."
 

@@ -1,0 +1,221 @@
+"""Package, user-runtime, and project path contracts."""
+
+from __future__ import annotations
+
+import re
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+
+from .config import load_config, render_handoff_contract, render_heavy_route
+from .errors import ValidationError
+from .markers import USER_MANAGED, extract, validate_project_template
+from .personalization import materialize_personalization
+
+
+PROJECT_ID = "<!-- codex-workflow-id: viettran-edgeAI/codex_workflow -->"
+USER_ID = "<!-- codex-workflow-user-id: viettran-edgeAI/codex_workflow -->"
+WORKER_MARKER = re.compile(r"^# codex-workflow-worker: ([A-Za-z0-9_-]+)$", re.MULTILINE)
+PROJECT_STATE = "state.json"
+USER_STATE = "install_state.json"
+
+
+@dataclass(frozen=True)
+class PackageLayout:
+    root: Path
+    project_template: Path
+    agent_templates: Path
+    project_docs: Path
+
+    @classmethod
+    def resolve(cls, root: Path, *, allow_legacy: bool = False) -> "PackageLayout":
+        root = root.resolve()
+        if not (root / "VERSION").is_file():
+            nested = root / "codex_workflow"
+            if nested.is_dir() and (nested / "VERSION").is_file():
+                root = nested
+            else:
+                raise ValidationError(f"package root does not contain VERSION: {root}")
+        if (root / "templates" / "AGENTS.md").is_file():
+            layout = cls(
+                root,
+                root / "templates" / "AGENTS.md",
+                root / "templates" / "agents",
+                root / "templates" / "project_docs",
+            )
+        else:
+            layout = cls(root, root / "AGENTS.md", root / "agents", root / "project_docs")
+        layout.validate(allow_legacy=allow_legacy)
+        return layout
+
+    def validate(self, *, allow_legacy: bool = False) -> None:
+        symlinks = [
+            path
+            for path in self.root.rglob("*")
+            if path.is_symlink()
+            and ".backups" not in path.parts
+            and ".source_backup" not in path.parts
+        ]
+        if symlinks:
+            raise ValidationError(f"package contains symlinks: {symlinks[:3]}")
+        version = self.version
+        if not re.fullmatch(
+            r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+            r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+            r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?",
+            version,
+        ):
+            raise ValidationError(f"invalid package VERSION: {version!r}")
+        user_agents = self.root / "user_AGENTS.md"
+        if not user_agents.is_file():
+            raise ValidationError("package user_AGENTS.md marker is missing")
+        user_agents_text = user_agents.read_text(encoding="utf-8")
+        if USER_ID not in user_agents_text:
+            raise ValidationError("package user_AGENTS.md marker is missing")
+        if f"<!-- codex-workflow-version: {version} -->" not in user_agents_text:
+            raise ValidationError("package version and user marker disagree")
+        extract(user_agents_text, USER_MANAGED)
+        if not allow_legacy:
+            required = [
+                "workflow.py",
+                "resources/workflow_config.default.json",
+                "heavy_route.md",
+                "medium_route.md",
+                "explorer_companion.md",
+                "end_of_session.md",
+                "install.md",
+                "update.md",
+                "disable_auto_check_update.md",
+                "configuration_guide.md",
+                "personalization_guide.md",
+                "enable.md",
+                "disable.md",
+                "runtime/__init__.py",
+                "runtime/backup.py",
+                "runtime/config.py",
+                "runtime/layout.py",
+                "runtime/lifecycle.py",
+                "runtime/markers.py",
+                "runtime/migrations.py",
+                "runtime/personalization.py",
+                "runtime/plan.py",
+                "runtime/project_ops.py",
+                "runtime/release.py",
+                "runtime/runtime_ops.py",
+                "runtime/transaction.py",
+                "resources/personalization.md",
+            ]
+            missing = [relative for relative in required if not (self.root / relative).is_file()]
+            if missing:
+                raise ValidationError(f"package runtime files missing: {missing}")
+            validate_project_template(self.project_template.read_text(encoding="utf-8"))
+        required_docs = {
+            "project_overview.md",
+            "project_core_tech.md",
+            "project_structure.md",
+            "project_progress.md",
+            "project_diary.md",
+            "latest_session_work.md",
+        }
+        present_docs = {path.name for path in self.project_docs.glob("*.md")}
+        if not required_docs.issubset(present_docs):
+            raise ValidationError(
+                f"package project document templates missing: {sorted(required_docs - present_docs)}"
+            )
+        templates = self.worker_names
+        if not templates:
+            raise ValidationError("package has no worker templates")
+        for worker in templates:
+            text = (self.agent_templates / f"{worker}.toml").read_text(encoding="utf-8")
+            match = WORKER_MARKER.search(text)
+            if not allow_legacy and (match is None or match.group(1) != worker):
+                raise ValidationError(f"worker ownership marker missing or wrong: {worker}")
+            try:
+                tomllib.loads(text)
+            except tomllib.TOMLDecodeError as error:
+                raise ValidationError(f"invalid worker TOML {worker}: {error}") from error
+        if not allow_legacy:
+            config = load_config(
+                self.default_config, templates=self.agent_templates
+            )
+            render_heavy_route(
+                (self.root / "heavy_route.md").read_text(encoding="utf-8"), config
+            )
+            render_handoff_contract(
+                (self.root / "end_of_session.md").read_text(encoding="utf-8"),
+                config,
+            )
+            materialize_personalization(
+                (self.root / "resources" / "personalization.md").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+    @property
+    def version(self) -> str:
+        lines = (self.root / "VERSION").read_text(encoding="utf-8").splitlines()
+        if len(lines) != 1 or not lines[0]:
+            raise ValidationError("VERSION must contain exactly one non-empty line")
+        return lines[0]
+
+    @property
+    def worker_names(self) -> set[str]:
+        return {path.stem for path in self.agent_templates.glob("*.toml") if path.is_file()}
+
+    @property
+    def default_config(self) -> Path:
+        return self.root / "resources" / "workflow_config.default.json"
+
+    @property
+    def default_personalization(self) -> Path:
+        return self.root / "resources" / "personalization.md"
+
+
+@dataclass(frozen=True)
+class RuntimePaths:
+    codex_home: Path
+
+    @property
+    def runtime(self) -> Path:
+        return self.codex_home / "codex_workflow"
+
+    @property
+    def agents(self) -> Path:
+        return self.codex_home / "agents"
+
+    @property
+    def config_toml(self) -> Path:
+        return self.codex_home / "config.toml"
+
+    @property
+    def user_agents(self) -> Path:
+        return self.codex_home / "AGENTS.md"
+
+
+@dataclass(frozen=True)
+class ProjectPaths:
+    root: Path
+
+    @property
+    def active(self) -> Path:
+        return self.root / "AGENTS.md"
+
+    @property
+    def hidden_dir(self) -> Path:
+        return self.root / ".codex_workflow_hidden_resource"
+
+    @property
+    def disabled(self) -> Path:
+        return self.hidden_dir / ".AGENTS.md"
+
+    @property
+    def personalization(self) -> Path:
+        return self.hidden_dir / "personalization.md"
+
+    @property
+    def state(self) -> Path:
+        return self.hidden_dir / PROJECT_STATE
+
+    @property
+    def docs(self) -> Path:
+        return self.root / "agent_docs"

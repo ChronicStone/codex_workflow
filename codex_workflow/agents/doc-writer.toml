@@ -1,3 +1,4 @@
+# codex-workflow-worker: doc-writer
 name = "doc-writer"
 description = "Documentation sub-agent for targeted durable updates from verified parent-provided facts."
 

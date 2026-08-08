@@ -1,3 +1,4 @@
+# codex-workflow-worker: executor_luna
 name = "executor_luna"
 description = "Production implementation sub-agent for bounded code changes from a parent-owned plan."
 

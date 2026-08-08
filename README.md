@@ -12,6 +12,8 @@ Beneath the simplicity is a tightly engineered agent orchestration system: a pur
 
 ## 1. Quick installation ⚙️
 
+Requires Python 3.11 or newer for deterministic lifecycle operations.
+
 ### Open Codex CLI / Codex app from your project directory 
 
 ▶️ Send:
@@ -23,12 +25,16 @@ Download and extract the latest GitHub Release from https://github.com/viettran-
 
 🔄 Restart Codex after installation
 
+New sessions automatically check for a newer workflow release. To opt out,
+send `codex_workflow --disable_auto_check_update`.
+
 ## 2. Workflow usage 
 
 ### This workflow has 3 routes:
 - Light route : No subagents, no workflow, minimal context.
 - Heavy route : Deploy subagents, full workflow.
-- Medium route: No subagents, full workflow.  
+- Medium route: Main agent performs the work; only Explorer and the dedicated
+  End-of-Session worker are used.
 
 ### How to use
 - Normally, for simple work, general Q&A, you don't need to do anything. `light route` is the default route.
@@ -58,5 +64,5 @@ use heavy route. continue the unfinished work.
 > **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities and maximize token usage savings.
 
 ## 3. More details 🧭 
-For the complete command reference, installed-file map, manual customization
+For the complete command reference, installed-file map, scripted customization
 guide, and Heavy-route design, see [workflow_usage.md](workflow_usage.md).

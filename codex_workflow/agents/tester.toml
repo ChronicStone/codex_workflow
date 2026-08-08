@@ -1,3 +1,4 @@
+# codex-workflow-worker: tester
 name = "tester"
 description = "Independent testing sub-agent for a bounded parent-provided verification package."
 

@@ -5,9 +5,10 @@ Use after the Medium route is selected under `AGENTS.md`.
 ## Main-Agent Role
 
 Perform planning, implementation, verification, and documentation directly.
-Do not delegate to worker subagents. Explorer remains available as the
+Do not delegate those tasks to workers. Explorer remains available as the
 deployment-session companion defined by
-`~/.codex/codex_workflow/explorer_companion.md`.
+`~/.codex/codex_workflow/explorer_companion.md`. The only worker exception is
+the fresh `end_of_session` worker required for an invoked handoff.
 
 Keep process proportional; simple tasks do not need the full workflow.
 
@@ -47,17 +48,19 @@ When the user says **"plan the implementation for..."** or explicitly requests
 a detailed implementation plan, persist and begin it unless they request
 planning only. Record:
 
-- Goal, scope, constraints, and acceptance criteria.
-- Major steps, dependencies, and protected areas.
-- Verification, blockers, and next action.
+- Goal and major milestones.
+- Overall progress and current position.
+- Next milestone.
 
 For durable or multi-session work, update
 `agent_docs/project_progress.md` at most twice:
 
 1. Activate the bounded plan.
-2. Reconcile final status, evidence, blockers, and next action.
+2. Reconcile overall progress, current position, and next milestone.
 
-Do not update it after every checkpoint. Keep plan changes traceable.
+Do not update it after every checkpoint. Keep detailed current work,
+verification, blockers, and the exact continuation point in
+`agent_docs/latest_session_work.md` only when a durable handoff is needed.
 
 ## Working Rules
 
@@ -77,5 +80,5 @@ clear continuation point and never present partial work as complete.
 ## Session End
 
 When the user says the exact phrase `end this session`, ignoring capitalization
-and surrounding punctuation, follow
-`~/.codex/codex_workflow/end_of_session.md` under the Medium branch.
+and surrounding punctuation, follow the delegation contract in
+`~/.codex/codex_workflow/end_of_session.md`.

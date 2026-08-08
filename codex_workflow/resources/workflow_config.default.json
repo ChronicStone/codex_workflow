@@ -1,7 +1,9 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "default_executor": "executor_luna",
   "default_executor_reasoning_effort": "xhigh",
+  "auto_check_update": true,
+  "end_of_session_context_turns": 200,
   "max_concurrent_workers": 20,
   "max_executor_sol_instances": 1,
   "report_package_size": 250,
@@ -10,6 +12,7 @@
     "executor_sol",
     "tester",
     "doc-writer",
-    "explorer"
+    "explorer",
+    "end_of_session"
   ]
 }

@@ -23,8 +23,10 @@ codex_workflow/
 ├── AGENTS.md
 ├── install.md
 ├── update.md
-├── check_update.md
-├── workflow_config.json
+├── disable_auto_check_update.md
+├── workflow.py
+├── runtime/
+├── resources/                              # immutable package defaults
 ├── agents/
 └── project_docs/
 ```
@@ -57,6 +59,7 @@ standard library and works on Linux, macOS, and Windows.
 Linux/macOS:
 
 ```sh
+python3 -B scripts/test_workflow_runtime.py -v
 python3 scripts/package_release.py --release-tag v1.1.0 --output-dir dist
 python3 scripts/package_release.py --verify dist/codex_workflow-*.zip
 ```
@@ -64,13 +67,15 @@ python3 scripts/package_release.py --verify dist/codex_workflow-*.zip
 Windows PowerShell:
 
 ```powershell
+py -3 -B scripts\test_workflow_runtime.py -v
 py -3 scripts/package_release.py --release-tag v1.1.0 --output-dir dist
 py -3 scripts/package_release.py --verify dist\codex_workflow-1.1.0.zip
 ```
 
-The build validates the version and marker, creates a deterministic ZIP asset,
-validates it, and writes `dist/SHA256SUMS`. Inspect the archive listing before
-publication if the package contents changed.
+The build validates the version, marker, lifecycle runtime, and required
+resources; rejects generated Python caches; creates a deterministic ZIP asset;
+and writes `dist/SHA256SUMS`. Run the runtime tests before packaging and inspect
+the archive listing when package contents change.
 
 ## Publishing — approval required
 
@@ -107,10 +112,12 @@ same tagged commit.
 ## Consumer commands
 
 - `codex_workflow --install` reads the extracted release package's
-  `codex_workflow/install.md` and installs the current project workflow. The
-  initial user-level installation starts from a release asset.
-- `codex_workflow --check-update` queries the Releases API, includes
-  prereleases, compares SemVer values, and makes no changes.
+  `codex_workflow/install.md`; Codex collects confirmation and the bundled
+  lifecycle CLI performs the installation transaction.
+- At session start, the installed runtime checks GitHub Releases once when
+  `auto_check_update` is enabled and reports an available update.
+- `codex_workflow --disable_auto_check_update` disables that check in mutable
+  installed configuration.
 - `codex_workflow --update` selects the latest appropriate ZIP asset, downloads
   it from its GitHub Release URL, verifies it, and follows the package's update
   procedure. It never clones the repository.

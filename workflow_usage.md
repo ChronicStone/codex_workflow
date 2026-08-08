@@ -8,7 +8,7 @@ This guide is organized into five parts:
 
 1. command prompts and route selection;
 2. the installed-file map;
-3. manual configuration and customization;
+3. scripted configuration and customization;
 4. the Heavy-route execution model;
 5. the component hierarchy and ownership model.
 
@@ -19,14 +19,14 @@ This guide is organized into five parts:
 Open Codex from the project directory and send this prompt:
 
 ```text
-Download the prerelease GitHub Release tagged `v1.1.0` from https://github.com/viettran-edgeAI/codex_workflow/releases. Download the universal asset `codex_workflow-1.1.0.zip` and `SHA256SUMS`, verify the ZIP checksum, and extract the ZIP to a temporary directory. Do not clone the repository, download a source-code archive, or use `README.md` as an installation source. Then read the extracted `codex_workflow/install.md` and follow it exactly to complete the first installation for this project.
+Download the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Download its universal `codex_workflow-<version>.zip` asset and `SHA256SUMS`, verify the ZIP checksum, and extract it to a temporary directory. Do not clone the repository or use a source-code archive. Then read the extracted `codex_workflow/install.md` and follow it to run the bundled lifecycle CLI.
 ```
 
-The release package is a universal ZIP for Linux, macOS, and Windows. The
-installation guide inside the package is the source of truth for validation,
-copying, backups, project initialization, and completion checks. After the
-first installation, start a new Codex session so the newly installed user
-instructions are loaded.
+The release package is a universal ZIP for Linux, macOS, and Windows. Its
+installation guide invokes the bundled lifecycle CLI, which owns validation,
+rendering, backups, project initialization, and rollback. After the first
+installation, start a new Codex session so the newly installed user
+instructions are loaded. Python 3.11 or newer is required.
 
 The bootstrap installs the user-level workflow and the current project. It
 does not ask configuration or personalization questions. Those are explicit
@@ -34,8 +34,8 @@ follow-up commands.
 
 ### Exact command prompts
 
-Send each command as its own prompt. These are workflow instructions handled by
-Codex, not operating-system executables.
+Send each command as its own prompt. Codex handles questions and confirmation;
+the installed lifecycle CLI performs deterministic filesystem operations.
 
 #### `codex_workflow --configure`
 
@@ -45,12 +45,14 @@ Interactively change the persistent user-level workflow configuration:
 - default executor reasoning effort (`high`, `xhigh`, or `max`);
 - maximum concurrent workers;
 - maximum concurrent `executor_sol` workers;
-- final-report package size.
+- final-report package size;
+- End-of-Session recent-context turns.
 
 The command shows the current values, proposes a complete new JSON snapshot,
 and writes only after confirmation. It then synchronizes the Heavy route,
-active workflow worker TOMLs, and workflow-owned Codex platform settings. It
-does not change project personalization or project documents.
+End-of-Session spawn contract, active workflow worker TOMLs, and workflow-owned
+Codex platform settings. It does not change project personalization or project
+documents.
 
 #### `codex_workflow --personal`
 
@@ -74,6 +76,8 @@ workflow has already been bootstrapped. It recognizes the active
 `AGENTS.md` or the disabled hidden entry point and:
 
 - creates or preserves the project `AGENTS.md` entry point;
+- imports a pre-existing project `AGENTS.md` into the dedicated project-local
+  region instead of semantically merging it;
 - creates missing files in `agent_docs/` from the six project-document
   templates;
 - initializes only newly created documentation with `doc-writer`;
@@ -91,25 +95,22 @@ eligible semantic-versioned release with the matching ZIP and checksum,
 downloads the asset, verifies it, and extracts it into a temporary directory.
 It never clones or pulls the repository.
 
-The update preserves valid configuration, project personalization, project
-documents, unrelated workers and settings, source backups, and the project's
-enabled or disabled state. It preflights the recognized project and resolves
-conflicts before replacing any live user-level files, then applies a staged
-update with rollback on write failure.
+The update preserves valid configuration, project personalization,
+project-local instructions, project documents, unrelated workers and settings,
+source backups, and the project's enabled or disabled state. It replaces only
+owned/generated surfaces and stops on marker drift or legacy edits requiring a
+one-time reviewed migration.
 
-Use `codex_workflow --update --source <PACKAGE>` to update or repair from one
-local extracted release package instead. This form skips GitHub release lookup
-and uses the supplied package path directly.
+#### Automatic update check
 
-#### `codex_workflow --check-update`
+At the start of each new session, Codex runs the lifecycle CLI's read-only
+`auto-check-update` command once. When enabled, it compares the installed
+version with the highest usable GitHub Release and reports an available update.
+It stays quiet when the workflow is current or the check is disabled.
 
-Perform a read-only version check. Codex reads the installed `VERSION`, queries
-GitHub Releases, filters out unusable release records and mismatched assets,
-compares semantic versions, and reports whether an appropriate newer release
-is available.
-
-This command does not download, extract, modify, clone, or pull anything. It
-requires network access for automatic lookup but does not require Git.
+Send `codex_workflow --disable_auto_check_update` to persistently disable the
+session-start check. The command changes only the mutable installed
+configuration. It can be enabled again through `codex_workflow --configure`.
 
 #### `codex_workflow --disable`
 
@@ -140,8 +141,8 @@ There are three execution routes:
 
 - **Light route** — the default; the main agent works alone with minimal
   workflow overhead.
-- **Medium route** — full planning and documentation discipline without worker
-  subagents.
+- **Medium route** — the main agent performs implementation and verification;
+  only Explorer and the dedicated handoff worker are used.
 - **Heavy route** — the main agent orchestrates enabled worker subagents for
   larger deployment-state tasks.
 
@@ -160,8 +161,8 @@ session. To perform the handoff and update durable project state, send:
 end this session
 ```
 
-The shared End-of-Session procedure verifies the final state and updates the
-cross-session documentation when warranted.
+A fresh Luna xhigh worker receives the configured number of recent turns and
+owns the entire End-of-Session handoff.
 
 ## Part 2 — Installed-file map
 
@@ -183,18 +184,25 @@ and the current project as follows:
 │   ├── executor_sol.toml
 │   ├── tester.toml
 │   ├── doc-writer.toml
-│   └── explorer.toml
+│   ├── explorer.toml
+│   └── end_of_session.toml
 └── codex_workflow/
     ├── VERSION                             # installed workflow version
     ├── user_AGENTS.md                      # managed command marker and command prompts
     ├── workflow_config.json                # persistent workflow configuration
+    ├── workflow.py                         # dry-run/apply lifecycle CLI
+    ├── runtime/                            # validation, rendering, release, and transaction modules
+    ├── resources/                          # immutable package defaults
+    │   ├── personalization.md
+    │   └── workflow_config.default.json
+    ├── install_state.json                  # workflow ownership and installed-state manifest
     ├── heavy_route.md                      # Heavy-route orchestration rules
     ├── medium_route.md                     # Medium-route rules
     ├── explorer_companion.md               # read-only Explorer lifecycle and boundaries
-    ├── end_of_session.md                   # shared session handoff procedure
+    ├── end_of_session.md                   # shared handoff spawn contract
     ├── install.md                          # installation procedure
     ├── update.md                           # Release-based update procedure
-    ├── check_update.md                     # read-only Release-based version check
+    ├── disable_auto_check_update.md        # disable automatic session check
     ├── configuration_guide.md               # --configure procedure
     ├── personalization_guide.md            # --personal procedure
     ├── disable.md                          # --disable procedure
@@ -217,6 +225,7 @@ and the current project as follows:
 │   └── latest_session_work.md
 └── .codex_workflow_hidden_resource/
     ├── personalization.md                  # project-scoped private resource
+    ├── state.json                          # project entry-format and activation state
     └── .AGENTS.md                          # disabled entry point; mutually exclusive with root AGENTS.md
 ```
 
@@ -230,17 +239,17 @@ The six files under `agent_docs/` have different ownership and purposes:
 - `project_overview.md` — goals, architecture, workflow, and major decisions;
 - `project_core_tech.md` — important technologies and architectural constraints;
 - `project_structure.md` — layout, modules, ownership, and boundaries;
-- `project_progress.md` — active deployment plan and cross-session status;
+- `project_progress.md` — concise overall progress and current milestone;
 - `project_diary.md` — durable decisions, discarded approaches, and lessons;
-- `latest_session_work.md` — the latest handoff and unfinished work.
+- `latest_session_work.md` — detailed current state, evidence, unfinished work,
+  and continuation point.
 
-## Part 3 — Manual configuration and customization
+## Part 3 — Scripted configuration and customization
 
-The command prompts are the safe default because they keep related files in
-sync. Manual edits are useful for advanced customization, but every generated
-copy and its source-of-truth must remain consistent.
+Command prompts collect intent and confirmation. The lifecycle CLI validates
+and materializes all generated surfaces from their source resources.
 
-### Manual user-level configuration
+### User-level configuration
 
 The persistent configuration is:
 
@@ -248,13 +257,20 @@ The persistent configuration is:
 ~/.codex/codex_workflow/workflow_config.json
 ```
 
+This mutable installed state is distinct from the immutable package default at
+`~/.codex/codex_workflow/resources/workflow_config.default.json`. Bootstrap
+copies the default; update preserves and migrates the installed state using the
+incoming default.
+
 The current default snapshot is:
 
 ```json
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "default_executor": "executor_luna",
   "default_executor_reasoning_effort": "xhigh",
+  "auto_check_update": true,
+  "end_of_session_context_turns": 200,
   "max_concurrent_workers": 20,
   "max_executor_sol_instances": 1,
   "report_package_size": 250,
@@ -263,29 +279,31 @@ The current default snapshot is:
     "executor_sol",
     "tester",
     "doc-writer",
-    "explorer"
+    "explorer",
+    "end_of_session"
   ]
 }
 ```
 
-When editing this file manually:
+The configuration contract is:
 
 1. keep valid JSON and a supported schema;
 2. set `default_executor` to `executor_luna` or `executor_terra` and keep it
    inside `enabled_workers`;
 3. set `default_executor_reasoning_effort` to `high`, `xhigh`, or `max`;
-4. keep `doc-writer` enabled because project installation depends on it;
-5. keep worker names unique and backed by templates in
+4. keep `auto_check_update` boolean; it defaults to `true`;
+5. keep `end_of_session_context_turns` a positive integer; it defaults to `200`;
+6. keep `doc-writer` enabled because project installation depends on it and
+   keep `end_of_session` enabled because both deployment routes require it;
+7. keep worker names unique and backed by templates in
    `~/.codex/codex_workflow/templates/agents/`;
-6. keep exactly one of `executor_luna` and `executor_terra` enabled as the
+8. keep exactly one of `executor_luna` and `executor_terra` enabled as the
    default executor;
-7. keep `max_executor_sol_instances` between zero and the concurrency limit.
+9. keep `max_executor_sol_instances` between zero and the concurrency limit.
 
-After a direct edit, synchronize the effective configuration block in
-`~/.codex/codex_workflow/heavy_route.md`, the active workflow TOMLs in
-`~/.codex/agents/`, and the workflow-owned keys in `~/.codex/config.toml`.
-Using `codex_workflow --configure` performs this synchronization and is less
-error-prone.
+Do not edit generated surfaces directly. `codex_workflow --configure` runs a
+dry-run, requests confirmation, then synchronizes the Heavy snapshot, handoff
+contract, active worker TOMLs, and workflow-owned `config.toml` keys.
 
 The concurrency values must stay synchronized: the confirmed
 `max_concurrent_workers` in `workflow_config.json` is also written to
@@ -298,8 +316,9 @@ so the updated settings are loaded.
 
 ### Tuning an individual worker
 
-Active workers live in `~/.codex/agents/`. Their TOML files define persistent
-role behavior. For example, an advanced user may add:
+Active workers live in `~/.codex/agents/` and are generated from templates.
+Advanced changes belong in the owned template before reconfiguration. For
+example, a template may add:
 
 ```toml
 service_tier = "fast"
@@ -329,17 +348,17 @@ Additional Workflow Decisions. Its decisions are materialized only inside the
 marked personalization block in `AGENTS.md` (or the hidden entry point while
 the project is disabled).
 
-For manual changes, update the resource and its materialized marker together,
-preserve the marker boundaries, and keep secrets or conversation logs out of
-both files. Prefer `codex_workflow --personal`, which validates the three
-sections and performs the materialization safely.
+Do not edit its materialized marker directly. `codex_workflow --personal`
+validates a complete candidate and atomically updates the resource and generated
+region while preserving project-local instructions.
 
 Do not put personalization in `agent_docs/`: those six files are durable
 project context and are intentionally available to the normal workflow.
 
 ### Customizing routes and documentation
 
-Advanced route changes belong in:
+Advanced route changes belong in a maintained source package or fork, not in an
+installed generated copy that update will replace:
 
 ```text
 ~/.codex/codex_workflow/heavy_route.md
@@ -352,13 +371,13 @@ Possible customizations include:
   management tool for a very large repository;
 - adding a project-specific worker and wiring its responsibility into the
   Heavy route;
-- adapting the End-of-Session handoff in `end_of_session.md` to match the
-  project's release or review practice.
+- adapting the `end_of_session` worker instruction to the project's release or
+  review practice while keeping `end_of_session.md` as the spawn contract.
 
 Keep the route's ownership boundaries, worker limits, verification gates, and
-main-agent ownership of the two session-state documents. After a route change,
-verify that the effective configuration block and worker list still agree with
-`workflow_config.json`.
+dedicated handoff ownership of the two session-state documents. After a route
+change, verify that the effective configuration block and worker list still
+agree with `workflow_config.json`.
 
 ## Part 4 — How the Heavy route works
 
@@ -373,12 +392,13 @@ The current enabled set is:
 
 | Role | Responsibility | Can edit project source? |
 | --- | --- | --- |
-| Main agent | Chooses scope, plans, delegates, integrates, reviews critical boundaries, and owns status/handoff docs | Yes, under the user-approved task scope |
+| Main agent | Chooses scope, plans, delegates, integrates, and reviews critical boundaries during normal execution | Yes, under the user-approved task scope |
 | Selected default executor (`executor_luna` or `executor_terra`) | Production implementation worker | Yes, within its work package |
 | `executor_sol` | Complex core reasoning or fallback implementation | Yes, within its work package; limited to one active instance |
 | `tester` | Independent focused tests and failure analysis | Test/fixture scope; production defects return to the executor |
-| `doc-writer` | Verified durable architecture, structure, workflow, or usage documentation | Documentation scope, except main-owned status/handoff files |
+| `doc-writer` | Verified durable architecture, structure, workflow, or usage documentation | Documentation scope, except shared status/handoff files |
 | Explorer companion | Read-only context gathering and session-long supplementary research | No |
+| `end_of_session` | Complete Medium/Heavy handoff, status documents, and Git closure | Documentation and Git state during an invoked handoff |
 
 `executor_terra.toml` is distributed as a template and becomes active when it
 is selected as the default executor. The active list, selected executor, and
@@ -399,10 +419,12 @@ When Heavy is selected for a deployment-state task, the main agent:
 5. sends self-contained work packages to only the enabled workers needed for
    the task.
 
-Each work package contains the task identity, outcome, ownership, source paths,
-completion criteria, validation, protected areas, and return format. Normal
-initial capsules are concise, follow-ups contain only new evidence, and final
-reports are limited by `report_package_size`.
+Each work package contains the task identity, outcome, ownership, relevant
+decision context, source paths, completion criteria, validation, protected
+areas, and return format. The default executor also receives a recommended
+approach and rationale; `executor_sol` receives constraints without a proposed
+solution. Normal initial capsules are concise, follow-ups contain only new
+evidence, and final reports are limited by `report_package_size`.
 
 The normal implementation and verification loop is:
 
@@ -430,7 +452,10 @@ Tester independently runs focused checks when testing is warranted
 Doc-writer records verified durable documentation when required
         │
         ▼
-Main agent performs critical integration review and session handoff
+Main agent performs critical integration review
+        │
+        ▼
+On `end this session`, a fresh Luna xhigh worker receives recent context and owns the handoff
 ```
 
 The tester is normally started after the executor hands off a completed
@@ -440,10 +465,11 @@ do not repeat work merely to increase activity.
 
 ### Concurrency and communication controls
 
-The current configuration permits at most five concurrent child workers and
-at most one `executor_sol` instance. The Explorer companion does not consume a
-worker slot. The main agent must not exceed the enabled-worker list or these
-limits.
+The current configuration permits at most twenty concurrent child workers and
+at most one `executor_sol` instance. Explorer is reported as a companion rather
+than a task worker, but its live thread consumes platform capacity. Heavy keeps
+one child-agent slot available for the fresh End-of-Session worker and must not
+exceed the enabled-worker list or configured limits.
 
 Worker communication is event-driven. `proof`, `defect`, `blocker`, and
 `replacement/takeover` events are used when evidence changes coordination,
@@ -451,26 +477,23 @@ risk, scope, or the next action. A worker that returns no concrete evidence
 gets one short retry; repeated evidence-free work triggers replacement or an
 explicit main-agent takeover with an honest report.
 
-Workers must not edit Git state or the main-owned
-`agent_docs/project_progress.md` and `agent_docs/latest_session_work.md`. The
-main agent owns those files and performs the final integration review. The
-Explorer remains read-only even though it can inspect adjacent context.
+Task workers must not edit Git state or the shared status documents. The main
+agent owns those surfaces during normal execution; `end_of_session` alone owns
+them during an invoked handoff. Explorer remains read-only.
 
 ### Cross-session continuity
 
-`project_progress.md` carries the active deployment plan and status.
-`latest_session_work.md` carries the latest handoff and unfinished work. They
-let a later session resume without sending the entire previous conversation to
-every worker.
+`project_progress.md` carries only the goal, overall progress, current position,
+and next milestone. `latest_session_work.md` carries the detailed current state,
+verification, blockers, and exact continuation point.
 
-When the user sends `end this session`, Heavy collects worker checkpoints when
-needed while Medium skips that worker-only step. Both routes verify the final
-state, complete warranted durable documentation, and run the Explorer closure
-audit when applicable. If the deployment plan is complete, both
-`project_progress.md` and `latest_session_work.md` are cleared but kept as
-empty framework files; if work remains, they are updated with the next
-handoff. Meaningful project changes are committed according to the installed
-handoff procedure.
+When the user sends `end this session`, either route creates a fresh
+`end_of_session` worker with the configured finite `fork_turns` value, `200` by
+default. This preserves its Luna xhigh model while providing recent session
+context. Its instruction owns checkpoint collection when needed, evidence
+reconciliation, durable handoff documents, compact closing checks, Git commit,
+and the final report. Explorer has no closure responsibility. The main agent
+waits and relays the result.
 
 ## Part 5 — Component hierarchy and ownership
 
@@ -488,14 +511,16 @@ The five blocks are:
 Location: `~/.codex/`
 
 - `~/.codex/agents/` contains active worker TOMLs. The current active set is
-  `executor_luna`, `executor_sol`, `tester`, `doc-writer`, and `explorer`.
+  `executor_luna`, `executor_sol`, `tester`, `doc-writer`, `explorer`, and
+  `end_of_session`.
 - `~/.codex/codex_workflow/heavy_route.md` defines Heavy orchestration,
   delegation, limits, repair loops, and ownership.
-- `~/.codex/codex_workflow/medium_route.md` defines the full workflow when no
-  subagents are used.
+- `~/.codex/codex_workflow/medium_route.md` defines main-agent execution with
+  only Explorer and End-of-Session subagent exceptions.
 - `~/.codex/codex_workflow/explorer_companion.md` defines the read-only
   Explorer's lifecycle and boundary.
-- `~/.codex/codex_workflow/end_of_session.md` defines the shared handoff.
+- `~/.codex/codex_workflow/end_of_session.md` defines the shared spawn contract;
+  `end_of_session.toml` contains the complete handoff procedure.
 
 This block is the reusable execution machinery. It is shared by projects and
 does not contain project-specific decisions.
@@ -525,14 +550,18 @@ The resource currently contains:
 
 1. `default_executor`: currently `executor_luna`;
 2. `default_executor_reasoning_effort`: currently `xhigh`;
-3. `max_concurrent_workers`: currently `20`;
-4. `max_executor_sol_instances`: currently `1`;
-5. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
-   `doc-writer`, and `explorer`;
-6. `report_package_size`: currently `250` words.
+3. `auto_check_update`: currently `true`;
+4. `end_of_session_context_turns`: currently `200`;
+5. `max_concurrent_workers`: currently `20`;
+6. `max_executor_sol_instances`: currently `1`;
+7. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
+   `doc-writer`, `explorer`, and required `end_of_session`;
+8. `report_package_size`: currently `250` words.
 
 Related configuration surfaces are:
 
+- `~/.codex/codex_workflow/resources/workflow_config.default.json`: immutable
+  package defaults and migration fallback;
 - `~/.codex/agents/*.toml`: materialized active worker definitions;
 - `~/.codex/config.toml`: workflow-owned Codex platform settings, merged into
   the user's existing configuration without replacing unrelated settings;
@@ -567,23 +596,26 @@ in `AGENTS.md` or in the hidden disabled entry point. It is not stored in
 
 Location: `~/.codex/codex_workflow/`
 
-- `user_AGENTS.md` contains the workflow marker, installed version marker, and
-  exact command prompts for `--install`, `--update`, `--check-update`,
+- `user_AGENTS.md` contains the workflow marker, installed version marker,
+  session-start update-check instruction, and exact command prompts for
+  `--install`, `--update`, `--disable_auto_check_update`,
   `--configure`, `--personal`, `--disable`, and `--enable`.
 - `install.md`, `configuration_guide.md`, and `personalization_guide.md`
   describe bootstrap, configuration, and personalization.
 - `update.md`, `disable.md`, and `enable.md` describe update and activation
   lifecycle operations.
-- `check_update.md` describes the read-only Release version check.
+- `disable_auto_check_update.md` describes the persistent opt-out operation.
+- `workflow.py` and `runtime/` implement validated dry-run/apply lifecycle
+  operations.
 - `VERSION` identifies the installed workflow version.
 - `templates/` stores the project entry-point, worker, and project-document
   templates used for installation and update.
 - `.source_backup/` keeps a complete release source copy for repair and
   recovery; update-time `.backups/` preserve replaced installed state.
 
-This block is the command and lifecycle control plane. It tells Codex how to
-perform operations; it is not itself the project context or the active worker
-execution layer.
+This block is the command and lifecycle control plane. Guides define intent and
+confirmation; the runtime performs deterministic mutations. It is not project
+context or the active worker execution layer.
 
 These five blocks are logical ownership boundaries, not five disjoint
 directories. For example, `~/.codex/codex_workflow/` hosts routes, guidance,

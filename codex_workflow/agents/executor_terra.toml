@@ -1,3 +1,4 @@
+# codex-workflow-worker: executor_terra
 name = "executor_terra"
 description = "Advanced high-reasoning implementation agent available as an alternate default executor."
 
