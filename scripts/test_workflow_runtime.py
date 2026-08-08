@@ -13,6 +13,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "codex_workflow"
+PACKAGE_VERSION = (PACKAGE / "VERSION").read_text(encoding="utf-8").strip()
 
 import sys
 
@@ -298,7 +299,8 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertFalse(self.codex_home.exists())
         plan.apply()
 
-    def incoming_package(self, directory: str, version: str = "1.1.1") -> PackageLayout:
+    def incoming_package(self, directory: str, version: str | None = None) -> PackageLayout:
+        version = version or PACKAGE_VERSION
         incoming_root = self.root / directory / "codex_workflow"
         shutil.copytree(
             PACKAGE,
@@ -309,7 +311,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
-                "codex-workflow-version: 1.1.0",
+                f"codex-workflow-version: {PACKAGE_VERSION}",
                 f"codex-workflow-version: {version}",
             ),
             encoding="utf-8",
@@ -410,7 +412,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
         (incoming_root / "VERSION").write_text("1.1.1\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
-            user_agents.replace("codex-workflow-version: 1.1.0", "codex-workflow-version: 1.1.1"),
+            user_agents.replace(
+                f"codex-workflow-version: {PACKAGE_VERSION}",
+                "codex-workflow-version: 1.1.1",
+            ),
             encoding="utf-8",
         )
         incoming = PackageLayout.resolve(incoming_root)
@@ -683,7 +688,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
-                "codex-workflow-version: 1.1.0",
+                f"codex-workflow-version: {PACKAGE_VERSION}",
                 "codex-workflow-version: 1.1.1",
             ),
             encoding="utf-8",
