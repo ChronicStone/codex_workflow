@@ -8,7 +8,7 @@ A workflow designed to drastically reduce overall token usage, support seamless 
 
 Beneath the simplicity is a tightly engineered agent orchestration system: a purpose-built documentation framework, strict responsibility boundaries, main agent's second brain, compact work-package communication, anti-stall and worker-replacement mechanisms, executor–tester repair loops, worker lifecycle management, persistent project-state tracking. Everything is optimized to keep each agent focused on exactly what it needs. 
 
-> 💡 For lightweight tasks, it won’t overdo things. Light route is default.
+> ⭐ For lightweight tasks, it won’t overdo things. Light route is default.
 
 ## 1. Quick installation ⚙️
 
@@ -17,8 +17,9 @@ Beneath the simplicity is a tightly engineered agent orchestration system: a pur
 ▶️ Send:
 
 ```text
-Download the prerelease GitHub Release tagged `v1.1.0` from https://github.com/viettran-edgeAI/codex_workflow/releases. Download the universal asset `codex_workflow-1.1.0.zip` and `SHA256SUMS`, verify the ZIP checksum, and extract the ZIP to a temporary directory. Do not clone the repository, download a source-code archive, or use `README.md` as an installation source. Then read the extracted `codex_workflow/install.md` and follow it exactly to complete the first installation for this project.
+Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/install.md` and follow it to complete the installation.
 ```
+> ⭐ Recommended: use 5.6 Luna xhigh for installation. 
 
 🔄 Restart Codex after installation
 
@@ -41,12 +42,12 @@ use medium route / use heavy route. [your task description]".
 > Codex stays on the selected route until you change it, so you don’t need to repeat it in every prompt.
 
 --------------------------------
-If the implementation plan is not yet complete, but the context window is nearly full, the conversation has already been compacted too many times, or you simply want to pause the work, trigger the **End-of-Session** procedure by sending:
+If the implementation plan is not yet complete, but the context window is nearly full or already been compacted too many times, or you simply want to pause the work, trigger the **End-of-Session** handoff by sending:
 
 ```text
 end this session. [more details if needed].
 ```
-> You can still continue the session after that message if needed. 
+> 💡 You can still continue the session after that mesage.
 
 To resume the unfinished work in a new session, send:
 

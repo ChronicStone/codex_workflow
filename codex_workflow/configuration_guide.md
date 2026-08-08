@@ -20,22 +20,29 @@ the resource is missing, invalid, or uses an unsupported schema.
 
 Rules:
 
-- `default_executor` must be present in `enabled_workers`;
+- `default_executor` must be either `executor_luna` or `executor_terra`, and
+  must be present in `enabled_workers`;
+- `default_executor_reasoning_effort` must be one of `high`, `xhigh`, or
+  `max`;
 - `enabled_workers` contains unique workflow worker-template names and must
-  include `doc-writer`, which project installation requires;
+  include `doc-writer`, which project installation requires. Exactly one of
+  `executor_luna` and `executor_terra` is enabled as the default executor;
 - `max_concurrent_workers` is positive and does not exceed the platform limit;
 - `max_executor_sol_instances` is between zero and
   `max_concurrent_workers`;
 - `report_package_size` is a positive final-report word limit;
-- `executor_terra` remains disabled unless explicitly enabled.
+- all other enabled workers are preserved when the default executor changes.
 
 ## Questions
 
-Show the current value with every question and allow **Keep current**. Ask in
-this order:
+Show the current value with every question and allow **Keep current / skip / next**.
+Treat each of these responses as retaining the current value and
+advancing to the next question. Ask in this order:
 
-1. Which workflow workers should be enabled? Keep `doc-writer` enabled.
-2. Which enabled executor should be the default executor?
+1. Which default executor should be used? Choose `executor_luna` or
+   `executor_terra`.
+2. What reasoning effort should the default executor use? Choose `high`,
+   `xhigh`, or `max`.
 3. What is the maximum number of concurrent workers?
 4. What is the maximum number of concurrent `executor_sol` instances?
 5. What is the maximum worker final-report package size in words?
@@ -53,8 +60,10 @@ After confirmation:
    `~/.codex/codex_workflow/heavy_route.md` with the final snapshot.
 3. From `~/.codex/codex_workflow/templates/agents/`, install in
    `~/.codex/agents/` exactly the workflow TOMLs named by `enabled_workers`.
-   Back up and remove workflow-owned TOMLs that became disabled. Preserve
-   unrelated TOMLs.
+   Replace the other default-executor TOML when the selected default changes,
+   and set the selected default executor's `model_reasoning_effort` to the
+   confirmed `default_executor_reasoning_effort`. Back up and remove
+   workflow-owned TOMLs that became disabled. Preserve unrelated TOMLs.
 4. Update only workflow-owned keys in `~/.codex/config.toml`. Set
    `max_concurrent_threads_per_session` to the same integer as the confirmed
    `max_concurrent_workers` value written to `workflow_config.json`; do not
@@ -68,6 +77,9 @@ After confirmation:
        max_concurrent_threads_per_session = <confirmed max_concurrent_workers>
        hide_spawn_agent_metadata = false
        tool_namespace = "agents"
+       min_wait_timeout_ms = 300_000
+       default_wait_timeout_ms = 300_000
+       max_wait_timeout_ms = 3_600_000
 
    For example, if the confirmed workflow value is
    `"max_concurrent_workers": 3`, write
@@ -83,6 +95,7 @@ content.
 - the Heavy route snapshot matches it;
 - active workflow TOMLs match `enabled_workers` and include `doc-writer`;
 - the default executor has an active TOML;
+- the default executor's active TOML uses the selected reasoning effort;
 - unrelated files and settings are unchanged.
 
 Report the old and new effective values. Tell the user to restart Codex when

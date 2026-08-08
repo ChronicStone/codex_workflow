@@ -41,8 +41,8 @@ Codex, not operating-system executables.
 
 Interactively change the persistent user-level workflow configuration:
 
-- enabled workflow workers;
-- default executor;
+- default executor (`executor_luna` or `executor_terra`);
+- default executor reasoning effort (`high`, `xhigh`, or `max`);
 - maximum concurrent workers;
 - maximum concurrent `executor_sol` workers;
 - final-report package size.
@@ -254,7 +254,8 @@ The current default snapshot is:
 {
   "schema_version": 2,
   "default_executor": "executor_luna",
-  "max_concurrent_workers": 5,
+  "default_executor_reasoning_effort": "xhigh",
+  "max_concurrent_workers": 20,
   "max_executor_sol_instances": 1,
   "report_package_size": 250,
   "enabled_workers": [
@@ -270,12 +271,15 @@ The current default snapshot is:
 When editing this file manually:
 
 1. keep valid JSON and a supported schema;
-2. keep `default_executor` inside `enabled_workers`;
-3. keep `doc-writer` enabled because project installation depends on it;
-4. keep worker names unique and backed by templates in
+2. set `default_executor` to `executor_luna` or `executor_terra` and keep it
+   inside `enabled_workers`;
+3. set `default_executor_reasoning_effort` to `high`, `xhigh`, or `max`;
+4. keep `doc-writer` enabled because project installation depends on it;
+5. keep worker names unique and backed by templates in
    `~/.codex/codex_workflow/templates/agents/`;
-5. keep `max_executor_sol_instances` between zero and the concurrency limit;
-6. do not enable `executor_terra` unless it is intentionally configured.
+6. keep exactly one of `executor_luna` and `executor_terra` enabled as the
+   default executor;
+7. keep `max_executor_sol_instances` between zero and the concurrency limit.
 
 After a direct edit, synchronize the effective configuration block in
 `~/.codex/codex_workflow/heavy_route.md`, the active workflow TOMLs in
@@ -286,7 +290,7 @@ error-prone.
 The concurrency values must stay synchronized: the confirmed
 `max_concurrent_workers` in `workflow_config.json` is also written to
 `[features.multi_agent_v2].max_concurrent_threads_per_session` in
-`~/.codex/config.toml`. The value `5` is only the current package default; it
+`~/.codex/config.toml`. The value `20` is only the current package default; it
 must be replaced when the user selects another valid limit.
 
 When worker definitions or platform settings change, open a new Codex session
@@ -370,15 +374,16 @@ The current enabled set is:
 | Role | Responsibility | Can edit project source? |
 | --- | --- | --- |
 | Main agent | Chooses scope, plans, delegates, integrates, reviews critical boundaries, and owns status/handoff docs | Yes, under the user-approved task scope |
-| `executor_luna` | Default production implementation worker | Yes, within its work package |
+| Selected default executor (`executor_luna` or `executor_terra`) | Production implementation worker | Yes, within its work package |
 | `executor_sol` | Complex core reasoning or fallback implementation | Yes, within its work package; limited to one active instance |
 | `tester` | Independent focused tests and failure analysis | Test/fixture scope; production defects return to the executor |
 | `doc-writer` | Verified durable architecture, structure, workflow, or usage documentation | Documentation scope, except main-owned status/handoff files |
 | Explorer companion | Read-only context gathering and session-long supplementary research | No |
 
-`executor_terra.toml` is distributed as a template but is not currently
-enabled. The active list and limits come from `workflow_config.json` and are
-copied into the Heavy route's effective-configuration block.
+`executor_terra.toml` is distributed as a template and becomes active when it
+is selected as the default executor. The active list, selected executor, and
+limits come from `workflow_config.json` and are copied into the Heavy route's
+effective-configuration block.
 
 ### Context loading and work-package flow
 
@@ -408,7 +413,7 @@ User selects Heavy route
 Main agent loads project context and initializes read-only Explorer
         │
         ▼
-Main agent creates bounded package(s) for executor_luna or executor_sol
+Main agent creates bounded package(s) for the selected default executor or executor_sol
         │
         ▼
 Executor implements one coherent increment and self-validates
@@ -519,11 +524,12 @@ Primary resource:
 The resource currently contains:
 
 1. `default_executor`: currently `executor_luna`;
-2. `max_concurrent_workers`: currently `5`;
-3. `max_executor_sol_instances`: currently `1`;
-4. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
+2. `default_executor_reasoning_effort`: currently `xhigh`;
+3. `max_concurrent_workers`: currently `20`;
+4. `max_executor_sol_instances`: currently `1`;
+5. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
    `doc-writer`, and `explorer`;
-5. `report_package_size`: currently `250` words.
+6. `report_package_size`: currently `250` words.
 
 Related configuration surfaces are:
 
@@ -531,7 +537,7 @@ Related configuration surfaces are:
 - `~/.codex/config.toml`: workflow-owned Codex platform settings, merged into
   the user's existing configuration without replacing unrelated settings;
 - `~/.codex/codex_workflow/templates/agents/`: all distributed worker
-  templates, including disabled `executor_terra`.
+  templates, including the alternate `executor_terra`.
 
 `workflow_config.json` is the source of the workflow-level values. The route
 snapshot, active worker files, and platform settings are synchronized outputs;

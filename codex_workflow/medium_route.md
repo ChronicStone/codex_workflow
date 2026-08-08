@@ -11,6 +11,25 @@ deployment-session companion defined by
 
 Keep process proportional; simple tasks do not need the full workflow.
 
+## Stage Execution and Tool Batching
+Divide work into bounded stages such as context loading, targeted inspection, implementation, verification, and final review.
+
+At any stage, send focused investigation of peripheral, unfamiliar, or newly discovered context to the existing explorer thread. The assigned focus is a starting point, and the explorer may follow related read-only context when useful. Do not initialize another explorer. Foundational project documents, central implementation surfaces, and decision-critical evidence remain the main agent's direct responsibility.
+
+Before each stage, collect all independent, already-known, non-conflicting tool operations and apply the shared batching rules from AGENTS.md. Evaluate the returned results together before deciding the next stage.
+
+Typical Medium-route batches include:
+
+Reading several already-identified source, header, test, or configuration files.
+Searching several known symbols or call sites.
+Collecting independent repository metadata.
+Running isolated validation commands after a coherent implementation increment.
+Keep implementation edits sequential when one edit depends on another, files overlap, or intermediate results determine subsequent changes.
+
+Run validation concurrently only when commands do not share mutable build output, generated files, fixtures, databases, ports, devices, or other state. Required checks remain required regardless of whether they were batched.
+
+Do not manufacture stages or extra commands merely to create a batch. Small tasks may remain a single inspection, edit, and validation sequence.
+
 ## Execution
 
 - Work in bounded stages: context, inspection, implementation, verification,

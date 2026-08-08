@@ -5,9 +5,9 @@ Use after the Heavy route is selected under `AGENTS.md`.
 <!-- codex-workflow-effective-config-start -->
 ## Effective Workflow Configuration
 
-- Default worker: `executor_luna`.
+- Default executor: `executor_luna` (`xhigh` reasoning effort).
 - Enabled workers: `executor_luna`, `executor_sol`, `tester`, `doc-writer`, `explorer`.
-- Maximum concurrent child workers: `5`.
+- Maximum concurrent child workers: `20`.
 - Maximum `executor_sol` workers: `1`.
 - Maximum worker final-report package: `250` words.
 
@@ -17,18 +17,23 @@ Create only enabled workers and obey these limits.
 ## Main-Agent Role
 
 You are the main agent.
+Minimize main-agent token use while preserving decision quality, clear ownership,
+and reliable verification.
+
 The main agent owns:
 
 - Direction, scope, acceptance criteria, plan, and task IDs.
-- Package boundaries, dependencies, ownership, and worker coordination.
+- Package boundaries, dependencies, ownership, and strategic coordination.
 - Critical review, integration decisions, verification gates, and completion.
-- Git state, user communication, `agent_docs/project_progress.md`, and
-  `agent_docs/latest_session_work.md`.
+- Git state, user communication, and official status in
+  `agent_docs/project_progress.md` and `agent_docs/latest_session_work.md`.
 
-Review critical changes and integration boundaries; broaden review only for
-high risk, missing evidence, or conflicting results. Worker TOMLs own internal
-implementation, testing, batching, and reporting behavior. Do not repeat those
-instructions here or in task capsules.
+Read foundational context, critical interfaces, and decision-driving evidence.
+Delegate supporting context to Explorer and package-local discovery,
+implementation, self-check, and repair to workers. Broaden main-agent review
+only for high risk, missing evidence, or conflicting results. Worker TOMLs own
+internal implementation, testing, batching, and reporting behavior. Do not
+repeat those instructions here or in task capsules.
 
 Simple queries do not require delegation.
 
@@ -51,14 +56,18 @@ For durable or multi-session work, update
 Do not write status for short-lived work or after every checkpoint. Write
 `agent_docs/latest_session_work.md` only for a durable cross-session handoff or
 `end this session`; replace its content and never use it as scratch space. These
-two files remain main-agent owned.
+two files remain main-agent owned. Workers may prepare compact verified inputs
+or drafts; the main agent approves and writes the official state.
 
 ## Delegation
 
-Use the fewest workers needed. Split packages only across independent ownership
-and mutable resources.
+Delegate coherent, independently completable packages. Each package should be
+large enough for one worker to handle its local discovery, implementation,
+self-check, and focused repair. Run packages concurrently when their outcomes
+and ownership of mutable resources are independent. Do not fragment work merely
+to increase worker count or concurrency.
 
-- `executor_luna`: default production implementation.
+- Selected default executor (`executor_luna` or `executor_terra`): production implementation.
 - `executor_sol`: when enabled, reserve for core work requiring substantial
   mathematical or logical reasoning, or exceptionally difficult cross-cutting
   work that cannot be narrowed effectively.
@@ -74,19 +83,25 @@ Every initial worker capsule must use `fork_turns="none"`, normally stay within
 
 - Task ID/iteration and bounded outcome.
 - Ownership and expected edit surface.
-- Context grouped as documents, then source/tests/interfaces/call sites.
+- Relevant documents, source, interfaces, call sites, dependencies, and upstream
+  decisions.
 - Acceptance criteria and validation.
 - Protected areas and return format.
-- Optional short advice or suggestions from the main agent for this package.
+
+For the default executor, include main-agent guidance: a recommended approach,
+its rationale, and the most important invariant, integration risk, or likely
+pitfall. For `executor_sol`, provide decision context and constraints but no
+proposed solution; let it derive the approach independently.
 
 If work must expand, require evidence and proposed files, resolve overlap, then
 send a scoped follow-up. Follow-ups stay within 120 words and contain only task
 ID/iteration, changed scope or state, new evidence, affected criterion, useful
 updated advice, and next action. Do not resend unchanged context or old logs.
 
-Obey configured worker limits. Run workers concurrently only when ownership and
-mutable resources do not conflict; keep lifecycle and repair-loop operations
-sequential and evidence-driven.
+Expect one concise, evidence-backed completion report per package. Workers
+contact the main agent earlier only for scope expansion, ownership conflicts, or
+decision-blocking ambiguity. Obey configured worker limits. Keep cross-package
+lifecycle gates sequential and evidence-driven.
 
 ## Handoff and Verification
 
@@ -119,8 +134,8 @@ Rules:
   also fails, notify the user and take over transparently.
 - If a required role is unavailable, report it; do not silently take over the
   complete specialized workflow.
-- Wait about 60 seconds during active work. Avoid polling or filesystem checks
-  merely to detect worker activity.
+- Wait for worker lifecycle events. Do not poll workers, inspect the filesystem
+  merely to detect activity, or request routine progress reports.
 - Update the user only at meaningful transitions: assignment, handoff, verified
   defect, replacement/takeover, blocker, or completion.
 - Record material blockers with the failed step, evidence, suspected cause,
@@ -130,7 +145,8 @@ Rules:
 ## Usage and Session End
 
 At the end of each shift and in the final report, use a compact table with call
-counts for `executor_luna`, `executor_sol`, `tester`, and `doc-writer`; add
+counts for the selected default executor (`executor_luna` or `executor_terra`),
+`executor_sol`, `tester`, and `doc-writer`; add
 companion usage from `~/.codex/codex_workflow/explorer_companion.md`.
 
 When the user says the exact phrase `end this session`, ignoring capitalization

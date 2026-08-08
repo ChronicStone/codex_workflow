@@ -16,12 +16,12 @@ shared by Medium and Heavy routes.
    `agent_docs/project_diary.md` only for significant decisions or durable
    lessons.
 4. If meaningful files changed and the Explorer companion is available, ask it
-   for a compact read-only closure audit covering changed files and line totals,
-   diff errors, large or generated payloads, unexpected changed surfaces,
-   blockers or deferrals, and verification evidence invalidated by later
-   changes. It must not rerun tests or replace central correctness review. Keep
-   the brief within 150 words. If Explorer is unavailable, perform the necessary
-   checks directly and report the limitation.
+   for a compact read-only closure brief covering changed files and line totals,
+   diff errors, unexpected changed surfaces, blockers or deferrals, verification
+   evidence invalidated by later changes, and a handoff outline when the plan is
+   incomplete. It must not rerun tests or replace central correctness review.
+   Keep the brief within 200 words. If Explorer is unavailable, perform the
+   necessary checks directly and report the limitation.
 5. Determine the deployment-plan state before updating the two main-owned
    status files:
    - when the plan is complete, with no pending work, blockers, or next action,
