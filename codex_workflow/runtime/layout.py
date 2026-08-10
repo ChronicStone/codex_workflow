@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from ._toml import tomllib
 from .config import load_config, render_handoff_contract, render_heavy_route
 from .errors import ValidationError
 from .markers import USER_MANAGED, extract, validate_project_template
@@ -84,7 +84,9 @@ class PackageLayout:
                 "explorer_companion.md",
                 "end_of_session.md",
                 "install.md",
+                "bootstrap.md",
                 "update.md",
+                "check_update.md",
                 "remove.md",
                 "enable_auto_update.md",
                 "disable_auto_update.md",
@@ -94,6 +96,7 @@ class PackageLayout:
                 "enable.md",
                 "disable.md",
                 "runtime/__init__.py",
+                "runtime/_toml.py",
                 "runtime/backup.py",
                 "runtime/config.py",
                 "runtime/layout.py",
@@ -205,19 +208,40 @@ class ProjectPaths:
 
     @property
     def hidden_dir(self) -> Path:
+        return self.root / ".codex_workflow_hidden_resources"
+
+    @property
+    def legacy_hidden_dir(self) -> Path:
+        """Previous singular resource name retained for existing projects."""
         return self.root / ".codex_workflow_hidden_resource"
 
     @property
+    def workflow_dir(self) -> Path:
+        """Select the canonical resource directory, or an existing legacy one."""
+        if self.hidden_dir.exists() or not self.legacy_hidden_dir.exists():
+            return self.hidden_dir
+        return self.legacy_hidden_dir
+
+    @property
+    def source_dir(self) -> Path:
+        """Project-local package staging directory removed after installation."""
+        return self.root / "Codex_Workflow"
+
+    @property
+    def gitignore(self) -> Path:
+        return self.root / ".gitignore"
+
+    @property
     def disabled(self) -> Path:
-        return self.hidden_dir / ".AGENTS.md"
+        return self.workflow_dir / ".AGENTS.md"
 
     @property
     def personalization(self) -> Path:
-        return self.hidden_dir / "personalization.md"
+        return self.workflow_dir / "personalization.md"
 
     @property
     def state(self) -> Path:
-        return self.hidden_dir / PROJECT_STATE
+        return self.workflow_dir / PROJECT_STATE
 
     @property
     def docs(self) -> Path:

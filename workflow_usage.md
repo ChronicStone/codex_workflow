@@ -19,18 +19,20 @@ This guide is organized into five parts:
 Open Codex from the project directory and send this prompt:
 
 ```text
-Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/install.md` and follow it exactly.
+Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/bootstrap.md` and follow it exactly.
 ```
 
 The release package is a universal ZIP for Linux, macOS, and Windows. Its
 installation guide invokes the bundled lifecycle CLI, which owns validation,
 rendering, backups, project initialization, and rollback. After the first
 installation, start a new Codex session so the newly installed user
-instructions are loaded. Python 3.11 or newer is required.
+instructions are loaded. Python 3.10 or newer is required.
 
 The bootstrap installs the user-level workflow and the current project. It
 does not ask configuration or personalization questions. Those are explicit
-follow-up commands.
+follow-up commands. It also adds the workflow-owned project paths to
+`.gitignore` and removes a project-level `Codex_Workflow/` extraction directory
+once the installation transaction succeeds.
 
 ### Exact command prompts
 
@@ -39,7 +41,10 @@ validated filesystem operation directly.
 
 #### `codex_workflow --configure`
 
-Interactively change the persistent user-level workflow configuration:
+Interactively change the persistent user-level workflow configuration. The
+command displays a menu containing every setting below, with **Exit** at the
+bottom. Choose one setting at a time; after a change, the menu is displayed
+again until **Exit** is selected.
 
 - default executor (`executor_luna` or `executor_terra`);
 - default executor reasoning effort (`high`, `xhigh`, or `max`);
@@ -50,7 +55,7 @@ Interactively change the persistent user-level workflow configuration:
 
 The command shows the current values, builds a complete new JSON snapshot, and
 then synchronizes the Heavy route,
-End-of-Session spawn contract, active workflow worker TOMLs, and workflow-owned
+End-of-Session spawn contract, all workflow worker TOMLs, and workflow-owned
 Codex platform settings. It does not change project personalization or project
 documents.
 
@@ -71,9 +76,8 @@ worker configuration or the Project Documentation Framework.
 
 #### `codex_workflow --install`
 
-Install or enable the workflow in the current project after the user-level
-workflow has already been bootstrapped. It recognizes the active
-`AGENTS.md` or the disabled hidden entry point and:
+Install the workflow in the current project after the user-level workflow has
+already been bootstrapped:
 
 - creates or preserves the project `AGENTS.md` entry point;
 - imports a pre-existing project `AGENTS.md` into the dedicated project-local
@@ -82,10 +86,13 @@ workflow has already been bootstrapped. It recognizes the active
   templates;
 - initializes only newly created documentation with `doc-writer`;
 - creates the default hidden personalization resource when missing;
-- reuses the installed user-level configuration.
+- reuses the installed user-level configuration as a read-only source.
 
-It does not reinstall the user-level payload, reset existing project documents,
-or ask configuration and personalization questions.
+It does not reinstall or modify any user-level payload under `~/.codex/`, reset
+existing project documents, or ask configuration and personalization
+questions. If the workflow already has an active or disabled project entry
+point, the command makes no changes and instructs the user to run
+`codex_workflow --enable`.
 
 #### `codex_workflow --update`
 
@@ -100,6 +107,13 @@ from the incoming package. It preserves project personalization, project-local
 instructions, project documents, unrelated Codex settings, source backups, and
 the project's enabled or disabled state. It stops only on marker drift or
 legacy edits requiring a one-time reviewed migration.
+
+#### `codex_workflow --check-update`
+
+Run an explicit read-only release check. It always queries the available
+installable releases, regardless of the automatic-check setting, and reports
+every version newer than the installed one with a compact summary of each
+release's notes. It does not download or change files.
 
 #### `codex_workflow --remove`
 
@@ -130,7 +144,7 @@ compatibility alias.
 Disable the workflow for the current project by moving the active entry point:
 
 ```text
-AGENTS.md -> .codex_workflow_hidden_resource/.AGENTS.md
+AGENTS.md -> .codex_workflow_hidden_resources/.AGENTS.md
 ```
 
 The contents, personalization resource, project documents, and user-level
@@ -142,7 +156,7 @@ already disabled.
 Re-enable a disabled project by moving the entry point back:
 
 ```text
-.codex_workflow_hidden_resource/.AGENTS.md -> AGENTS.md
+.codex_workflow_hidden_resources/.AGENTS.md -> AGENTS.md
 ```
 
 This changes only the active/disabled entry-point state. It does not reread or
@@ -192,8 +206,9 @@ and the current project as follows:
 ~/.codex/
 ├── AGENTS.md                              # user-level command interface
 ├── config.toml                            # existing Codex config; only workflow-owned keys are managed
-├── agents/                                # active workflow worker TOMLs
+├── agents/                                # all distributed workflow worker TOMLs
 │   ├── executor_luna.toml
+│   ├── executor_terra.toml
 │   ├── executor_sol.toml
 │   ├── tester.toml
 │   ├── doc-writer.toml
@@ -213,8 +228,10 @@ and the current project as follows:
     ├── medium_route.md                     # Medium-route rules
     ├── explorer_companion.md               # read-only Explorer lifecycle and boundaries
     ├── end_of_session.md                   # shared handoff spawn contract
-    ├── install.md                          # installation procedure
+    ├── bootstrap.md                        # initial user/project bootstrap procedure
+    ├── install.md                          # project-only installation procedure
     ├── update.md                           # Release-based update procedure
+    ├── check_update.md                     # explicit read-only release check
     ├── remove.md                            # two-phase removal procedure
     ├── enable_auto_update.md               # enable automatic session check
     ├── disable_auto_update.md              # disable automatic session check
@@ -232,6 +249,7 @@ and the current project as follows:
 
 <project>/
 ├── AGENTS.md                               # active project workflow entry point
+├── .gitignore                               # workflow-owned project paths are ignored
 ├── agent_docs/
 │   ├── project_overview.md
 │   ├── project_core_tech.md
@@ -239,7 +257,7 @@ and the current project as follows:
 │   ├── project_progress.md
 │   ├── project_diary.md
 │   └── latest_session_work.md
-└── .codex_workflow_hidden_resource/
+└── .codex_workflow_hidden_resources/
     ├── personalization.md                  # project-scoped private resource
     ├── state.json                          # project entry-format and activation state
     └── .AGENTS.md                          # disabled entry point; mutually exclusive with root AGENTS.md
@@ -319,7 +337,7 @@ The configuration contract is:
 9. keep `max_executor_sol_instances` between zero and the concurrency limit.
 
 Do not edit generated surfaces directly. `codex_workflow --configure`
-synchronizes the Heavy snapshot, handoff contract, active worker TOMLs, and
+synchronizes the Heavy snapshot, handoff contract, all worker TOMLs, and
 workflow-owned `config.toml` keys.
 
 The concurrency values must stay synchronized: the confirmed
@@ -333,7 +351,9 @@ so the updated settings are loaded.
 
 ### Tuning an individual worker
 
-Active workers live in `~/.codex/agents/` and are generated from templates.
+All distributed workers live in `~/.codex/agents/` and are generated from
+templates. The `enabled_workers` configuration controls which materialized
+workers the workflow may create and use.
 Advanced changes belong in the owned template before reconfiguration. For
 example, a template may add:
 
@@ -343,7 +363,7 @@ service_tier = "fast"
 
 to an installed worker whose service supports that setting. Keep the role's
 scope, reporting contract, and safety boundaries intact. Do not edit unrelated
-worker files or replace an active worker with a repository-only file.
+worker files or replace a materialized worker with a repository-only file.
 
 To add a custom worker, ask Codex to create a worker template consistent with
 the existing role files, place the template under the workflow template area,
@@ -357,7 +377,7 @@ understood.
 The private source resource is:
 
 ```text
-.codex_workflow_hidden_resource/personalization.md
+.codex_workflow_hidden_resources/personalization.md
 ```
 
 It contains the confirmed Frontend Project Profile, Design Principles, and
@@ -417,9 +437,10 @@ The current enabled set is:
 | Explorer companion | Read-only context gathering and session-long supplementary research | No |
 | `end_of_session` | Complete Medium/Heavy handoff, status documents, and Git closure | Documentation and Git state during an invoked handoff |
 
-`executor_terra.toml` is distributed as a template and becomes active when it
-is selected as the default executor. The active list, selected executor, and
-limits come from `workflow_config.json` and are copied into the Heavy route's
+`executor_terra.toml` is materialized alongside the other worker definitions;
+it becomes the selected default executor only when configured as such. The
+enabled list, selected executor, and limits come from `workflow_config.json`
+and are copied into the Heavy route's
 effective-configuration block.
 
 ### Context loading and work-package flow
@@ -517,7 +538,7 @@ waits and relays the result.
 The original design grouped the system into five logical blocks across two
 geographical levels. That model remains useful, but some paths need a precise
 distinction: `agent_docs/` is project documentation, while personalization is
-private under `.codex_workflow_hidden_resource/`; worker TOMLs are active
+private under `.codex_workflow_hidden_resources/`; worker TOMLs are materialized
 runtime definitions, while `workflow_config.json` is their persistent
 configuration source.
 
@@ -527,9 +548,10 @@ The five blocks are:
 
 Location: `~/.codex/`
 
-- `~/.codex/agents/` contains active worker TOMLs. The current active set is
-  `executor_luna`, `executor_sol`, `tester`, `doc-writer`, `explorer`, and
-  `end_of_session`.
+- `~/.codex/agents/` contains all distributed worker TOMLs. The current
+  enabled set is `executor_luna`, `executor_sol`, `tester`, `doc-writer`,
+  `explorer`, and `end_of_session`; `executor_terra` remains available as the
+  alternate default executor.
 - `~/.codex/codex_workflow/heavy_route.md` defines Heavy orchestration,
   delegation, limits, repair loops, and ownership.
 - `~/.codex/codex_workflow/medium_route.md` defines main-agent execution with
@@ -549,7 +571,7 @@ Location: the current project directory
 - `AGENTS.md` is the active project entry point and contains the workflow
   instructions materialized for this project.
 - `agent_docs/` contains the six-document Project Documentation Framework.
-- `.codex_workflow_hidden_resource/.AGENTS.md` is the same entry point in its
+- `.codex_workflow_hidden_resources/.AGENTS.md` is the same entry point in its
   disabled state and must not coexist with root `AGENTS.md`.
 
 This block connects the shared runtime to one project. Its project documents
@@ -579,14 +601,14 @@ Related configuration surfaces are:
 
 - `~/.codex/codex_workflow/resources/workflow_config.default.json`: immutable
   package defaults and migration fallback;
-- `~/.codex/agents/*.toml`: materialized active worker definitions;
+- `~/.codex/agents/*.toml`: materialized definitions for all distributed workers;
 - `~/.codex/config.toml`: workflow-owned Codex platform settings, merged into
   the user's existing configuration without replacing unrelated settings;
 - `~/.codex/codex_workflow/templates/agents/`: all distributed worker
   templates, including the alternate `executor_terra`.
 
 `workflow_config.json` is the source of the workflow-level values. The route
-snapshot, active worker files, and platform settings are synchronized outputs;
+snapshot, worker files, and platform settings are synchronized outputs;
 they must not silently disagree with it.
 
 ### 4. Personalization — project level
@@ -594,7 +616,7 @@ they must not silently disagree with it.
 Private resource:
 
 ```text
-.codex_workflow_hidden_resource/personalization.md
+.codex_workflow_hidden_resources/personalization.md
 ```
 
 It contains the confirmed project-scoped decisions:
@@ -618,8 +640,9 @@ Location: `~/.codex/codex_workflow/`
   `--install`, `--update`, `--remove`, `--enable_auto_update`,
   `--disable_auto_update`, `--configure`, `--personal`, `--disable`, and
   `--enable`.
-- `install.md`, `configuration_guide.md`, and `personalization_guide.md`
-  describe bootstrap, configuration, and personalization.
+- `bootstrap.md`, `install.md`, `configuration_guide.md`, and
+  `personalization_guide.md` describe initial bootstrap, project installation,
+  configuration, and personalization.
 - `update.md`, `disable.md`, and `enable.md` describe update and activation
   lifecycle operations.
 - `remove.md` describes the destructive two-phase removal procedure.
@@ -634,7 +657,7 @@ Location: `~/.codex/codex_workflow/`
 
 This block is the command and lifecycle control plane. Guides define intent and
 the runtime performs deterministic mutations. It is not project context or the
-active worker execution layer.
+worker execution layer.
 
 These five blocks are logical ownership boundaries, not five disjoint
 directories. For example, `~/.codex/codex_workflow/` hosts routes, guidance,

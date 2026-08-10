@@ -10,14 +10,14 @@ A workflow designed to drastically reduce overall token usage, support seamless 
 
 ## 1. Quick installation ⚙️
 
-Requires Python 3.11 or newer for deterministic lifecycle operations.
+Requires Python 3.10 or newer for deterministic lifecycle operations.
 
 ### Open Codex CLI / Codex app from your project directory 
 
 ▶️ Send:
 
 ```text
-Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/install.md` and follow it to complete the installation.
+Download and extract the latest GitHub Release from https://github.com/viettran-edgeAI/codex_workflow/releases. Then read the bundled `codex_workflow/bootstrap.md` and follow it to complete the initial installation.
 ```
 > ⭐ Recommended: use 5.6 Luna xhigh for installation. 
 
@@ -26,6 +26,9 @@ Download and extract the latest GitHub Release from https://github.com/viettran-
 New sessions do not check for a newer workflow release by default. To enable
 the check, send `codex_workflow --enable_auto_update`. To disable it again,
 send `codex_workflow --disable_auto_update`.
+
+To explicitly check for available releases and see release-note summaries,
+send `codex_workflow --check-update`.
 
 To remove the workflow, send `codex_workflow --remove`. It first shows a
 destructive dry-run summary and requires a second explicit confirmation.

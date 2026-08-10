@@ -72,9 +72,11 @@ class ReleaseSelection:
     zip_name: str
     zip_url: str
     checksums_url: str
+    release_notes: str = ""
+    release_url: str = ""
 
 
-def select_latest(timeout: int = 30) -> ReleaseSelection:
+def select_releases(timeout: int = 30) -> list[ReleaseSelection]:
     records = _read_json_url(RELEASES_URL, timeout)
     if not isinstance(records, list):
         raise ValidationError("GitHub Releases response is not a list")
@@ -87,10 +89,13 @@ def select_latest(timeout: int = 30) -> ReleaseSelection:
         except ValidationError:
             continue
         version_text = str(record["tag_name"]).removeprefix("v")
+        raw_assets = record.get("assets", [])
+        if not isinstance(raw_assets, list):
+            continue
         assets = {
             asset.get("name"): asset.get("browser_download_url")
-            for asset in record.get("assets", [])
-            if isinstance(asset, dict)
+            for asset in raw_assets
+            if isinstance(asset, dict) and isinstance(asset.get("name"), str)
         }
         zip_name = f"codex_workflow-{version_text}.zip"
         if zip_name in assets and "SHA256SUMS" in assets:
@@ -101,11 +106,51 @@ def select_latest(timeout: int = 30) -> ReleaseSelection:
                     zip_name,
                     str(assets[zip_name]),
                     str(assets["SHA256SUMS"]),
+                    record.get("body") if isinstance(record.get("body"), str) else "",
+                    record.get("html_url")
+                    if isinstance(record.get("html_url"), str)
+                    else "",
                 )
             )
     if not candidates:
         raise ValidationError("no release has both the universal ZIP and SHA256SUMS")
-    return max(candidates, key=lambda item: item.version)
+    return sorted(candidates, key=lambda item: item.version, reverse=True)
+
+
+def select_latest(timeout: int = 30) -> ReleaseSelection:
+    return select_releases(timeout)[0]
+
+
+def summarize_release_notes(text: str, *, max_length: int = 600) -> str:
+    """Render a compact plain-text summary from a GitHub release body."""
+
+    fragments: list[str] = []
+    in_code_block = False
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block or not line or line.startswith("<!--"):
+            continue
+        line = re.sub(r"^#{1,6}\s*", "", line)
+        line = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+)", "", line)
+        line = re.sub(r"\[([^]]+)\]\([^)]*\)", r"\1", line)
+        line = re.sub(r"`([^`]+)`", r"\1", line)
+        if line:
+            fragments.append(line)
+
+    summary = " ".join(fragments).strip()
+    if not summary:
+        return "No release notes were provided."
+    if len(summary) <= max_length:
+        return summary
+    if max_length <= 1:
+        return "…"[:max_length]
+    truncated = summary[: max_length - 1].rstrip()
+    if " " in truncated:
+        truncated = truncated.rsplit(" ", 1)[0].rstrip()
+    return f"{truncated}…"
 
 
 def acquire(selection: ReleaseSelection, timeout: int = 60) -> tuple[tempfile.TemporaryDirectory[str], Path]:

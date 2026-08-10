@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import shutil
 import subprocess
 import tempfile
@@ -18,6 +20,8 @@ PACKAGE_VERSION = (PACKAGE / "VERSION").read_text(encoding="utf-8").strip()
 import sys
 
 sys.path.insert(0, str(PACKAGE))
+
+import workflow as workflow_cli
 
 from runtime.config import (
     WorkflowConfig,
@@ -50,6 +54,12 @@ from runtime.markers import (
 )
 from runtime.migrations import migrate_config_resource
 from runtime.plan import read_string_list, resolve_owned_runtime_path
+from runtime.release import (
+    ReleaseSelection,
+    parse_semver,
+    select_releases,
+    summarize_release_notes,
+)
 from runtime.transaction import Mutation, apply
 
 
@@ -57,11 +67,11 @@ class MarkerTests(unittest.TestCase):
     def test_user_command_contract_uses_automatic_check_opt_out(self) -> None:
         instructions = (PACKAGE / "user_AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("auto-check-update --json", instructions)
+        self.assertIn("codex_workflow --check-update", instructions)
         self.assertIn("codex_workflow --enable_auto_update", instructions)
         self.assertIn("codex_workflow --disable_auto_update", instructions)
         self.assertIn("codex_workflow --disable_auto_check_update", instructions)
         self.assertIn("codex_workflow --remove", instructions)
-        self.assertNotIn("codex_workflow --check-update", instructions)
 
     def test_template_renders_independent_project_regions(self) -> None:
         template = (PACKAGE / "AGENTS.md").read_text(encoding="utf-8")
@@ -114,7 +124,7 @@ class MarkerTests(unittest.TestCase):
         self.assertNotIn("--apply", completed.stdout)
 
     def test_explicit_auto_update_commands_are_available(self) -> None:
-        for command in ("enable-auto-update", "disable-auto-update"):
+        for command in ("enable-auto-update", "disable-auto-update", "check-update"):
             completed = subprocess.run(
                 [sys.executable, "-B", str(PACKAGE / "workflow.py"), command, "--help"],
                 check=False,
@@ -252,6 +262,81 @@ class ConfigTests(unittest.TestCase):
         self.assertIn('fork_turns="200"', handoff)
 
 
+class ReleaseTests(unittest.TestCase):
+    def test_check_update_reports_new_release_notes_without_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            home = Path(temporary) / "codex-home"
+            runtime = home / "codex_workflow"
+            runtime.mkdir(parents=True)
+            (runtime / "VERSION").write_text("1.1.1\n", encoding="utf-8")
+            release = ReleaseSelection(
+                "1.2.0",
+                parse_semver("1.2.0"),
+                "codex_workflow-1.2.0.zip",
+                "https://example/1.2.0.zip",
+                "https://example/SHA256SUMS",
+                "## Changes\n- Add release-note summaries.",
+                "https://example/releases/1.2.0",
+            )
+            output = io.StringIO()
+            argv = ["workflow.py", "check-update", "--codex-home", str(home), "--json"]
+            with (
+                mock.patch.object(workflow_cli, "select_releases", return_value=[release]),
+                mock.patch.object(sys, "argv", argv),
+                contextlib.redirect_stdout(output),
+            ):
+                self.assertEqual(workflow_cli.main(), 0)
+            summary = json.loads(output.getvalue())
+            self.assertEqual(summary["status"], "update available")
+            self.assertEqual(summary["updates"][0]["version"], "1.2.0")
+            self.assertIn("release-note summaries", summary["summary"])
+            self.assertEqual((runtime / "VERSION").read_text(), "1.1.1\n")
+
+    def test_select_releases_keeps_installable_versions_and_notes(self) -> None:
+        records = [
+            {
+                "tag_name": "v1.3.0",
+                "draft": False,
+                "body": "## Changes\n- Add explicit update summaries.",
+                "html_url": "https://github.com/example/releases/1.3.0",
+                "assets": [
+                    {
+                        "name": "codex_workflow-1.3.0.zip",
+                        "browser_download_url": "https://example/1.3.0.zip",
+                    },
+                    {"name": "SHA256SUMS", "browser_download_url": "https://example/sums"},
+                ],
+            },
+            {
+                "tag_name": "v1.2.0",
+                "draft": False,
+                "body": "- Older change",
+                "assets": [
+                    {
+                        "name": "codex_workflow-1.2.0.zip",
+                        "browser_download_url": "https://example/1.2.0.zip",
+                    },
+                    {"name": "SHA256SUMS", "browser_download_url": "https://example/sums"},
+                ],
+            },
+            {"tag_name": "v1.4.0", "draft": True, "assets": []},
+        ]
+        with mock.patch("runtime.release._read_json_url", return_value=records):
+            releases = select_releases()
+        self.assertEqual([release.version_text for release in releases], ["1.3.0", "1.2.0"])
+        self.assertIn("explicit update summaries", releases[0].release_notes)
+
+    def test_release_note_summary_strips_markdown_and_limits_length(self) -> None:
+        summary = summarize_release_notes(
+            "## Changes\n- `check-update` now reports [notes](https://example)."
+        )
+        self.assertEqual(summary, "Changes check-update now reports notes.")
+        self.assertEqual(
+            summarize_release_notes("", max_length=10),
+            "No release notes were provided.",
+        )
+
+
 class TransactionTests(unittest.TestCase):
     def test_failed_transaction_restores_all_targets(self) -> None:
         from runtime import transaction
@@ -328,11 +413,50 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertTrue((self.runtime.runtime / "workflow.py").is_file())
         self.assertTrue((self.runtime.runtime / "templates" / "AGENTS.md").is_file())
         self.assertTrue((self.runtime.agents / "executor_luna.toml").is_file())
+        self.assertTrue((self.runtime.agents / "executor_terra.toml").is_file())
         self.assertTrue((self.runtime.agents / "end_of_session.toml").is_file())
         self.assertIn(
             "max_concurrent_threads_per_session = 20",
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
+
+    def test_bootstrap_cleans_project_staging_and_updates_gitignore(self) -> None:
+        staging = self.project_root / "Codex_Workflow"
+        (staging / "nested").mkdir(parents=True)
+        (staging / "nested" / "package.txt").write_text("staged", encoding="utf-8")
+        (self.project_root / ".gitignore").write_text("# local rules\n", encoding="utf-8")
+
+        self.bootstrap()
+
+        self.assertFalse(staging.exists())
+        gitignore = (self.project_root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("# local rules\n", gitignore)
+        for entry in (
+            "agent_docs/",
+            ".codex_workflow_hidden_resources/",
+            "AGENTS.md",
+        ):
+            self.assertEqual(gitignore.splitlines().count(entry), 1)
+
+        # A repeated project install is idempotent and does not duplicate rules.
+        plan_project_install(self.package, self.project).apply()
+        repeated = (self.project_root / ".gitignore").read_text(encoding="utf-8")
+        for entry in (
+            "agent_docs/",
+            ".codex_workflow_hidden_resources/",
+            "AGENTS.md",
+        ):
+            self.assertEqual(repeated.splitlines().count(entry), 1)
+
+    def test_unactivated_workers_are_materialized_for_codex(self) -> None:
+        self.bootstrap()
+        for worker in self.package.worker_names:
+            self.assertTrue((self.runtime.agents / f"{worker}.toml").is_file())
+            self.assertTrue(
+                (self.runtime.runtime / "templates" / "agents" / f"{worker}.toml").is_file()
+            )
+        state = json.loads((self.runtime.runtime / "install_state.json").read_text())
+        self.assertEqual(set(state["owned_workers"]), self.package.worker_names)
 
     def test_configure_switches_default_executor_without_touching_local_region(self) -> None:
         self.bootstrap(existing_agents="Local policy.\n")
@@ -356,10 +480,21 @@ class LifecycleIntegrationTests(unittest.TestCase):
             'fork_turns="150"',
             (self.runtime.runtime / "end_of_session.md").read_text(encoding="utf-8"),
         )
-        self.assertFalse((self.runtime.agents / "executor_luna.toml").exists())
+        self.assertTrue((self.runtime.agents / "executor_luna.toml").is_file())
         terra = (self.runtime.agents / "executor_terra.toml").read_text(encoding="utf-8")
         self.assertIn('model_reasoning_effort = "max"', terra)
         self.assertEqual(extract(self.project.active.read_text(), PROJECT_LOCAL), "Local policy.")
+
+    def test_configure_keeps_unactivated_worker_definitions_materialized(self) -> None:
+        self.bootstrap()
+        current = json.loads(
+            (self.runtime.runtime / "workflow_config.json").read_text(encoding="utf-8")
+        )
+        current["enabled_workers"].remove("explorer")
+        plan_configure(self.runtime, {"enabled_workers": current["enabled_workers"]}).apply()
+        self.assertTrue((self.runtime.agents / "explorer.toml").is_file())
+        state = json.loads((self.runtime.runtime / "install_state.json").read_text())
+        self.assertIn("explorer", state["owned_workers"])
 
     def test_personalize_and_enable_disable_preserve_regions(self) -> None:
         self.bootstrap(existing_agents="Local policy.\n")

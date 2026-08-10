@@ -20,6 +20,76 @@ from .plan import OperationPlan, json_mutation, read_json, text_mutation
 from .transaction import Mutation
 
 
+GITIGNORE_ENTRIES = (
+    "agent_docs/",
+    ".codex_workflow_hidden_resources/",
+    "AGENTS.md",
+)
+
+
+def _plan_gitignore(project: ProjectPaths) -> Mutation | None:
+    """Add the project files owned by the workflow to ``.gitignore``.
+
+    Existing entries and unrelated rules are preserved verbatim. Matching is
+    done on stripped, non-comment lines so a repeated install remains a
+    no-op even when the file uses blank lines or indentation around rules.
+    """
+
+    path = project.gitignore
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        raise ValidationError(
+            f"project .gitignore path is not a regular file: {path}"
+        )
+
+    current = path.read_text(encoding="utf-8") if path.is_file() else ""
+    existing = {
+        line.strip()
+        for line in current.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    missing = [entry for entry in GITIGNORE_ENTRIES if entry not in existing]
+    if not missing:
+        return None
+
+    rendered = current
+    if rendered and not rendered.endswith(("\n", "\r")):
+        rendered += "\n"
+    rendered += "\n".join(missing) + "\n"
+    return text_mutation(path, rendered)
+
+
+def _plan_source_cleanup(project: ProjectPaths) -> tuple[list[Mutation], list[Path]]:
+    """Delete the extracted project-level ``Codex_Workflow`` staging tree."""
+
+    source = project.source_dir
+    if source.is_symlink():
+        raise ValidationError(
+            f"refusing to remove symlinked package staging directory: {source}"
+        )
+    if not source.exists():
+        return [], []
+    if not source.is_dir():
+        raise ValidationError(f"project package staging path is not a directory: {source}")
+
+    mutations: list[Mutation] = []
+    cleanup_dirs: list[Path] = []
+    for path in sorted(source.rglob("*")):
+        if path.is_symlink():
+            raise ValidationError(
+                f"refusing to remove symlink in package staging directory: {path}"
+            )
+        if path.is_dir():
+            cleanup_dirs.append(path)
+        elif path.is_file():
+            mutations.append(Mutation(path, None))
+        elif path.exists():
+            raise ValidationError(
+                f"package staging directory contains a non-file entry: {path}"
+            )
+    cleanup_dirs.append(source)
+    return mutations, cleanup_dirs
+
+
 def plan_project_install(package: PackageLayout, project: ProjectPaths) -> OperationPlan:
     active_exists = project.active.exists()
     disabled_exists = project.disabled.exists()
@@ -89,6 +159,13 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
         "enabled": enabled,
     }
     mutations.append(json_mutation(project.state, project_state))
+    gitignore_mutation = _plan_gitignore(project)
+    if gitignore_mutation is not None:
+        mutations.append(gitignore_mutation)
+    cleanup_mutations, cleanup_dirs = _plan_source_cleanup(project)
+    mutations.extend(cleanup_mutations)
+    if cleanup_mutations:
+        warnings.append(f"{project.source_dir} will be deleted after installation")
     actions = []
     if created_docs:
         actions.append(
@@ -98,7 +175,13 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
                 "files": created_docs,
             }
         )
-    return OperationPlan("project-install", mutations, warnings, actions)
+    return OperationPlan(
+        "project-install",
+        mutations,
+        warnings,
+        actions,
+        cleanup_dirs=cleanup_dirs,
+    )
 
 
 def plan_personalize(project: ProjectPaths, resource_text: str) -> OperationPlan:
@@ -214,6 +297,9 @@ def plan_project_update(
         "enabled": not disabled_exists,
     }
     mutations.append(json_mutation(project.state, state))
+    gitignore_mutation = _plan_gitignore(project)
+    if gitignore_mutation is not None:
+        mutations.append(gitignore_mutation)
     return mutations, []
 
 
@@ -244,10 +330,11 @@ def plan_project_remove(
         mutations.append(Mutation(entry, None))
         warnings.append(f"{entry} will be permanently deleted")
 
-    if project.hidden_dir.is_symlink() or (
-        project.hidden_dir.exists() and not project.hidden_dir.is_dir()
+    hidden_dir = project.workflow_dir
+    if hidden_dir.is_symlink() or (
+        hidden_dir.exists() and not hidden_dir.is_dir()
     ):
-        raise ValidationError(f"project hidden resource is not a directory: {project.hidden_dir}")
+        raise ValidationError(f"project hidden resource is not a directory: {hidden_dir}")
 
     for path in (project.personalization, project.state):
         if path.is_symlink() or (path.exists() and not path.is_file()):
@@ -256,15 +343,15 @@ def plan_project_remove(
             mutations.append(Mutation(path, None))
 
     cleanup_dirs: list[Path] = []
-    if project.hidden_dir.is_dir():
-        for path in sorted(project.hidden_dir.rglob("*")):
+    if hidden_dir.is_dir():
+        for path in sorted(hidden_dir.rglob("*")):
             if path.is_symlink():
                 raise ValidationError(f"refusing to remove symlink in project resource: {path}")
             if path.is_dir():
                 cleanup_dirs.append(path)
             elif path.exists() and not path.is_file():
                 raise ValidationError(f"project resource contains a non-file entry: {path}")
-        cleanup_dirs.append(project.hidden_dir)
+        cleanup_dirs.append(hidden_dir)
 
     return mutations, cleanup_dirs, warnings
 

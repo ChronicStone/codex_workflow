@@ -21,6 +21,7 @@ codex_workflow/
 ├── VERSION
 ├── user_AGENTS.md
 ├── AGENTS.md
+├── bootstrap.md
 ├── install.md
 ├── update.md
 ├── remove.md
@@ -114,9 +115,11 @@ same tagged commit.
 
 ## Consumer commands
 
-- `codex_workflow --install` reads the extracted release package's
-  `codex_workflow/install.md`; the bundled lifecycle CLI validates and applies
-  the installation transaction directly.
+- Initial installation reads the extracted release package's
+  `codex_workflow/bootstrap.md`; the bundled lifecycle CLI validates and
+  applies the user-level bootstrap transaction directly.
+- `codex_workflow --install` reads the installed `install.md` and creates only
+  project-level workflow assets from the existing bootstrap.
 - At session start, the installed runtime checks GitHub Releases once when
   `auto_check_update` is enabled and reports an available update.
 - `codex_workflow --enable_auto_update` explicitly enables that check in

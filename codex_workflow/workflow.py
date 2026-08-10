@@ -18,6 +18,7 @@ from pathlib import Path
 
 from runtime.config import load_config
 from runtime.errors import WorkflowError
+from runtime.layout import PROJECT_ID
 from runtime.lifecycle import (
     OperationPlan,
     PackageLayout,
@@ -32,7 +33,13 @@ from runtime.lifecycle import (
     plan_remove,
     plan_update,
 )
-from runtime.release import acquire, parse_semver, select_latest
+from runtime.release import (
+    acquire,
+    parse_semver,
+    select_latest,
+    select_releases,
+    summarize_release_notes,
+)
 
 
 def _default_codex_home() -> Path:
@@ -54,7 +61,15 @@ def parse_args() -> argparse.Namespace:
 
     install = commands.add_parser("install")
     _add_common(install)
-    install.add_argument("--package-root", type=Path, default=Path(__file__).resolve().parent)
+    # Retained for callers that have an extracted package available. This is
+    # a read-only project-install source; install never bootstraps user files.
+    install.add_argument("--package-root", type=Path, help=argparse.SUPPRESS)
+
+    bootstrap = commands.add_parser("bootstrap", help=argparse.SUPPRESS)
+    _add_common(bootstrap)
+    bootstrap.add_argument(
+        "--package-root", type=Path, default=Path(__file__).resolve().parent
+    )
 
     update = commands.add_parser("update")
     _add_common(update)
@@ -73,6 +88,9 @@ def parse_args() -> argparse.Namespace:
 
     auto_check = commands.add_parser("auto-check-update")
     _add_common(auto_check, project=False)
+
+    check_update = commands.add_parser("check-update")
+    _add_common(check_update, project=False)
 
     enable_auto_update = commands.add_parser("enable-auto-update")
     _add_common(enable_auto_update, project=False)
@@ -131,6 +149,15 @@ def _finish(plan: OperationPlan, args: argparse.Namespace) -> int:
     plan.apply()
     _emit(summary, compact=args.json)
     return 0
+
+
+def _project_workflow_entry(project: ProjectPaths) -> Path | None:
+    """Return an existing recognized active or disabled project entry point."""
+
+    for path in (project.active, project.disabled):
+        if path.is_file() and PROJECT_ID in path.read_text(encoding="utf-8"):
+            return path
+    return None
 
 
 def _delegate_update(incoming: PackageLayout, args: argparse.Namespace) -> int:
@@ -203,6 +230,45 @@ def main() -> int:
                 compact=args.json,
             )
             return 0
+        if args.command == "check-update":
+            installed_text = (runtime.runtime / "VERSION").read_text(encoding="utf-8").strip()
+            installed = parse_semver(installed_text)
+            releases = select_releases()
+            newer = [release for release in releases if release.version > installed]
+            latest = releases[0]
+            updates = [
+                {
+                    "version": release.version_text,
+                    "asset": release.zip_name,
+                    "release_url": release.release_url,
+                    "release_notes": release.release_notes,
+                    "summary": summarize_release_notes(release.release_notes),
+                }
+                for release in newer
+            ]
+            if newer:
+                status = "update available"
+                summary = "\n".join(
+                    f"{item['version']}: {item['summary']}" for item in updates
+                )
+            elif latest.version == installed:
+                status = "current"
+                summary = "The installed workflow is current."
+            else:
+                status = "installed newer"
+                summary = "The installed workflow is newer than the latest release."
+            _emit(
+                {
+                    "status": status,
+                    "installed": installed_text,
+                    "available": latest.version_text,
+                    "asset": latest.zip_name,
+                    "summary": summary,
+                    "updates": updates,
+                },
+                compact=args.json,
+            )
+            return 0
         if args.command == "remove":
             assert project is not None
             plan = plan_remove(runtime, project)
@@ -225,13 +291,32 @@ def main() -> int:
                 ),
                 args,
             )
-        if args.command == "install":
+        if args.command == "bootstrap":
             assert project is not None
-            if (runtime.runtime / "VERSION").is_file():
-                package = PackageLayout.resolve(runtime.runtime)
-                return _finish(plan_project_install(package, project), args)
             package = PackageLayout.resolve(args.package_root)
             return _finish(plan_bootstrap(package, runtime, project), args)
+        if args.command == "install":
+            assert project is not None
+            if _project_workflow_entry(project) is not None:
+                _emit(
+                    {
+                        "applied": False,
+                        "status": "already installed",
+                        "instruction": "Run `codex_workflow --enable` to reactivate it.",
+                    },
+                    compact=args.json,
+                )
+                return 0
+            if (runtime.runtime / "VERSION").is_file():
+                package = PackageLayout.resolve(runtime.runtime)
+            elif args.package_root is not None:
+                package = PackageLayout.resolve(args.package_root)
+            else:
+                raise WorkflowError(
+                    "the user-level workflow bootstrap is not installed; "
+                    "complete the initial bootstrap before installing a project"
+                )
+            return _finish(plan_project_install(package, project), args)
         if args.command == "update":
             assert project is not None
             if args.source:

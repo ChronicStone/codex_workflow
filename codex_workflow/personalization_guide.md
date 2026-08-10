@@ -6,10 +6,10 @@ Run this procedure only when the user's trimmed message is exactly:
 
 The persistent resource is:
 
-    .codex_workflow_hidden_resource/personalization.md
+    .codex_workflow_hidden_resources/personalization.md
 
 The lifecycle CLI applies a validated resource directly and requires Python
-3.11 or newer:
+3.10 or newer:
 
     ~/.codex/codex_workflow/workflow.py
 

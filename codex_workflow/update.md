@@ -4,7 +4,7 @@ Supported command forms:
 
     codex_workflow --update
 
-Python 3.11 or newer is required. The lifecycle CLI applies a validated update
+Python 3.10 or newer is required. The lifecycle CLI applies a validated update
 directly.
 
 ## Source

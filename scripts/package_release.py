@@ -274,8 +274,10 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
     required = {
         f"{PACKAGE_DIR_NAME}/{VERSION_FILE}",
         f"{PACKAGE_DIR_NAME}/{USER_AGENTS_FILE}",
+        f"{PACKAGE_DIR_NAME}/bootstrap.md",
         f"{PACKAGE_DIR_NAME}/install.md",
         f"{PACKAGE_DIR_NAME}/update.md",
+        f"{PACKAGE_DIR_NAME}/check_update.md",
         f"{PACKAGE_DIR_NAME}/remove.md",
         f"{PACKAGE_DIR_NAME}/enable_auto_update.md",
         f"{PACKAGE_DIR_NAME}/disable_auto_update.md",
@@ -284,6 +286,7 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
         f"{PACKAGE_DIR_NAME}/agents/end_of_session.toml",
         f"{PACKAGE_DIR_NAME}/workflow.py",
         f"{PACKAGE_DIR_NAME}/runtime/__init__.py",
+        f"{PACKAGE_DIR_NAME}/runtime/_toml.py",
         f"{PACKAGE_DIR_NAME}/runtime/backup.py",
         f"{PACKAGE_DIR_NAME}/runtime/config.py",
         f"{PACKAGE_DIR_NAME}/runtime/errors.py",

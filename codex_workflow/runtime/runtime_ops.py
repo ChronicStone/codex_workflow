@@ -57,7 +57,7 @@ def plan_runtime_files(
     template_targets = [(package.project_template, runtime.runtime / "templates" / "AGENTS.md")]
     template_targets.extend(
         (source, runtime.runtime / "templates" / "agents" / source.name)
-        for source in package.agent_templates.glob("*.toml")
+        for source in sorted(package.agent_templates.glob("*.toml"))
     )
     template_targets.extend(
         (source, runtime.runtime / "templates" / "project_docs" / source.name)
@@ -122,13 +122,16 @@ def plan_materialized_config(
     ]
     current_state = read_json(runtime.runtime / USER_STATE, default={})
     previous_owned = set(read_string_list(current_state, "owned_workers"))
-    for worker in config.enabled_workers:
+    workers = {
+        path.stem for path in templates.glob("*.toml") if path.is_file()
+    }
+    for worker in sorted(workers):
         source = templates / f"{worker}.toml"
         rendered = render_worker_template(
             source.read_text(encoding="utf-8"), worker=worker, config=config
         )
         mutations.append(text_mutation(runtime.agents / f"{worker}.toml", rendered))
-    for worker in previous_owned - set(config.enabled_workers):
+    for worker in sorted(previous_owned - workers):
         target = runtime.agents / f"{worker}.toml"
         if target.exists():
             validate_worker_owner(target, worker)

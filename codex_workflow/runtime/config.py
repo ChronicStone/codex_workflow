@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-import tomllib
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from ._toml import tomllib
 from .errors import ValidationError
 from .markers import EFFECTIVE_CONFIG, HANDOFF_CONFIG, replace
 from .migrations import migrate_config_resource

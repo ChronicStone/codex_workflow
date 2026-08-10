@@ -5,7 +5,7 @@
 
 Once at the start of every new session, before normal task work, run
 `python3 ~/.codex/codex_workflow/workflow.py auto-check-update --json`, using
-the equivalent Python 3.11+ invocation and path for the current platform. Run
+the equivalent Python 3.10+ invocation and path for the current platform. Run
 it at most once per session.
 The package default is disabled, so this command stays local and reports
 `disabled` until the user explicitly enables update checks. If it reports
@@ -22,6 +22,9 @@ exactly.
 
 - codex_workflow --update
   Guide:  ~/.codex/codex_workflow/update.md.
+
+- codex_workflow --check-update
+  Guide:  ~/.codex/codex_workflow/check_update.md.
 
 - codex_workflow --remove
   Guide: ~/.codex/codex_workflow/remove.md.

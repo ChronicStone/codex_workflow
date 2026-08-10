@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from . import RUNTIME_SCHEMA_VERSION
@@ -42,7 +42,7 @@ def plan_bootstrap(
         "schema_version": RUNTIME_SCHEMA_VERSION,
         "version": package.version,
         "owned_runtime_files": sorted(owned_runtime),
-        "owned_workers": sorted(config.enabled_workers),
+        "owned_workers": sorted(package.worker_names),
     }
     mutations.append(json_mutation(runtime.runtime / USER_STATE, state))
     return OperationPlan(
@@ -51,6 +51,7 @@ def plan_bootstrap(
         project_plan.warnings,
         project_plan.agent_actions,
         {"version": package.version},
+        cleanup_dirs=project_plan.cleanup_dirs,
     )
 
 
@@ -80,7 +81,7 @@ def plan_configure(
         {
             "schema_version": RUNTIME_SCHEMA_VERSION,
             "version": (runtime.runtime / "VERSION").read_text(encoding="utf-8").strip(),
-            "owned_workers": sorted(proposed.enabled_workers),
+            "owned_workers": sorted(available),
         }
     )
     mutations.append(json_mutation(runtime.runtime / USER_STATE, state))
@@ -154,7 +155,7 @@ def plan_update(
     backup_root = (
         runtime.runtime
         / ".backups"
-        / f"{installed.version}-{datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ')}"
+        / f"{installed.version}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}"
     )
     mutations: list[Mutation] = []
     append_backup_mutations(mutations, backup_root, runtime, project)
@@ -181,7 +182,7 @@ def plan_update(
         "schema_version": RUNTIME_SCHEMA_VERSION,
         "version": incoming.version,
         "owned_runtime_files": sorted(owned_runtime),
-        "owned_workers": sorted(config.enabled_workers),
+        "owned_workers": sorted(incoming.worker_names),
     }
     mutations.append(json_mutation(runtime.runtime / USER_STATE, state))
     return OperationPlan(

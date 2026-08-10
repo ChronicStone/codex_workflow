@@ -7,7 +7,7 @@ state, generated outputs, and project-owned content.
 
 - `codex_workflow/resources/`: immutable defaults distributed by a release.
 - `~/.codex/codex_workflow/workflow_config.json`: mutable installed state.
-- Heavy snapshots, the End-of-Session fork value, active worker TOMLs, and
+- Heavy snapshots, the End-of-Session fork value, all worker TOMLs, and
   workflow-owned Codex settings: generated outputs; never sources of truth.
 - Project personalization: structured project state materialized into its own
   marker region.
