@@ -27,8 +27,7 @@ must not be edited as user configuration.
 3. Maximum concurrent workers, from 1 through the current platform limit of 20.
 4. Maximum concurrent `executor_sol` instances.
 5. Maximum worker final-report size in words.
-6. End-of-Session context turns: a positive integer; default `200`.
-7. Exit.
+6. Exit.
 
 Ask the user to select one menu item. For a setting, ask only the follow-up
 needed for a valid value, allow **Keep current**, and then return to the full
@@ -52,15 +51,15 @@ changed flags:
 --max-workers <count>
 --max-sol <count>
 --report-size <words>
---handoff-context-turns <count>
 ```
 
 Run it with `--json` after collecting the requested values. The command
 validates and applies the complete configuration in one operation.
 
 The script validates the configuration, keeps `doc-writer` and
-`end_of_session` enabled as required system roles, renders the Heavy snapshot
-and handoff contract, synchronizes all distributed worker TOMLs, removes only
-obsolete manifest-owned workers, and patches only workflow-owned Codex settings.
-Report its result and tell the user to restart Codex when worker definitions or
-platform settings changed.
+`end_of_session` enabled as required system roles, renders the Heavy snapshot,
+synchronizes all distributed worker TOMLs, removes only obsolete manifest-owned
+workers, and patches only workflow-owned Codex settings. The End-of-Session
+handoff is integrated and automatic; it is not user-configurable. Report the
+result and tell the user to restart Codex when worker definitions or platform
+settings changed.

@@ -55,14 +55,13 @@ again until **Exit** is selected.
 - default executor reasoning effort (`high`, `xhigh`, or `max`);
 - maximum concurrent workers;
 - maximum concurrent `executor_sol` workers;
-- final-report package size;
-- End-of-Session recent-context turns.
+- final-report package size.
 
 The command shows the current values, builds a complete new JSON snapshot, and
-then synchronizes the Heavy route,
-End-of-Session spawn contract, all workflow worker TOMLs, and workflow-owned
-Codex platform settings. It does not change project personalization or project
-documents.
+then synchronizes the Heavy route, all workflow worker TOMLs, and workflow-owned
+Codex platform settings. The End-of-Session handoff is integrated and automatic,
+not a user-configurable setting. The command does not change project
+personalization or project documents.
 
 #### `codex_workflow --personal`
 
@@ -310,11 +309,10 @@ The current default snapshot is:
 
 ```json
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "default_executor": "executor_luna",
   "default_executor_reasoning_effort": "xhigh",
   "auto_check_update": false,
-  "end_of_session_context_turns": 200,
   "max_concurrent_workers": 20,
   "max_executor_sol_instances": 1,
   "report_package_size": 250,
@@ -336,18 +334,18 @@ The configuration contract is:
    inside `enabled_workers`;
 3. set `default_executor_reasoning_effort` to `high`, `xhigh`, or `max`;
 4. keep `auto_check_update` boolean; it defaults to `false`;
-5. keep `end_of_session_context_turns` a positive integer; it defaults to `200`;
-6. keep `doc-writer` enabled because project installation depends on it and
+5. keep `doc-writer` enabled because project installation depends on it and
    keep `end_of_session` enabled because both deployment routes require it;
-7. keep worker names unique and backed by templates in
+6. keep worker names unique and backed by templates in
    `~/.codex/codex_workflow/templates/agents/`;
-8. keep exactly one of `executor_luna` and `executor_terra` enabled as the
+7. keep exactly one of `executor_luna` and `executor_terra` enabled as the
    default executor;
-9. keep `max_executor_sol_instances` between zero and the concurrency limit.
+8. keep `max_executor_sol_instances` between zero and the concurrency limit.
 
 Do not edit generated surfaces directly. `codex_workflow --configure`
-synchronizes the Heavy snapshot, handoff contract, all worker TOMLs, and
-workflow-owned `config.toml` keys.
+synchronizes the Heavy snapshot, all worker TOMLs, and workflow-owned
+`config.toml` keys. End-of-Session handoff context is owned by the automatic
+handoff contract rather than persistent user configuration.
 
 The concurrency values must stay synchronized: the confirmed
 `max_concurrent_workers` in `workflow_config.json` is also written to
@@ -551,10 +549,10 @@ outcome, verification, blockers, and exact continuation point. A completed
 deployment remains recorded concisely instead of clearing both files.
 
 Before each substantive Medium or Heavy deployment returns its final response,
-the route creates a fresh, uniquely named `end_of_session` worker with the
-configured finite `fork_turns` value, `200` by default. This preserves its Luna
-xhigh model while inheriting recent main-agent context. Without a parent-built
-capsule or usage ledger, it reconciles every core and module-specific
+the route automatically creates a fresh, uniquely named `end_of_session` worker
+with the handoff contract's finite context fork. This preserves its Luna xhigh
+model while inheriting recent main-agent context. Without a parent-built capsule
+or usage ledger, it reconciles every core and module-specific
 `agent_docs/` file against verified deployment facts, performs compact closing
 checks, handles the Git commit, and returns the final report. The report ends
 with exactly three statistics columns:
@@ -620,12 +618,11 @@ The resource currently contains:
 1. `default_executor`: currently `executor_luna`;
 2. `default_executor_reasoning_effort`: currently `xhigh`;
 3. `auto_check_update`: currently `false`;
-4. `end_of_session_context_turns`: currently `200`;
-5. `max_concurrent_workers`: currently `20`;
-6. `max_executor_sol_instances`: currently `1`;
-7. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
+4. `max_concurrent_workers`: currently `20`;
+5. `max_executor_sol_instances`: currently `1`;
+6. `enabled_workers`: currently `executor_luna`, `executor_sol`, `tester`,
    `doc-writer`, `explorer`, and required `end_of_session`;
-8. `report_package_size`: currently `250` words.
+7. `report_package_size`: currently `250` words.
 
 Related configuration surfaces are:
 

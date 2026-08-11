@@ -60,7 +60,7 @@ Send these exact commands to Codex from the relevant project directory:
 | Command | Purpose |
 | --- | --- |
 | `codex_workflow --install` | Install workflow in the current project and initialize its documentation framework. |
-| `codex_workflow --configure` | Configure the default executor, reasoning effort, worker limits, and handoff context. |
+| `codex_workflow --configure` | Configure the default executor, reasoning effort, and worker limits. |
 | `codex_workflow --personal` | Add or update project-specific workflow preferences. |
 | `codex_workflow --check-update` | Check for a newer release without installing it. |
 | `codex_workflow --update` | Download, verify, and install the latest eligible release. |

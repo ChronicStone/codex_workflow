@@ -36,12 +36,6 @@ EFFECTIVE_CONFIG = Marker(
     "<!-- codex-workflow-effective-config-start -->",
     "<!-- codex-workflow-effective-config-end -->",
 )
-HANDOFF_CONFIG = Marker(
-    "<!-- codex-workflow-handoff-config-start -->",
-    "<!-- codex-workflow-handoff-config-end -->",
-)
-
-
 def _bounds(text: str, marker: Marker) -> tuple[int, int]:
     if text.count(marker.start) != 1 or text.count(marker.end) != 1:
         raise ValidationError(

@@ -8,7 +8,6 @@ from .config import (
     WorkflowConfig,
     patch_codex_config,
     remove_workflow_owned_config,
-    render_handoff_contract,
     render_heavy_route,
     render_worker_template,
 )
@@ -57,8 +56,6 @@ def plan_runtime_files(
         content = source.read_bytes()
         if relative.as_posix() == "heavy_route.md":
             content = render_heavy_route(content.decode(), config).encode()
-        elif relative.as_posix() == "end_of_session.md":
-            content = render_handoff_contract(content.decode(), config).encode()
         mutations.append(Mutation(target, content))
         owned.add(relative.as_posix())
     template_targets = [(package.project_template, runtime.runtime / "templates" / "AGENTS.md")]
@@ -159,17 +156,8 @@ def plan_materialized_config(
     templates = package.agent_templates if package else runtime.runtime / "templates" / "agents"
     heavy_source = package.root / "heavy_route.md" if package else runtime.runtime / "heavy_route.md"
     heavy = render_heavy_route(heavy_source.read_text(encoding="utf-8"), config)
-    handoff_source = (
-        package.root / "end_of_session.md"
-        if package
-        else runtime.runtime / "end_of_session.md"
-    )
-    handoff = render_handoff_contract(
-        handoff_source.read_text(encoding="utf-8"), config
-    )
     mutations = [
         text_mutation(runtime.runtime / "heavy_route.md", heavy),
-        text_mutation(runtime.runtime / "end_of_session.md", handoff),
     ]
     current_state = read_json(runtime.runtime / USER_STATE, default={})
     previous_owned = set(read_string_list(current_state, "owned_workers"))

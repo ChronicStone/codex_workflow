@@ -27,7 +27,6 @@ from runtime.config import (
     WorkflowConfig,
     patch_codex_config,
     remove_workflow_owned_config,
-    render_handoff_contract,
     render_heavy_route,
 )
 from runtime.backup import append_backup_mutations
@@ -110,7 +109,7 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("not spawn, message, or otherwise call subagents", heavy)
         self.assertIn("skips End-of-Session and worker statistics", heavy)
         self.assertIn("before the final response", heavy)
-        self.assertIn("configured context fork supplies", heavy)
+        self.assertIn("automatic handoff context fork", heavy)
         self.assertNotIn("compact ledger", heavy)
 
         medium = policies["medium_route.md"]
@@ -272,6 +271,22 @@ class MarkerTests(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
 
+    def test_configure_help_omits_handoff_context_option(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(PACKAGE / "workflow.py"),
+                "configure",
+                "--help",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertNotIn("--handoff-context-turns", completed.stdout)
+
     def test_remove_help_hides_internal_confirmation_flag(self) -> None:
         completed = subprocess.run(
             [sys.executable, "-B", str(PACKAGE / "workflow.py"), "remove", "--help"],
@@ -322,8 +337,8 @@ class ConfigTests(unittest.TestCase):
     def test_newer_persistent_schema_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
             migrate_config_resource(
+                {"schema_version": 5},
                 {"schema_version": 4},
-                {"schema_version": 3},
             )
 
     def test_v2_config_migration_enables_handoff_worker(self) -> None:
@@ -332,11 +347,22 @@ class ConfigTests(unittest.TestCase):
                 "schema_version": 2,
                 "enabled_workers": ["executor_luna", "doc-writer", "explorer"],
             },
-            {"schema_version": 3},
+            {"schema_version": 4},
         )
-        self.assertEqual(migrated["schema_version"], 3)
+        self.assertEqual(migrated["schema_version"], 4)
         self.assertIn("end_of_session", migrated["enabled_workers"])
-        self.assertEqual(migrated["end_of_session_context_turns"], 200)
+        self.assertNotIn("end_of_session_context_turns", migrated)
+
+    def test_v3_config_migration_removes_handoff_context_setting(self) -> None:
+        migrated = migrate_config_resource(
+            {
+                "schema_version": 3,
+                "end_of_session_context_turns": 150,
+            },
+            {"schema_version": 4},
+        )
+        self.assertEqual(migrated["schema_version"], 4)
+        self.assertNotIn("end_of_session_context_turns", migrated)
 
     def test_worker_limit_above_platform_limit_is_rejected(self) -> None:
         raw = json.loads(
@@ -394,11 +420,11 @@ class ConfigTests(unittest.TestCase):
         )
         self.assertIn("Maximum concurrent child workers: `20`", rendered)
         self.assertIn("Default executor: `executor_luna` (`xhigh`", rendered)
-
-        handoff = render_handoff_contract(
-            (PACKAGE / "end_of_session.md").read_text(encoding="utf-8"), config
+        self.assertNotIn("End-of-Session context fork", rendered)
+        self.assertIn(
+            'fork_turns="200"',
+            (PACKAGE / "end_of_session.md").read_text(encoding="utf-8"),
         )
-        self.assertIn('fork_turns="200"', handoff)
 
 
 class ReleaseTests(unittest.TestCase):
@@ -629,7 +655,6 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 "default_executor": "executor_terra",
                 "default_executor_reasoning_effort": "max",
                 "max_concurrent_workers": 7,
-                "end_of_session_context_turns": 150,
             },
         )
         plan.apply()
@@ -638,9 +663,9 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(configured["default_executor"], "executor_terra")
         self.assertEqual(configured["max_concurrent_workers"], 7)
-        self.assertEqual(configured["end_of_session_context_turns"], 150)
+        self.assertNotIn("end_of_session_context_turns", configured)
         self.assertIn(
-            'fork_turns="150"',
+            'fork_turns="200"',
             (self.runtime.runtime / "end_of_session.md").read_text(encoding="utf-8"),
         )
         self.assertTrue((self.runtime.agents / "executor_luna.toml").is_file())

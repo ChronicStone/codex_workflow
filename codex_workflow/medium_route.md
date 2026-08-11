@@ -62,6 +62,7 @@ input. Never present partial work as complete.
 Before the final response that completes, pauses, or blocks the deployment,
 follow `~/.codex/codex_workflow/end_of_session.md` exactly once and wait for its
 fresh worker. Pass only the route, a unique deployment ID, and closure state;
-the configured context fork supplies the main-agent history. Relay its result;
-do not duplicate its documentation, status, Git, or statistics work. A later
-substantive deployment receives a new ID and handoff, even in the same session.
+the automatic handoff context fork supplies the main-agent history. Relay its
+result; do not duplicate its documentation, status, Git, or statistics work. A
+later substantive deployment receives a new ID and handoff, even in the same
+session.

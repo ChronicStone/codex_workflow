@@ -109,7 +109,6 @@ def parse_args() -> argparse.Namespace:
     configure.add_argument("--max-workers", type=int)
     configure.add_argument("--max-sol", type=int)
     configure.add_argument("--report-size", type=int)
-    configure.add_argument("--handoff-context-turns", type=int)
     configure.add_argument(
         "--auto-check-update",
         choices=["enabled", "disabled"],
@@ -351,7 +350,6 @@ def main() -> int:
                 "max_concurrent_workers": args.max_workers,
                 "max_executor_sol_instances": args.max_sol,
                 "report_package_size": args.report_size,
-                "end_of_session_context_turns": args.handoff_context_turns,
                 "auto_check_update": (
                     args.auto_check_update == "enabled"
                     if args.auto_check_update is not None

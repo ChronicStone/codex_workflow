@@ -10,7 +10,6 @@ Use after Heavy is selected under `AGENTS.md`.
 - Maximum concurrent child workers: `20`.
 - Maximum `executor_sol` workers: `1`.
 - Maximum worker final-report package: `250` words.
-- End-of-Session context fork: `200` recent turns.
 
 Create only enabled workers and obey these limits.
 <!-- codex-workflow-effective-config-end -->
@@ -181,8 +180,8 @@ conflicting evidence invalidate them.
 After all package workers reach a terminal state, and before the final response
 that completes, pauses, or blocks the deployment, follow
 `~/.codex/codex_workflow/end_of_session.md` exactly once. Pass only the route, a
-unique deployment ID, and closure state; the configured context fork supplies
-the main-agent history. Wait and relay the fresh worker's report without
-duplicating its work. A later substantive deployment gets a new ID and handoff.
-The direct fast path calls no worker, including Explorer or End-of-Session, and
-emits no statistics.
+unique deployment ID, and closure state; the automatic handoff context fork
+supplies the main-agent history. Wait and relay the fresh worker's report
+without duplicating its work. A later substantive deployment gets a new ID and
+handoff. The direct fast path calls no worker, including Explorer or
+End-of-Session, and emits no statistics.

@@ -10,15 +10,13 @@ Spawn one fresh worker with:
 - `agent_type="end_of_session"`
 - `task_name="end_of_session_<deployment_id>"`, where the suffix is a unique,
   lowercase, underscore-safe deployment identifier
-<!-- codex-workflow-handoff-config-start -->
 - `fork_turns="200"`
-<!-- codex-workflow-handoff-config-end -->
 
 Pass only the active route, deployment ID, and closure state (`complete`,
 `paused`, or `blocked`). Do not summarize the session, build a task capsule, or
-maintain a usage ledger. The finite fork passes recent main-agent turns so the
-worker inherits the deployment context while retaining its Luna xhigh model;
-its TOML contains the full procedure.
+maintain a usage ledger. The automatic finite fork passes recent main-agent
+turns so the worker inherits the deployment context while retaining its Luna
+xhigh model; its TOML contains the full procedure.
 
 The worker alone reconciles the complete `agent_docs/` framework, performs
 compact closing checks, handles Git staging and commit, and returns the final

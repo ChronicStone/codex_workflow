@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ._toml import tomllib
-from .config import load_config, render_handoff_contract, render_heavy_route
+from .config import load_config, render_heavy_route
 from .errors import ValidationError
 from .markers import (
     AUTO_CHECK_UPDATE_PLACEHOLDER,
@@ -163,10 +163,6 @@ class PackageLayout:
             )
             render_heavy_route(
                 (self.root / "heavy_route.md").read_text(encoding="utf-8"), config
-            )
-            render_handoff_contract(
-                (self.root / "end_of_session.md").read_text(encoding="utf-8"),
-                config,
             )
             materialize_personalization(
                 (self.root / "resources" / "personalization.md").read_text(

@@ -22,7 +22,17 @@ def _migrate_v2_to_v3(raw: dict[str, Any]) -> dict[str, Any]:
     return migrated
 
 
-CONFIG_MIGRATIONS: dict[int, ConfigMigration] = {2: _migrate_v2_to_v3}
+def _migrate_v3_to_v4(raw: dict[str, Any]) -> dict[str, Any]:
+    migrated = dict(raw)
+    migrated.pop("end_of_session_context_turns", None)
+    migrated["schema_version"] = 4
+    return migrated
+
+
+CONFIG_MIGRATIONS: dict[int, ConfigMigration] = {
+    2: _migrate_v2_to_v3,
+    3: _migrate_v3_to_v4,
+}
 
 
 def migrate_config_resource(

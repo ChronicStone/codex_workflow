@@ -10,13 +10,13 @@ from typing import Any
 
 from ._toml import tomllib
 from .errors import ValidationError
-from .markers import EFFECTIVE_CONFIG, HANDOFF_CONFIG, replace
+from .markers import EFFECTIVE_CONFIG, replace
 from .migrations import migrate_config_resource
 
 
 DEFAULT_EXECUTORS = {"executor_luna", "executor_terra"}
 REASONING_EFFORTS = {"high", "xhigh", "max"}
-CONFIG_SCHEMA_VERSION = 3
+CONFIG_SCHEMA_VERSION = 4
 REQUIRED_WORKERS = {"doc-writer", "end_of_session"}
 PLATFORM_MAX_WORKERS = 20
 
@@ -27,7 +27,6 @@ class WorkflowConfig:
     default_executor: str
     default_executor_reasoning_effort: str
     auto_check_update: bool
-    end_of_session_context_turns: int
     max_concurrent_workers: int
     max_executor_sol_instances: int
     report_package_size: int
@@ -42,7 +41,6 @@ class WorkflowConfig:
             "default_executor",
             "default_executor_reasoning_effort",
             "auto_check_update",
-            "end_of_session_context_turns",
             "max_concurrent_workers",
             "max_executor_sol_instances",
             "report_package_size",
@@ -81,10 +79,6 @@ class WorkflowConfig:
         auto_check = raw["auto_check_update"]
         if not isinstance(auto_check, bool):
             raise ValidationError("auto_check_update must be a boolean")
-        handoff_turns = _positive_int(
-            raw["end_of_session_context_turns"],
-            "end_of_session_context_turns",
-        )
         maximum = _positive_int(raw["max_concurrent_workers"], "max_concurrent_workers")
         if maximum > PLATFORM_MAX_WORKERS:
             raise ValidationError(
@@ -109,7 +103,6 @@ class WorkflowConfig:
             default,
             effort,
             auto_check,
-            handoff_turns,
             maximum,
             sol_maximum,
             report_size,
@@ -171,7 +164,6 @@ def effective_config_body(config: WorkflowConfig) -> str:
             f"- Maximum concurrent child workers: `{config.max_concurrent_workers}`.",
             f"- Maximum `executor_sol` workers: `{config.max_executor_sol_instances}`.",
             f"- Maximum worker final-report package: `{config.report_package_size}` words.",
-            f"- End-of-Session context fork: `{config.end_of_session_context_turns}` recent turns.",
             "",
             "Create only enabled workers and obey these limits.",
         ]
@@ -180,11 +172,6 @@ def effective_config_body(config: WorkflowConfig) -> str:
 
 def render_heavy_route(text: str, config: WorkflowConfig) -> str:
     return replace(text, EFFECTIVE_CONFIG, effective_config_body(config))
-
-
-def render_handoff_contract(text: str, config: WorkflowConfig) -> str:
-    body = f'- `fork_turns="{config.end_of_session_context_turns}"`'
-    return replace(text, HANDOFF_CONFIG, body)
 
 
 _EFFORT_LINE = re.compile(
