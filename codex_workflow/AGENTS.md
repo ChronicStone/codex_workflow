@@ -39,8 +39,9 @@ The durable project documents are under `agent_docs/`:
 
 `project_progress.md` and `latest_session_work.md` may be edited only in
 `deployment state` or when the user explicitly requests it. The main agent owns
-them during normal execution; the dedicated `end_of_session` worker owns them
-during an invoked handoff. No other worker may edit them.
+them during normal execution. During automatic deployment closure, the single
+`end_of_session` worker owns reconciliation of the complete documentation
+framework; no other worker participates in that closure update.
 
 Keep raw logs, temporary reasoning, and short-lived checkpoints out of durable
 documents. Never delete a main project document without warning the user and
@@ -59,14 +60,20 @@ There are three routes:
 
 The user selects the route for the session. If unspecified, use Light; do not
 infer Medium or Heavy. Light implies `leaf state`; Medium and Heavy imply
-`deployment state`. Keep the selected route until the user changes it or the
-session ends.
+`deployment state` only for substantive work. Their direct fast path remains
+`leaf state`. Keep the selected route until the user changes it or the session
+ends.
 
 ## Context Loading
 
 - In Light, inspect only material needed for the current task.
-- On first entering deployment state, read the selected route and
-  `explorer_companion.md`, then initialize the single persistent Explorer.
+- Before initializing deployment state, classify the request. Questions and
+  small or odd bounded tasks use the direct main-agent fast path even when
+  Medium or Heavy is selected: call no worker, including Explorer and
+  `end_of_session`, and produce no worker statistics.
+- For every substantive Medium or Heavy deployment, read the selected route and
+  `explorer_companion.md`, then initialize or reuse the single persistent
+  Explorer.
 - Give Explorer the session goal, known constraints, investigation questions,
   and boundaries. It reads the foundational project documents and relevant
   repository context, then returns the planning brief defined in its contract.
@@ -80,6 +87,11 @@ session ends.
 - Resolve stale or conflicting project status with targeted evidence. Load only
   relevant module documentation and avoid replaying raw logs, large diffs,
   directory listings, or complete source files into the main context.
+- Before the final response that completes, pauses, or blocks each substantive
+  Medium or Heavy deployment, run the automatic handoff defined in
+  `end_of_session.md` exactly once. Its worker inherits recent main-agent
+  context and performs the complete documentation-framework update. The
+  handoff is not a user command.
 
 ## Platform Paths
 

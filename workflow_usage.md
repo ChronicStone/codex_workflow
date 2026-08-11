@@ -32,7 +32,12 @@ The bootstrap installs the user-level workflow and the current project. It
 does not ask configuration or personalization questions. Those are explicit
 follow-up commands. It also adds the workflow-owned project paths to
 `.gitignore` and removes a project-level `Codex_Workflow/` extraction directory
-once the installation transaction succeeds.
+once the installation transaction succeeds. Bootstrap then requires one
+`doc-writer` action to initialize newly created `agent_docs/` files or perform a
+read-only completeness check when the framework already exists. Installation
+is incomplete until that action succeeds. For a new framework, the worker must
+populate `project_structure.md`, `project_overview.md`, and
+`project_core_tech.md` from verified project evidence.
 
 ### Exact command prompts
 
@@ -84,7 +89,10 @@ already been bootstrapped:
   region instead of semantically merging it;
 - creates missing files in `agent_docs/` from the six project-document
   templates;
-- initializes only newly created documentation with `doc-writer`;
+- always invokes `doc-writer` to initialize newly created documentation or
+  verify an already complete framework;
+- requires newly created `project_structure.md`, `project_overview.md`, and
+  `project_core_tech.md` to be populated from verified project evidence;
 - creates the default hidden personalization resource when missing;
 - reuses the installed user-level configuration as a read-only source.
 
@@ -127,16 +135,17 @@ non-affirmative response performs no changes.
 
 #### Automatic update check
 
-At the start of each new session, Codex runs the lifecycle CLI's read-only
-`auto-check-update` command once. When enabled, it compares the installed
-version with the highest usable GitHub Release and reports an available update.
-It stays quiet when the workflow is current or the check is disabled. The
-package default is disabled.
+The package default is disabled: `~/.codex/AGENTS.md` contains no session-start
+check instruction, so new sessions make no automatic update-check call.
 
 Send `codex_workflow --enable_auto_update` to explicitly enable the
-session-start check, or `codex_workflow --disable_auto_update` to disable it
-again. Each command changes only the mutable installed configuration. The
-former `codex_workflow --disable_auto_check_update` prompt remains a
+session-start check. It updates the installed configuration and adds an
+instruction that runs the read-only `auto-check-update` command once per new
+session. When enabled, the command compares the installed version with the
+highest usable GitHub Release and reports an available update; it stays quiet
+when current. `codex_workflow --disable_auto_update` disables the setting and
+removes that instruction. Both commands preserve unrelated user-level content.
+The former `codex_workflow --disable_auto_check_update` prompt remains a
 compatibility alias.
 
 #### `codex_workflow --disable`
@@ -162,7 +171,7 @@ Re-enable a disabled project by moving the entry point back:
 This changes only the active/disabled entry-point state. It does not reread or
 reapply configuration or personalization.
 
-### Route selection and session closure
+### Route selection and deployment closure
 
 There are three execution routes:
 
@@ -181,15 +190,14 @@ use medium route. [task description]
 use heavy route. [task description]
 ```
 
-The selected route remains active until the user changes it or ends the
-session. To perform the handoff and update durable project state, send:
-
-```text
-end this session
-```
-
-A fresh Luna xhigh worker receives the configured number of recent turns and
-owns the entire End-of-Session handoff.
+The selected route remains active until the user changes it or the session
+ends. Each substantive Medium or Heavy deployment automatically creates a fresh
+Luna xhigh worker before its final response. That worker receives the configured
+recent main-agent turns and alone reconciles the complete `agent_docs/`
+framework, handles Git closure, and returns the final three-column
+worker-statistics table. No manual closure prompt, main-agent summary, usage
+ledger, or second documentation worker is required. Questions and small or odd
+bounded tasks use the direct worker-free path and emit no table.
 
 ## Part 2 — Installed-file map
 
@@ -216,11 +224,12 @@ and the current project as follows:
 │   └── end_of_session.toml
 └── codex_workflow/
     ├── VERSION                             # installed workflow version
-    ├── user_AGENTS.md                      # managed command marker and command prompts
+    ├── user_AGENTS.md                      # managed commands and optional-check placeholder
     ├── workflow_config.json                # persistent workflow configuration
     ├── workflow.py                         # validated lifecycle CLI
     ├── runtime/                            # validation, rendering, release, and transaction modules
     ├── resources/                          # immutable package defaults
+    │   ├── auto_check_update.md
     │   ├── personalization.md
     │   └── workflow_config.default.json
     ├── install_state.json                  # workflow ownership and installed-state manifest
@@ -275,8 +284,8 @@ The six files under `agent_docs/` have different ownership and purposes:
 - `project_structure.md` — layout, modules, ownership, and boundaries;
 - `project_progress.md` — concise overall progress and current milestone;
 - `project_diary.md` — durable decisions, discarded approaches, and lessons;
-- `latest_session_work.md` — detailed current state, evidence, unfinished work,
-  and continuation point.
+- `latest_session_work.md` — the latest deployment state, evidence, outcome,
+  unfinished work when present, and continuation point.
 
 ## Part 3 — Scripted configuration and customization
 
@@ -412,9 +421,9 @@ Possible customizations include:
   review practice while keeping `end_of_session.md` as the spawn contract.
 
 Keep the route's ownership boundaries, worker limits, verification gates, and
-dedicated handoff ownership of the two session-state documents. After a route
-change, verify that the effective configuration block and worker list still
-agree with `workflow_config.json`.
+single-worker automatic-closure ownership of the complete documentation
+framework. After a route change, verify that the effective configuration block
+and worker list still agree with `workflow_config.json`.
 
 ## Part 4 — How the Heavy route works
 
@@ -422,8 +431,8 @@ The Heavy route is an orchestrated deployment-state workflow. It is selected
 explicitly by the user; Light remains the default for small tasks. The Heavy
 route does not mean that every prompt must spawn workers: common questions and
 small tasks use a direct main-agent fast path and must not call subagents. When
-that fast path calls no subagent, its final response also omits worker call-count
-statistics.
+that fast path calls no subagent, its final response also omits the worker
+statistics table.
 
 ### Roles and ownership
 
@@ -435,9 +444,9 @@ The current enabled set is:
 | Selected default executor (`executor_luna` or `executor_terra`) | Package discovery, production implementation, self-check, and routine repair | Yes, within its work package |
 | `executor_sol` | Complex core reasoning or fallback implementation | Yes, within its work package; limited to one active instance |
 | `tester` | Independent focused tests and failure analysis | Test/fixture scope; production defects return to the executor |
-| `doc-writer` | Verified durable architecture, structure, workflow, or usage documentation | Documentation scope, except shared status/handoff files |
+| `doc-writer` | Assigned documentation during implementation and required installation initialization; not automatic deployment closure | Documentation scope; installation may authorize initialization of newly created status files |
 | Explorer companion | Read-only context gateway for planning and knowledge-delta briefs | No |
-| `end_of_session` | Complete Medium/Heavy handoff, status documents, and Git closure | Documentation and Git state during an invoked handoff |
+| `end_of_session` | Inherited-context reconciliation of the complete documentation framework plus Git closure and statistics | All `agent_docs/` and Git state during automatic closure |
 
 `executor_terra.toml` is materialized alongside the other worker definitions;
 it becomes the selected default executor only when configured as such. The
@@ -493,10 +502,10 @@ Tester independently runs focused checks when testing is warranted
 Explorer consolidates material knowledge deltas when needed
         │
         ▼
-Main integrates; doc-writer records verified durable facts when required
+Main integrates verified package outcomes
         │
         ▼
-On `end this session`, a fresh Luna xhigh worker receives recent context and owns the handoff
+Fresh Luna xhigh worker automatically closes the deployment before the final response
 ```
 
 The tester and responsible executor receive each other's canonical task names.
@@ -529,23 +538,30 @@ worker that returns no concrete evidence gets one short retry; repeated
 evidence-free work triggers replacement or a narrowly scoped, explicit
 main-agent takeover.
 
-Task workers must not edit Git state or the shared status documents. The main
-agent owns those surfaces during normal execution; `end_of_session` alone owns
-them during an invoked handoff. Explorer remains read-only.
+Task workers must not edit Git state or the shared status documents. During
+automatic closure, `end_of_session` alone reconciles the complete documentation
+framework and Git state; it does not invoke another documentation worker.
+Explorer remains read-only.
 
 ### Cross-session continuity
 
 `project_progress.md` carries only the goal, overall progress, current position,
-and next milestone. `latest_session_work.md` carries the detailed current state,
-verification, blockers, and exact continuation point.
+and next milestone. `latest_session_work.md` carries the most recent deployment
+outcome, verification, blockers, and exact continuation point. A completed
+deployment remains recorded concisely instead of clearing both files.
 
-When the user sends `end this session`, either route creates a fresh
-`end_of_session` worker with the configured finite `fork_turns` value, `200` by
-default. This preserves its Luna xhigh model while providing recent session
-context. Its instruction owns checkpoint collection when needed, evidence
-reconciliation, durable handoff documents, compact closing checks, Git commit,
-and the final report. Explorer has no closure responsibility. The main agent
-waits and relays the result.
+Before each substantive Medium or Heavy deployment returns its final response,
+the route creates a fresh, uniquely named `end_of_session` worker with the
+configured finite `fork_turns` value, `200` by default. This preserves its Luna
+xhigh model while inheriting recent main-agent context. Without a parent-built
+capsule or usage ledger, it reconciles every core and module-specific
+`agent_docs/` file against verified deployment facts, performs compact closing
+checks, handles the Git commit, and returns the final report. The report ends
+with exactly three statistics columns:
+`Worker name`, `Quantity` (distinct task names), and `Number of calls`
+(turn-starting assignments and follow-ups). Explorer has no closure
+responsibility. Direct questions and small or odd bounded tasks create no
+worker, handoff, or statistics table.
 
 ## Part 5 — Component hierarchy and ownership
 
@@ -650,7 +666,7 @@ in `AGENTS.md` or in the hidden disabled entry point. It is not stored in
 Location: `~/.codex/codex_workflow/`
 
 - `user_AGENTS.md` contains the workflow marker, installed version marker,
-  session-start update-check instruction, and exact command prompts for
+  optional-check placeholder, and exact command prompts for
   `--install`, `--update`, `--remove`, `--enable_auto_update`,
   `--disable_auto_update`, `--configure`, `--personal`, `--disable`, and
   `--enable`.
@@ -661,7 +677,9 @@ Location: `~/.codex/codex_workflow/`
   lifecycle operations.
 - `remove.md` describes the destructive two-phase removal procedure.
 - `enable_auto_update.md` and `disable_auto_update.md` describe the explicit
-  update-check controls; `disable_auto_check_update.md` remains a legacy alias.
+  update-check controls; `resources/auto_check_update.md` supplies the optional
+  session instruction, and `disable_auto_check_update.md` remains a legacy
+  alias.
 - `workflow.py` and `runtime/` implement validated lifecycle operations.
 - `VERSION` identifies the installed workflow version.
 - `templates/` stores the project entry-point, worker, and project-document

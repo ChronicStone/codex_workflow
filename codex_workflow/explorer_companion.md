@@ -14,9 +14,11 @@ session.
 - Reuse its thread across Medium and Heavy for the session. Do not create a
   second Explorer or work merely to keep it active. If unavailable, continue
   only when safe and report the limitation.
-- Count its live thread against platform capacity. Report substantive requests
-  separately from task-worker calls; initialization and acknowledgments do not
-  count.
+- Count its live thread against platform capacity. For each deployment,
+  quantity counts distinct task names, so it is one when that persistent task
+  name is used; its calls are turn-starting requests containing substantive
+  work. Initialization-only contact, acknowledgements, waits, and status checks
+  do not count.
 
 ## Role and Boundaries
 

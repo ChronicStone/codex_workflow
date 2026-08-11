@@ -46,6 +46,7 @@ from runtime.lifecycle import (
     plan_update,
 )
 from runtime.markers import (
+    AUTO_CHECK_UPDATE_PLACEHOLDER,
     PROJECT_LOCAL,
     PROJECT_PERSONALIZATION,
     USER_MANAGED,
@@ -53,7 +54,7 @@ from runtime.markers import (
     render_project_entry,
 )
 from runtime.migrations import migrate_config_resource
-from runtime.plan import read_string_list, resolve_owned_runtime_path
+from runtime.plan import OperationPlan, read_string_list, resolve_owned_runtime_path
 from runtime.release import (
     ReleaseSelection,
     parse_semver,
@@ -64,9 +65,14 @@ from runtime.transaction import Mutation, apply
 
 
 class MarkerTests(unittest.TestCase):
-    def test_user_command_contract_uses_automatic_check_opt_out(self) -> None:
+    def test_user_command_contract_keeps_automatic_check_optional(self) -> None:
         instructions = (PACKAGE / "user_AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("auto-check-update --json", instructions)
+        auto_check = (PACKAGE / "resources" / "auto_check_update.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("auto-check-update --json", instructions)
+        self.assertEqual(instructions.count(AUTO_CHECK_UPDATE_PLACEHOLDER), 1)
+        self.assertIn("auto-check-update --json", auto_check)
         self.assertIn("codex_workflow --check-update", instructions)
         self.assertIn("codex_workflow --enable_auto_update", instructions)
         self.assertIn("codex_workflow --disable_auto_update", instructions)
@@ -101,19 +107,88 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("canonical task names", heavy)
         self.assertIn("Decision required: none", heavy)
         self.assertIn("knowledge-delta brief", heavy)
-        self.assertIn("do not spawn,\nmessage, or otherwise call subagents", heavy)
-        self.assertIn("omit the worker-call list entirely", heavy)
+        self.assertIn("not spawn, message, or otherwise call subagents", heavy)
+        self.assertIn("skips End-of-Session and worker statistics", heavy)
+        self.assertIn("before the final response", heavy)
+        self.assertIn("configured context fork supplies", heavy)
+        self.assertNotIn("compact ledger", heavy)
+
+        medium = policies["medium_route.md"]
+        self.assertIn("direct main-agent fast path", medium)
+        self.assertIn("do not call `end_of_session`", medium)
+        self.assertIn("Before the final response", medium)
+        self.assertIn("complete documentation framework", medium)
+        self.assertNotIn("usage ledger", medium)
+
+        agents_policy = policies["AGENTS.md"]
+        self.assertIn("handoff is not a user command", agents_policy)
 
         explorer = policies["explorer_companion.md"]
         self.assertIn("planning brief", explorer)
         self.assertIn("knowledge-delta brief", explorer)
+        self.assertIn("distinct task names", explorer)
+
+        handoff_contract = (PACKAGE / "end_of_session.md").read_text(
+            encoding="utf-8"
+        )
+        handoff_worker = (PACKAGE / "agents" / "end_of_session.toml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('task_name="end_of_session_<deployment_id>"', handoff_contract)
+        self.assertIn("after every substantive Medium or Heavy", handoff_contract)
+        self.assertIn("inherits the deployment context", handoff_contract)
+        self.assertIn("complete `agent_docs/` framework", handoff_contract)
+        self.assertIn("Do not call a second documentation worker", handoff_contract)
+        self.assertNotIn('fork_turns="none"', handoff_contract)
+        self.assertNotIn("compact usage ledger", handoff_contract)
+        self.assertIn(
+            "| Worker name | Quantity | Number of calls |", handoff_worker
+        )
+        self.assertIn(
+            "`Quantity` is the number of distinct task names", handoff_worker
+        )
+        self.assertIn("turn-starting initial assignments", handoff_worker)
+        self.assertIn("read the complete existing", handoff_worker)
+        self.assertIn("Do not delegate or create another worker", handoff_worker)
+        self.assertIn("the parent does not supply or maintain a ledger", handoff_worker)
+        for framework_file in (
+            "project_overview.md",
+            "project_core_tech.md",
+            "project_structure.md",
+            "project_progress.md",
+            "project_diary.md",
+            "latest_session_work.md",
+        ):
+            self.assertIn(framework_file, handoff_worker)
+        for policy in (
+            heavy,
+            medium,
+            agents_policy,
+            handoff_contract,
+            handoff_worker,
+        ):
+            self.assertNotIn("end this session", policy.lower())
 
         tester = (PACKAGE / "agents" / "tester.toml").read_text(encoding="utf-8")
         executor = (PACKAGE / "agents" / "executor_luna.toml").read_text(
             encoding="utf-8"
         )
+        doc_writer = (PACKAGE / "agents" / "doc-writer.toml").read_text(
+            encoding="utf-8"
+        )
+        bootstrap = (PACKAGE / "bootstrap.md").read_text(encoding="utf-8")
+        install = (PACKAGE / "install.md").read_text(encoding="utf-8")
         self.assertIn("contact the named executor directly", tester)
         self.assertIn("Do not involve the parent for a routine defect", executor)
+        self.assertIn("always contains one required", bootstrap)
+        self.assertIn("explicitly labeled bootstrap/project-install action", doc_writer)
+        for required_context in (
+            "project_structure.md",
+            "project_overview.md",
+            "project_core_tech.md",
+        ):
+            self.assertIn(required_context, bootstrap)
+            self.assertIn(required_context, install)
 
     def test_reserved_marker_collision_is_rejected_during_import(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -140,6 +215,38 @@ class MarkerTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             path.write_text(
                 text.replace(USER_MANAGED.start, "", 1), encoding="utf-8"
+            )
+            with self.assertRaises(ValidationError):
+                PackageLayout.resolve(root)
+
+    def test_package_requires_auto_check_placeholder(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "codex_workflow"
+            shutil.copytree(
+                PACKAGE,
+                root,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
+            path = root / "user_AGENTS.md"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    AUTO_CHECK_UPDATE_PLACEHOLDER, "", 1
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValidationError):
+                PackageLayout.resolve(root)
+
+    def test_package_requires_auto_check_instruction_command(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "codex_workflow"
+            shutil.copytree(
+                PACKAGE,
+                root,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
+            (root / "resources" / "auto_check_update.md").write_text(
+                "Missing command.\n", encoding="utf-8"
             )
             with self.assertRaises(ValidationError):
                 PackageLayout.resolve(root)
@@ -409,12 +516,13 @@ class LifecycleIntegrationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    def bootstrap(self, *, existing_agents: str | None = None) -> None:
+    def bootstrap(self, *, existing_agents: str | None = None) -> OperationPlan:
         if existing_agents is not None:
             self.project.active.write_text(existing_agents, encoding="utf-8")
         plan = plan_bootstrap(self.package, self.runtime, self.project)
         self.assertFalse(self.codex_home.exists())
         plan.apply()
+        return plan
 
     def incoming_package(self, directory: str, version: str | None = None) -> PackageLayout:
         version = version or PACKAGE_VERSION
@@ -436,7 +544,9 @@ class LifecycleIntegrationTests(unittest.TestCase):
         return PackageLayout.resolve(incoming_root)
 
     def test_bootstrap_imports_existing_agents_and_materializes_runtime(self) -> None:
-        self.bootstrap(existing_agents="# Existing instructions\nKeep local policy.\n")
+        plan = self.bootstrap(
+            existing_agents="# Existing instructions\nKeep local policy.\n"
+        )
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(
             extract(entry, PROJECT_LOCAL),
@@ -451,6 +561,27 @@ class LifecycleIntegrationTests(unittest.TestCase):
             "max_concurrent_threads_per_session = 20",
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
+        installed_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.assertNotIn("auto-check-update --json", installed_user_agents)
+        self.assertNotIn(AUTO_CHECK_UPDATE_PLACEHOLDER, installed_user_agents)
+        self.assertEqual(len(plan.agent_actions), 1)
+        action = plan.agent_actions[0]
+        self.assertEqual(action["role"], "doc-writer")
+        self.assertTrue(action["required"])
+        self.assertEqual(set(action["files"]), set(action["framework"]))
+        self.assertEqual(
+            action["required_context_files"],
+            [
+                "project_structure.md",
+                "project_overview.md",
+                "project_core_tech.md",
+            ],
+        )
+
+        repeated = plan_project_install(self.package, self.project)
+        self.assertEqual(len(repeated.agent_actions), 1)
+        self.assertTrue(repeated.agent_actions[0]["required"])
+        self.assertEqual(repeated.agent_actions[0]["files"], [])
 
     def test_bootstrap_cleans_project_staging_and_updates_gitignore(self) -> None:
         staging = self.project_root / "Codex_Workflow"
@@ -528,6 +659,18 @@ class LifecycleIntegrationTests(unittest.TestCase):
         state = json.loads((self.runtime.runtime / "install_state.json").read_text())
         self.assertIn("explorer", state["owned_workers"])
 
+    def test_configure_materializes_auto_check_instruction_when_changed(self) -> None:
+        self.bootstrap()
+        plan_configure(self.runtime, {"auto_check_update": True}).apply()
+        configured = json.loads(
+            (self.runtime.runtime / "workflow_config.json").read_text(encoding="utf-8")
+        )
+        self.assertTrue(configured["auto_check_update"])
+        self.assertIn(
+            "auto-check-update --json",
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+        )
+
     def test_personalize_and_enable_disable_preserve_regions(self) -> None:
         self.bootstrap(existing_agents="Local policy.\n")
         customized = (PACKAGE / "resources" / "personalization.md").read_text(
@@ -562,6 +705,11 @@ class LifecycleIntegrationTests(unittest.TestCase):
 
     def test_update_replaces_managed_content_and_preserves_local_content(self) -> None:
         self.bootstrap(existing_agents="Local policy.\n")
+        plan_auto_check_update_setting(self.runtime, enabled=True).apply()
+        self.assertIn(
+            "auto-check-update --json",
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+        )
         installed_config_path = self.runtime.runtime / "workflow_config.json"
         installed_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
         installed_config["default_executor"] = "executor_terra"
@@ -595,6 +743,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(updated_config["max_concurrent_workers"], 20)
         self.assertEqual(updated_config["default_executor_reasoning_effort"], "xhigh")
         self.assertFalse(updated_config["auto_check_update"])
+        self.assertNotIn(
+            "auto-check-update --json",
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+        )
         self.assertNotIn(
             "local worker override",
             (self.runtime.agents / "executor_luna.toml").read_text(encoding="utf-8"),
@@ -636,7 +788,18 @@ class LifecycleIntegrationTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertTrue(json.loads(completed.stdout)["applied"])
+        summary = json.loads(completed.stdout)
+        self.assertTrue(summary["applied"])
+        self.assertEqual(len(summary["agent_actions"]), 1)
+        self.assertTrue(summary["agent_actions"][0]["required"])
+        self.assertEqual(
+            summary["agent_actions"][0]["required_context_files"],
+            [
+                "project_structure.md",
+                "project_overview.md",
+                "project_core_tech.md",
+            ],
+        )
         self.assertTrue((project_root / "AGENTS.md").is_file())
 
     def test_remove_requires_second_confirmation_and_cleans_owned_files(self) -> None:
@@ -732,13 +895,23 @@ class LifecycleIntegrationTests(unittest.TestCase):
 
     def test_disable_auto_check_is_scoped_and_skips_network_check(self) -> None:
         self.bootstrap()
+        default_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.assertNotIn("auto-check-update --json", default_user_agents)
+        self.runtime.user_agents.write_text(
+            default_user_agents + "\nUser-level custom instruction.\n",
+            encoding="utf-8",
+        )
         plan = plan_auto_check_update_setting(self.runtime, enabled=False)
-        self.assertEqual(len(plan.mutations), 1)
+        self.assertEqual(len(plan.mutations), 2)
         plan.apply()
         configured = json.loads(
             (self.runtime.runtime / "workflow_config.json").read_text(encoding="utf-8")
         )
         self.assertFalse(configured["auto_check_update"])
+        self.assertNotIn(
+            "auto-check-update --json",
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+        )
         completed = subprocess.run(
             [
                 sys.executable,
@@ -778,6 +951,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 )
             )["auto_check_update"]
         )
+        enabled_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.assertIn("auto-check-update --json", enabled_user_agents)
+        self.assertIn("User-level custom instruction.", enabled_user_agents)
+        self.assertNotIn(AUTO_CHECK_UPDATE_PLACEHOLDER, enabled_user_agents)
 
         completed = subprocess.run(
             [
@@ -801,6 +978,9 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 )
             )["auto_check_update"]
         )
+        disabled_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.assertNotIn("auto-check-update --json", disabled_user_agents)
+        self.assertIn("User-level custom instruction.", disabled_user_agents)
 
     def test_legacy_entry_with_edits_requires_reviewed_local_instructions(self) -> None:
         self.bootstrap()

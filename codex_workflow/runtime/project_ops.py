@@ -146,8 +146,10 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
         mutations.append(text_mutation(project.active, rendered))
     if not project.personalization.is_file():
         mutations.append(text_mutation(project.personalization, personalization))
+    framework_sources = sorted(package.project_docs.glob("*.md"))
+    framework_docs = [source.name for source in framework_sources]
     created_docs: list[str] = []
-    for source in sorted(package.project_docs.glob("*.md")):
+    for source in framework_sources:
         target = project.docs / source.name
         if not target.exists():
             mutations.append(Mutation(target, source.read_bytes()))
@@ -166,15 +168,20 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
     mutations.extend(cleanup_mutations)
     if cleanup_mutations:
         warnings.append(f"{project.source_dir} will be deleted after installation")
-    actions = []
-    if created_docs:
-        actions.append(
-            {
-                "role": "doc-writer",
-                "action": "initialize newly copied project documents",
-                "files": created_docs,
-            }
-        )
+    actions = [
+        {
+            "role": "doc-writer",
+            "action": "initialize or verify the Project Documentation Framework",
+            "required": True,
+            "files": created_docs,
+            "framework": framework_docs,
+            "required_context_files": [
+                "project_structure.md",
+                "project_overview.md",
+                "project_core_tech.md",
+            ],
+        }
+    ]
     return OperationPlan(
         "project-install",
         mutations,

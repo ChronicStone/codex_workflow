@@ -28,7 +28,8 @@ Workers own operational context: Explorer gathers and refines discovery;
 executors own package-local investigation, implementation, self-check, and
 repair; testers own test evidence and failure diagnosis; doc-writers own
 assigned durable documentation. The End-of-Session worker owns final Git and
-status reconciliation only during an invoked handoff.
+complete documentation-framework reconciliation during automatic deployment
+closure.
 
 The main agent's default tool use should be coordination, planning/status,
 compact commands, and critical source or evidence inspection. Delegate routine
@@ -38,8 +39,10 @@ should be used by the role that owns that context when practical. The main
 agent retains access to critical evidence but opens it only for a material
 decision, uncertainty, contradiction, missing proof, or high-risk boundary.
 
-Questions and small tasks use a direct main-agent fast path: do not spawn,
-message, or otherwise call subagents. Do not create work merely to use a worker.
+Questions and small or odd bounded tasks use a direct main-agent fast path: do
+not spawn, message, or otherwise call subagents. Do not create work merely to
+use a worker. This fast path also skips End-of-Session and worker statistics
+entirely.
 
 ## Planning and Context Gateway
 
@@ -55,10 +58,10 @@ logs. If no decision is required and evidence is coherent, absorb the brief
 without reopening its sources.
 
 When the user asks to plan an implementation, persist and begin it unless they
-request planning only. For durable work, update
-`agent_docs/project_progress.md` at most twice: plan activation and final state
-reconciliation. Use `latest_session_work.md` only for a needed cross-session
-handoff. No worker except `end_of_session` may edit either file.
+request planning only. For durable work, the main agent may update
+`agent_docs/project_progress.md` once for plan activation. The automatic
+closure worker owns final reconciliation and replaces
+`latest_session_work.md`; no other worker may edit either file.
 
 ## Packages and Knowledge Distribution
 
@@ -101,7 +104,9 @@ Use the selected default executor for production work. Reserve `executor_sol`
 for substantial mathematical or logical reasoning or exceptionally difficult
 cross-cutting work. Start the independent tester after executor self-check
 unless separate test research is genuinely independent. Delegate documentation
-only after the relevant behavior is verified.
+only after the relevant behavior is verified. Do not create a separate
+doc-writer for the automatic end-of-deployment framework reconciliation; the
+End-of-Session worker owns it.
 
 ## Direct Repair Loop
 
@@ -171,13 +176,13 @@ conflicting evidence invalidate them.
   state, affected criterion, and required decision or next action. Never present
   partial work as complete.
 
-## Usage and Session End
+## Automatic Handoff and Worker Statistics
 
-For work that used subagents, give compact call counts at shift end and in the
-final report for the selected default executor, `executor_sol`, `tester`,
-`doc-writer`, and `end_of_session`, plus Explorer usage as defined in its
-companion contract. For a direct question or small-task turn that called no
-subagent, omit the worker-call list entirely.
-
-When the user says the exact phrase `end this session`, ignoring capitalization
-and surrounding punctuation, follow `~/.codex/codex_workflow/end_of_session.md`.
+After all package workers reach a terminal state, and before the final response
+that completes, pauses, or blocks the deployment, follow
+`~/.codex/codex_workflow/end_of_session.md` exactly once. Pass only the route, a
+unique deployment ID, and closure state; the configured context fork supplies
+the main-agent history. Wait and relay the fresh worker's report without
+duplicating its work. A later substantive deployment gets a new ID and handoff.
+The direct fast path calls no worker, including Explorer or End-of-Session, and
+emits no statistics.

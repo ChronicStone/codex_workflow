@@ -4,7 +4,9 @@
 
 ![Workflow illustration](illustration.png)
 
-A workflow designed to drastically reduce overall token usage, support seamless deployment across multiple sessions, and remain extremely simple to use.
+Built for maximum token efficiency: swarm execution with the main agent as the
+knowledge distributor, companion assistants that preserve operational context,
+and built-in context and implementation-progress management across sessions.
 
 > ⭐ For lightweight tasks, it won’t overdo things. Light route is default.
 
@@ -23,23 +25,16 @@ Download and extract the latest GitHub Release from https://github.com/viettran-
 
 🔄 Restart Codex after installation
 
-New sessions do not check for a newer workflow release by default. To enable
-the check, send `codex_workflow --enable_auto_update`. To disable it again,
-send `codex_workflow --disable_auto_update`.
-
-To explicitly check for available releases and see release-note summaries,
-send `codex_workflow --check-update`.
-
-To remove the workflow, send `codex_workflow --remove`. It first shows a
-destructive dry-run summary and requires a second explicit confirmation.
+After this initial installation, the current project is ready to use. Whenever you need to install this workflow for a new project, simply open the codex and send: `codex_workflow --install`
 
 ## 2. Workflow usage 
 
 ### This workflow has 3 routes:
 - Light route : No subagents, no workflow, minimal context.
-- Heavy route : Deploy subagents, full workflow.
-- Medium route: Main agent performs the work; only Explorer and the dedicated
-  End-of-Session worker are used.
+- Heavy route : Deploy subagents, full workflow mode.
+- Medium route: No subagents, full workflow mode.
+
+> Full workflow mode : Activate `explorer companion` and the ability to automatically manage context and processes.
 
 ### How to use
 - Normally, for simple work, general Q&A, you don't need to do anything. `light route` is the default route.
@@ -48,26 +43,29 @@ destructive dry-run summary and requires a second explicit confirmation.
 - When starting or continuing a plan in progress, just tell Codex in the prompt: "
 
 ```text
-use medium route / use heavy route. [your task description]".
+use medium/heavy route. [your task description]".
+```
+Or:
+```text
+use medium/heavy route. Continue ongoing work.
 ```
 > Codex stays on the selected route until you change it, so you don’t need to repeat it in every prompt.
-
---------------------------------
-If the implementation plan is not yet complete, but the context window is nearly full or already been compacted too many times, or you simply want to pause the work, trigger the **End-of-Session** handoff by sending:
-
-```text
-end this session. [more details if needed].
-```
-> 💡 You can still continue the session after that mesage.
-
-To resume the unfinished work in a new session, send:
-
-```text
-use heavy route. continue the unfinished work.
-```
 ---------------
 > **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities and maximize token usage savings.
 
 ## 3. More details 🧭 
+
+Send these exact commands to Codex from the relevant project directory:
+
+| Command | Purpose |
+| --- | --- |
+| `codex_workflow --install` | Install workflow in the current project and initialize its documentation framework. |
+| `codex_workflow --configure` | Configure the default executor, reasoning effort, worker limits, and handoff context. |
+| `codex_workflow --personal` | Add or update project-specific workflow preferences. |
+| `codex_workflow --check-update` | Check for a newer release without installing it. |
+| `codex_workflow --update` | Download, verify, and install the latest eligible release. |
+| `codex_workflow --disable` / `codex_workflow --enable` | Disable or re-enable the workflow for the current project. |
+| `codex_workflow --remove` | Remove the installed workflow after a destructive dry-run and confirmation. |
+
 For the complete command reference, installed-file map, scripted customization
 guide, and Heavy-route design, see [workflow_usage.md](workflow_usage.md).

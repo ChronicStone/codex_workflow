@@ -41,11 +41,18 @@ It does not rewrite the shared user-level runtime, configuration, user
 instructions, source backup, or worker TOMLs under `~/.codex/`. Stop and report
 the error if the initial user-level bootstrap is missing.
 
-## Agent completion action
+## Required documentation action
 
-If the result contains a `doc-writer` action, initialize only the listed newly
-created files. Preserve existing project documents. An empty project is valid;
-record only verified context and leave deployment status empty when no active
-plan exists.
+The result always contains one required `doc-writer` action. Spawn it with
+`agent_type="doc-writer"`, `task_name="install_docs"`, and
+`fork_turns="none"`. Pass the project root and returned `files`, `framework`, and
+`required_context_files` lists. Initialize only listed new documents, remove
+their bootstrap markers, and preserve existing documents. Populate newly created
+`project_structure.md`, `project_overview.md`, and `project_core_tech.md` with
+verified project evidence. If `files` is empty, perform only a read-only
+framework completeness check. An empty project is valid; explicitly record that
+project context was unavailable and leave deployment status empty when no plan
+exists.
 
-Installation is incomplete until every reported agent action succeeds.
+Installation is incomplete if the required worker cannot run or fails. Do not
+silently perform its work in the main thread.

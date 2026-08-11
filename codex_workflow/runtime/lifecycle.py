@@ -25,7 +25,12 @@ from .project_ops import (
     plan_project_remove,
     plan_project_update,
 )
-from .runtime_ops import plan_materialized_config, plan_runtime_files, plan_runtime_remove
+from .runtime_ops import (
+    plan_installed_user_agents,
+    plan_materialized_config,
+    plan_runtime_files,
+    plan_runtime_remove,
+)
 from .transaction import Mutation
 
 
@@ -73,6 +78,8 @@ def plan_configure(
     available = {path.stem for path in templates.glob("*.toml")}
     proposed = WorkflowConfig.from_mapping(raw, available_workers=available)
     mutations = plan_materialized_config(runtime, proposed)
+    if proposed.auto_check_update != current.auto_check_update:
+        mutations.extend(plan_installed_user_agents(runtime, proposed))
     mutations.append(
         Mutation(runtime.runtime / "workflow_config.json", proposed.to_json().encode())
     )
@@ -105,14 +112,16 @@ def plan_auto_check_update_setting(
         raw,
         available_workers={path.stem for path in templates.glob("*.toml")},
     )
+    mutations = [
+        Mutation(
+            runtime.runtime / "workflow_config.json",
+            proposed.to_json().encode(),
+        )
+    ]
+    mutations.extend(plan_installed_user_agents(runtime, proposed))
     return OperationPlan(
         "set-auto-check-update",
-        [
-            Mutation(
-                runtime.runtime / "workflow_config.json",
-                proposed.to_json().encode(),
-            )
-        ],
+        mutations,
         [],
         [],
         {"auto_check_update": enabled},

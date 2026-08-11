@@ -9,7 +9,12 @@ from pathlib import Path
 from ._toml import tomllib
 from .config import load_config, render_handoff_contract, render_heavy_route
 from .errors import ValidationError
-from .markers import USER_MANAGED, extract, validate_project_template
+from .markers import (
+    AUTO_CHECK_UPDATE_PLACEHOLDER,
+    USER_MANAGED,
+    extract,
+    validate_project_template,
+)
 from .personalization import materialize_personalization
 
 
@@ -74,8 +79,12 @@ class PackageLayout:
             raise ValidationError("package user_AGENTS.md marker is missing")
         if f"<!-- codex-workflow-version: {version} -->" not in user_agents_text:
             raise ValidationError("package version and user marker disagree")
-        extract(user_agents_text, USER_MANAGED)
+        managed_user_agents = extract(user_agents_text, USER_MANAGED)
         if not allow_legacy:
+            if managed_user_agents.count(AUTO_CHECK_UPDATE_PLACEHOLDER) != 1:
+                raise ValidationError(
+                    "package user_AGENTS.md auto-check placeholder is missing or duplicated"
+                )
             required = [
                 "workflow.py",
                 "resources/workflow_config.default.json",
@@ -109,11 +118,19 @@ class PackageLayout:
                 "runtime/release.py",
                 "runtime/runtime_ops.py",
                 "runtime/transaction.py",
+                "resources/auto_check_update.md",
                 "resources/personalization.md",
             ]
             missing = [relative for relative in required if not (self.root / relative).is_file()]
             if missing:
                 raise ValidationError(f"package runtime files missing: {missing}")
+            auto_check_instruction = (
+                self.root / "resources" / "auto_check_update.md"
+            ).read_text(encoding="utf-8")
+            if "auto-check-update --json" not in auto_check_instruction:
+                raise ValidationError(
+                    "package automatic-check instruction is missing its command"
+                )
             validate_project_template(self.project_template.read_text(encoding="utf-8"))
         required_docs = {
             "project_overview.md",

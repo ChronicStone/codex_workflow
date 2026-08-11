@@ -301,6 +301,7 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
         f"{PACKAGE_DIR_NAME}/runtime/runtime_ops.py",
         f"{PACKAGE_DIR_NAME}/runtime/transaction.py",
         f"{PACKAGE_DIR_NAME}/resources/personalization.md",
+        f"{PACKAGE_DIR_NAME}/resources/auto_check_update.md",
         f"{PACKAGE_DIR_NAME}/resources/workflow_config.default.json",
     }
     missing = sorted(required.difference(normalized))

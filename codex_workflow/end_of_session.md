@@ -1,26 +1,31 @@
 # End-of-Session Handoff
 
-Use this handoff only when the user directly commands the exact phrase
-`end this session`, ignoring capitalization and surrounding punctuation. It is
-shared by Medium and Heavy routes.
+Use this automatic closure once after every substantive Medium or Heavy
+deployment, immediately before the main agent's final response. It also applies
+when a deployment pauses or blocks. Questions and small or odd bounded tasks on
+the direct fast path do not use this handoff and produce no worker statistics.
 
 Spawn one fresh worker with:
 
 - `agent_type="end_of_session"`
-- `task_name="end_of_session_handoff"`
+- `task_name="end_of_session_<deployment_id>"`, where the suffix is a unique,
+  lowercase, underscore-safe deployment identifier
 <!-- codex-workflow-handoff-config-start -->
 - `fork_turns="200"`
 <!-- codex-workflow-handoff-config-end -->
 
-Tell it the active route and pass through any extra handoff details from the
-user. Do not summarize the session or build a task capsule. The finite fork
-passes the configured number of recent turns so the worker can use its own Luna
-xhigh model; its TOML contains the full procedure.
+Pass only the active route, deployment ID, and closure state (`complete`,
+`paused`, or `blocked`). Do not summarize the session, build a task capsule, or
+maintain a usage ledger. The finite fork passes recent main-agent turns so the
+worker inherits the deployment context while retaining its Luna xhigh model;
+its TOML contains the full procedure.
 
-The worker owns the entire handoff, including status reconciliation,
-documentation updates, compact closing checks, Git staging and commit, and the
-final handoff report. The main agent must not duplicate those steps. Wait for
-the worker, then relay its result to the user.
+The worker alone reconciles the complete `agent_docs/` framework, performs
+compact closing checks, handles Git staging and commit, and returns the final
+handoff report and statistics table. Do not call a second documentation worker
+or duplicate these steps. Wait for the worker, then relay its result. Create a
+fresh uniquely named worker for every later substantive deployment in the same
+session.
 
 If the worker cannot be created or is blocked, report that limitation. Do not
 silently transfer the handoff to Explorer or another role.

@@ -14,8 +14,9 @@ python3 ~/.codex/codex_workflow/workflow.py \
   enable-auto-update --json
 ```
 
-Report the final `auto_check_update` value. The script changes only the mutable
-installed `workflow_config.json`; it does not rewrite routes, workers, project
-files, or package defaults.
+Report the final `auto_check_update` value. The script sets the mutable installed
+configuration and adds the session-start check instruction to the workflow's
+managed region in `~/.codex/AGENTS.md`. It preserves unrelated user content and
+does not rewrite routes, workers, project files, or package defaults.
 
 The setting is disabled again through `codex_workflow --disable_auto_update`.
