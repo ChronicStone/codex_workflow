@@ -226,7 +226,7 @@ and the current project as follows:
     ├── install_state.json                  # workflow ownership and installed-state manifest
     ├── heavy_route.md                      # Heavy-route orchestration rules
     ├── medium_route.md                     # Medium-route rules
-    ├── explorer_companion.md               # read-only Explorer lifecycle and boundaries
+    ├── explorer_companion.md               # read-only context gateway and brief contracts
     ├── end_of_session.md                   # shared handoff spawn contract
     ├── bootstrap.md                        # initial user/project bootstrap procedure
     ├── install.md                          # project-only installation procedure
@@ -421,7 +421,9 @@ agree with `workflow_config.json`.
 The Heavy route is an orchestrated deployment-state workflow. It is selected
 explicitly by the user; Light remains the default for small tasks. The Heavy
 route does not mean that every prompt must spawn workers: common questions and
-small tasks may still be handled directly by the main agent.
+small tasks use a direct main-agent fast path and must not call subagents. When
+that fast path calls no subagent, its final response also omits worker call-count
+statistics.
 
 ### Roles and ownership
 
@@ -429,12 +431,12 @@ The current enabled set is:
 
 | Role | Responsibility | Can edit project source? |
 | --- | --- | --- |
-| Main agent | Chooses scope, plans, delegates, integrates, and reviews critical boundaries during normal execution | Yes, under the user-approved task scope |
-| Selected default executor (`executor_luna` or `executor_terra`) | Production implementation worker | Yes, within its work package |
+| Main agent | Knowledge architect: chooses scope and architecture, distributes guidance, integrates knowledge, and reviews decision-critical boundaries | Only for exceptional scoped takeover, not routine Heavy implementation |
+| Selected default executor (`executor_luna` or `executor_terra`) | Package discovery, production implementation, self-check, and routine repair | Yes, within its work package |
 | `executor_sol` | Complex core reasoning or fallback implementation | Yes, within its work package; limited to one active instance |
 | `tester` | Independent focused tests and failure analysis | Test/fixture scope; production defects return to the executor |
 | `doc-writer` | Verified durable architecture, structure, workflow, or usage documentation | Documentation scope, except shared status/handoff files |
-| Explorer companion | Read-only context gathering and session-long supplementary research | No |
+| Explorer companion | Read-only context gateway for planning and knowledge-delta briefs | No |
 | `end_of_session` | Complete Medium/Heavy handoff, status documents, and Git closure | Documentation and Git state during an invoked handoff |
 
 `executor_terra.toml` is materialized alongside the other worker definitions;
@@ -448,21 +450,23 @@ effective-configuration block.
 When Heavy is selected for a deployment-state task, the main agent:
 
 1. reads the project entry point and the workflow's Heavy-route instructions;
-2. initializes one read-only Explorer companion;
-3. loads the bounded foundational project context: overview, structure,
-   progress, and latest-session handoff, then reconciles the remaining relevant
-   documents;
-4. defines a bounded plan, acceptance criteria, ownership, protected areas,
-   dependencies, and verification gates;
+2. initializes one read-only Explorer and asks it to refine foundational
+   documents and relevant repository evidence into a planning brief;
+3. uses that brief to form the architecture, bounded plan, acceptance matrix,
+   ownership, dependencies, and verification gates without replaying raw
+   discovery;
+4. directly inspects only decision-critical, contradictory, uncertain, or
+   high-risk evidence;
 5. sends self-contained work packages to only the enabled workers needed for
    the task.
 
-Each work package contains the task identity, outcome, ownership, relevant
-decision context, source paths, completion criteria, validation, protected
-areas, and return format. The default executor also receives a recommended
-approach and rationale; `executor_sol` receives constraints without a proposed
-solution. Normal initial capsules are concise, follow-ups contain only new
-evidence, and final reports are limited by `report_package_size`.
+Each package distributes task identity, outcome, ownership, upstream decisions,
+interfaces, dependencies, recommendation and rationale, the key invariant and
+pitfall, acceptance criteria, verification, escalation conditions, and return
+format. `executor_sol` receives the unresolved problem and constraints without a
+prescribed solution. Capsules use exact references but retain judgment needed to
+avoid clarification and repair. Final reports are limited by
+`report_package_size` and describe knowledge changes rather than file activity.
 
 The normal implementation and verification loop is:
 
@@ -470,10 +474,10 @@ The normal implementation and verification loop is:
 User selects Heavy route
         │
         ▼
-Main agent loads project context and initializes read-only Explorer
+Explorer refines project and repository evidence into a planning brief
         │
         ▼
-Main agent creates bounded package(s) for the selected default executor or executor_sol
+Main forms architecture and distributes guidance-rich package(s)
         │
         ▼
 Executor implements one coherent increment and self-validates
@@ -481,25 +485,34 @@ Executor implements one coherent increment and self-validates
         ▼
 Tester independently runs focused checks when testing is warranted
         │
-        ├── proof  ──► main agent reviews and integrates
-        ├── defect ─► same executor receives a bounded repair delta
-        ├── blocker ─► main agent re-scopes or requests a decision
-        └── replacement/takeover ─► recovery path after repeated evidence loss
+        ├── routine defect ─► direct executor repair ─► tester recheck
+        ├── proof ─────────► compact knowledge report
+        └── decision defect ─► main agent re-scopes or decides
         │
         ▼
-Doc-writer records verified durable documentation when required
+Explorer consolidates material knowledge deltas when needed
         │
         ▼
-Main agent performs critical integration review
+Main integrates; doc-writer records verified durable facts when required
         │
         ▼
 On `end this session`, a fresh Luna xhigh worker receives recent context and owns the handoff
 ```
 
-The tester is normally started after the executor hands off a completed
-increment. A production defect goes back to that same executor; a test or
-fixture defect stays with the tester. Repair loops respond to new evidence and
-do not repeat work merely to increase activity.
+The tester and responsible executor receive each other's canonical task names.
+Routine production defects travel directly between them as compact packets with
+the failed criterion, reproduction, expected and observed behavior, affected
+contract, evidence artifact, and scope/architecture assessment. The main agent
+is involved only for capsule conflict, cross-package contract change, an
+invalidated decision, expanded ownership, security or migration risk, or
+repeated failure. Test and fixture defects stay with the tester.
+
+Workers keep raw logs, large diffs, reports, responses, and diagnostics in
+artifacts or retained thread context. Upward reports give the outcome, contract
+changes, new facts, invalidated assumptions, verification reference, residual
+risk, decision required, and exact evidence location. When no decision is
+required and evidence is coherent, the main agent normally does not reopen the
+artifact.
 
 ### Concurrency and communication controls
 
@@ -509,11 +522,12 @@ than a task worker, but its live thread consumes platform capacity. Heavy keeps
 one child-agent slot available for the fresh End-of-Session worker and must not
 exceed the enabled-worker list or configured limits.
 
-Worker communication is event-driven. `proof`, `defect`, `blocker`, and
-`replacement/takeover` events are used when evidence changes coordination,
-risk, scope, or the next action. A worker that returns no concrete evidence
-gets one short retry; repeated evidence-free work triggers replacement or an
-explicit main-agent takeover with an honest report.
+Worker communication is event-driven and knowledge-aware. Routine repair stays
+inside the executor/tester pair; the main agent receives events only when new
+evidence changes coordination, contracts, risk, scope, or the next decision. A
+worker that returns no concrete evidence gets one short retry; repeated
+evidence-free work triggers replacement or a narrowly scoped, explicit
+main-agent takeover.
 
 Task workers must not edit Git state or the shared status documents. The main
 agent owns those surfaces during normal execution; `end_of_session` alone owns
@@ -557,7 +571,7 @@ Location: `~/.codex/`
 - `~/.codex/codex_workflow/medium_route.md` defines main-agent execution with
   only Explorer and End-of-Session subagent exceptions.
 - `~/.codex/codex_workflow/explorer_companion.md` defines the read-only
-  Explorer's lifecycle and boundary.
+  Explorer's lifecycle, gateway role, and brief contracts.
 - `~/.codex/codex_workflow/end_of_session.md` defines the shared spawn contract;
   `end_of_session.toml` contains the complete handoff procedure.
 

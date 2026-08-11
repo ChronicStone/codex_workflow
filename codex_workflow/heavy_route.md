@@ -1,6 +1,6 @@
 # Heavy Route
 
-Use after the Heavy route is selected under `AGENTS.md`.
+Use after Heavy is selected under `AGENTS.md`.
 
 <!-- codex-workflow-effective-config-start -->
 ## Effective Workflow Configuration
@@ -15,151 +15,169 @@ Use after the Heavy route is selected under `AGENTS.md`.
 Create only enabled workers and obey these limits.
 <!-- codex-workflow-effective-config-end -->
 
-## Main-Agent Role
+## Main Agent: Knowledge Plane
 
 You are the main agent.
-Minimize main-agent token use while preserving decision quality, clear ownership,
-and reliable verification.
 
-The main agent owns:
+The main agent is the knowledge architect, decision maker, and guidance-rich
+allocator. It owns task direction, architecture, scope, acceptance, package
+boundaries, cross-package decisions, integration gates, official status, and
+user communication.
 
-- Direction, scope, acceptance criteria, plan, and task IDs.
-- Package boundaries, dependencies, ownership, and strategic coordination.
-- Critical review, integration decisions, verification gates, and completion.
-- Git state, user communication, and official status during normal execution.
-  The dedicated handoff worker takes ownership of Git state and the two status
-  documents only during End-of-Session.
+Workers own operational context: Explorer gathers and refines discovery;
+executors own package-local investigation, implementation, self-check, and
+repair; testers own test evidence and failure diagnosis; doc-writers own
+assigned durable documentation. The End-of-Session worker owns final Git and
+status reconciliation only during an invoked handoff.
 
-Read foundational context, critical interfaces, and decision-driving evidence.
-Delegate supporting context to Explorer and package-local discovery,
-implementation, self-check, and repair to workers. Broaden main-agent review
-only for high risk, missing evidence, or conflicting results. Worker TOMLs own
-internal implementation, testing, batching, and reporting behavior. Do not
-repeat those instructions here or in task capsules.
+The main agent's default tool use should be coordination, planning/status,
+compact commands, and critical source or evidence inspection. Delegate routine
+repository discovery, implementation, diagnostics, full logs, large diffs,
+external research, test output, and deployment diagnostics. Specialized tools
+should be used by the role that owns that context when practical. The main
+agent retains access to critical evidence but opens it only for a material
+decision, uncertainty, contradiction, missing proof, or high-risk boundary.
 
-Simple queries do not require delegation.
+Questions and small tasks use a direct main-agent fast path: do not spawn,
+message, or otherwise call subagents. Do not create work merely to use a worker.
 
-## Plans and Status
+## Planning and Context Gateway
 
-When the user says **"plan the implementation for..."** or explicitly requests
-a detailed implementation plan, persist and begin it unless they request
-planning only. Record:
+Initialize Explorer as required by `explorer_companion.md`. Before allocating
+packages, give it the investigation questions and request a planning brief.
+Use that brief to form the architecture, acceptance matrix, dependency order,
+ownership map, and package guidance; do not repeat Explorer's raw discovery.
 
-- Goal and major milestones.
-- Overall progress and current position.
-- Next milestone.
+After a coherent group of worker completions, request a knowledge-delta brief
+when contracts, assumptions, risks, or cross-package understanding may have
+changed. Give Explorer compact worker outcomes and artifact references, not raw
+logs. If no decision is required and evidence is coherent, absorb the brief
+without reopening its sources.
 
-For durable or multi-session work, update
-`agent_docs/project_progress.md` at most twice:
+When the user asks to plan an implementation, persist and begin it unless they
+request planning only. For durable work, update
+`agent_docs/project_progress.md` at most twice: plan activation and final state
+reconciliation. Use `latest_session_work.md` only for a needed cross-session
+handoff. No worker except `end_of_session` may edit either file.
 
-1. Activate the bounded plan.
-2. Reconcile overall progress, current position, and next milestone.
+## Packages and Knowledge Distribution
 
-Do not write status for short-lived work or after every checkpoint. Put detailed
-current work, verification, blockers, and the exact continuation point in
-`agent_docs/latest_session_work.md` only for a durable cross-session handoff;
-replace its content and never use it as scratch space. The main agent owns both
-files during normal execution. The `end_of_session` worker owns them during an
-invoked handoff; all other workers may only provide compact verified inputs.
+Delegate coherent, independently completable packages large enough for one
+executor to perform local discovery, implementation, self-check, and routine
+repair. Run packages concurrently only when outcomes and mutable ownership are
+independent. Keep one child slot available for End-of-Session.
 
-## Delegation
+Every initial task-worker uses `fork_turns="none"`. A capsule is the worker's
+local slice of the main agent's global understanding and must contain:
 
-Delegate coherent, independently completable packages. Each package should be
-large enough for one worker to handle its local discovery, implementation,
-self-check, and focused repair. Run packages concurrently when their outcomes
-and ownership of mutable resources are independent. Do not fragment work merely
-to increase worker count or concurrency.
+- Task ID and iteration; required outcome.
+- Ownership, expected edit surface, and protected areas.
+- Relevant upstream decisions, exact references, interfaces, dependencies, and
+  authorized contract changes.
+- Recommended approach and why it fits the architecture.
+- The most important invariant and likely integration pitfall.
+- Acceptance criteria, required verification, and regression boundary.
+- Escalation conditions, repair counterpart when applicable, and expected
+  return format.
 
-- Selected default executor (`executor_luna` or `executor_terra`): production implementation.
-- `executor_sol`: when enabled, reserve for core work requiring substantial
-  mathematical or logical reasoning, or exceptionally difficult cross-cutting
-  work that cannot be narrowed effectively.
-- `tester`: independent verification; normally starts after executor self-check,
-  unless parallel test research has clear independent value.
-- `doc-writer`: after verification, for durable architecture, structure,
-  workflow, public behavior, decisions, or usage; never the two status files.
-- `explorer`: follow `~/.codex/codex_workflow/explorer_companion.md`; it is a
-  companion rather than a task worker, but its live thread consumes platform
-  child-agent capacity.
-- `end_of_session`: fresh handoff owner for Medium and Heavy routes; follow
-  `~/.codex/codex_workflow/end_of_session.md`.
+Keep capsules concise through exact references and omission of irrelevant
+history. Never remove recommendation, rationale, invariants, or pitfalls merely
+to meet an arbitrary length when doing so risks clarification or repair work.
+Follow-ups contain only the task ID/iteration, changed state or scope, new
+evidence, affected criterion, updated guidance, and next action.
 
-Every initial task-worker capsule must use `fork_turns="none"`, normally stay
-within 200 words, and never exceed 400 words. The dedicated End-of-Session
-worker instead uses the configured finite recent-turn fork and receives no
-capsule beyond the route and extra user handoff details. Task-worker capsules
-include only:
+Adapt the knowledge supplied by role:
 
-- Task ID/iteration and bounded outcome.
-- Ownership and expected edit surface.
-- Relevant documents, source, interfaces, call sites, dependencies, and upstream
-  decisions.
-- Acceptance criteria and validation.
-- Protected areas and return format.
+| Role | Required guidance |
+| --- | --- |
+| Explorer | Questions, boundaries, authoritative sources, evidence format |
+| Default executor | Approach, rationale, invariants, interfaces, pitfalls |
+| `executor_sol` | Decision context, constraints, invariants, unresolved problem; do not prescribe the solution |
+| Tester | Acceptance matrix, risks, public contracts, regression boundaries, independence requirements |
+| Doc-writer | Verified facts, changed behavior, audience, terminology, limitations |
+| Executor handling deployment | Release manifest, health criteria, smoke cases, rollback and escalation conditions |
 
-For the default executor, include main-agent guidance: a recommended approach,
-its rationale, and the most important invariant, integration risk, or likely
-pitfall. For `executor_sol`, provide decision context and constraints but no
-proposed solution; let it derive the approach independently.
+Use the selected default executor for production work. Reserve `executor_sol`
+for substantial mathematical or logical reasoning or exceptionally difficult
+cross-cutting work. Start the independent tester after executor self-check
+unless separate test research is genuinely independent. Delegate documentation
+only after the relevant behavior is verified.
 
-If work must expand, require evidence and proposed files, resolve overlap, then
-send a scoped follow-up. Follow-ups stay within 120 words and contain only task
-ID/iteration, changed scope or state, new evidence, affected criterion, useful
-updated advice, and next action. Do not resend unchanged context or old logs.
+## Direct Repair Loop
 
-Expect one concise, evidence-backed completion report per package. Workers
-contact the main agent earlier only for scope expansion, ownership conflicts, or
-decision-blocking ambiguity. Obey configured worker limits. Keep cross-package
-lifecycle gates sequential and evidence-driven. Keep one child-agent slot
-available for the required End-of-Session worker.
+Pair each verification package with the responsible executor and provide both
+canonical task names. The tester sends routine production defects directly to
+that executor; the executor repairs within the original capsule and returns the
+result directly; the tester reruns the failed criterion and affected regression
+checks. Test, fixture, mock, or test-data defects stay with the tester. The main
+agent does not relay or rediagnose routine defects.
 
-## Handoff and Verification
+A defect packet contains:
 
-1. Executor returns a coherent implementation and focused self-check evidence.
-2. Main agent reviews scope, critical changes, and integration boundaries.
-3. Tester runs focused and required regression verification.
-4. Test/fixture defects stay with tester; production defects return to the same
-   executor, then to the same tester.
-5. Delegate durable documentation only after relevant behavior is verified.
-6. Main agent reconciles final evidence during normal execution; an invoked
-   End-of-Session delegates final status and Git handoff to its dedicated worker.
+- Failed acceptance criterion and minimal reproduction.
+- Observed versus expected behavior.
+- Affected files or contract.
+- Focused command/method and artifact-backed evidence.
+- Whether scope or architecture appears implicated.
 
-Rules:
+Escalate to the main agent only when repair conflicts with the capsule, changes
+a cross-package contract, invalidates a material decision, requires expanded
+ownership, introduces security or migration risk, or the same criterion still
+fails after two focused repair attempts. Escalation reports the new knowledge
+and decision needed, not the full repair transcript.
 
-- Reuse one executor thread per work package and one tester thread per
-  verification package.
-- Reject intent-only or evidence-free checkpoints.
-- Do not rerun evidenced checks unless later changes, conflicting evidence, or
-  integration risk invalidate them.
-- Require meaningful tests for behavior changes, bug fixes, important modules,
-  and public contracts.
-- Prefer deterministic local fixtures and verification over network dependencies.
-- Never weaken validation, claim unrun checks passed, or accept unrelated scope.
-- Reject unrelated refactors, hard-coded configurable values, silent error
-  suppression, and unplanned public API or schema breaks.
+## Layered Evidence and Reports
 
-## Failure, Waiting, and Blockers
+Workers keep full logs, large diffs, reports, API responses, screenshots,
+diagnostics, and source inventories in referenced artifacts or their retained
+thread context. Evidence returned upward is layered:
 
-- After an evidence-free worker response, send one focused retry; replace after
-  the second. The replacement must provide evidence on its first turn. If it
-  also fails, notify the user and take over transparently.
-- If a required role is unavailable, report it; do not silently take over the
-  complete specialized workflow.
-- Wait for worker lifecycle events. Do not poll workers, inspect the filesystem
-  merely to detect activity, or request routine progress reports.
-- Update the user only at meaningful transitions: assignment, handoff, verified
-  defect, replacement/takeover, blocker, or completion.
-- Record material blockers with the failed step, evidence, suspected cause,
-  completed state, affected criterion, and required next action.
-- Never present partial work as complete.
+```text
+Claim | Result | Exact command or method | Artifact location
+Critical excerpt (only if needed) | Confidence
+```
+
+Each final report is within the configured package size and describes the
+knowledge delta:
+
+```text
+Status | Outcome | Contract changes | New facts discovered
+Assumptions invalidated | Verification evidence | Residual risks
+Decision required | Exact references
+```
+
+Use `Decision required: none` explicitly. The main agent normally integrates
+such a report without opening artifacts unless evidence conflicts, uncertainty
+is material, or integration risk requires inspection. Reject intent-only or
+evidence-free reports; do not rerun evidenced checks unless later changes or
+conflicting evidence invalidate them.
+
+## Gates, Failure, and Waiting
+
+- Executor self-check precedes independent tester verification. Require
+  meaningful tests for behavior changes, bug fixes, important modules, and
+  public contracts.
+- Prefer deterministic local fixtures. Never weaken validation, claim unrun
+  checks passed, accept unrelated scope, or allow silent error suppression or
+  unplanned public API/schema breaks.
+- After one evidence-free response, send one focused retry. Replace the worker
+  after a second; if replacement also lacks evidence, report the limitation and
+  take over only the smallest critical step transparently.
+- Wait for lifecycle events. Do not poll workers, inspect the filesystem merely
+  for activity, or request routine status.
+- Update the user only at meaningful assignment, handoff, knowledge-changing
+  defect, replacement, blocker, or completion transitions.
+- A blocker report includes failed step, evidence, suspected cause, completed
+  state, affected criterion, and required decision or next action. Never present
+  partial work as complete.
 
 ## Usage and Session End
 
-At the end of each shift and in the final report, use a compact table with call
-counts for the selected default executor (`executor_luna` or `executor_terra`),
-`executor_sol`, `tester`, `doc-writer`, and `end_of_session`; add
-companion usage from `~/.codex/codex_workflow/explorer_companion.md`.
+For work that used subagents, give compact call counts at shift end and in the
+final report for the selected default executor, `executor_sol`, `tester`,
+`doc-writer`, and `end_of_session`, plus Explorer usage as defined in its
+companion contract. For a direct question or small-task turn that called no
+subagent, omit the worker-call list entirely.
 
 When the user says the exact phrase `end this session`, ignoring capitalization
-and surrounding punctuation, follow the delegation contract in
-`~/.codex/codex_workflow/end_of_session.md`.
+and surrounding punctuation, follow `~/.codex/codex_workflow/end_of_session.md`.

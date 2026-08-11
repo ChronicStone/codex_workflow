@@ -83,6 +83,38 @@ class MarkerTests(unittest.TestCase):
         self.assertEqual(extract(rendered, PROJECT_PERSONALIZATION), "Personal rule.")
         self.assertEqual(extract(rendered, PROJECT_LOCAL), "# Existing\nKeep this.")
 
+    def test_operational_policies_are_compact_and_knowledge_aware(self) -> None:
+        names = (
+            "AGENTS.md",
+            "medium_route.md",
+            "heavy_route.md",
+            "explorer_companion.md",
+        )
+        policies = {
+            name: (PACKAGE / name).read_text(encoding="utf-8") for name in names
+        }
+        for name, text in policies.items():
+            self.assertLess(len(text.splitlines()), 200, name)
+
+        heavy = policies["heavy_route.md"]
+        self.assertIn("recommended approach", heavy.lower())
+        self.assertIn("canonical task names", heavy)
+        self.assertIn("Decision required: none", heavy)
+        self.assertIn("knowledge-delta brief", heavy)
+        self.assertIn("do not spawn,\nmessage, or otherwise call subagents", heavy)
+        self.assertIn("omit the worker-call list entirely", heavy)
+
+        explorer = policies["explorer_companion.md"]
+        self.assertIn("planning brief", explorer)
+        self.assertIn("knowledge-delta brief", explorer)
+
+        tester = (PACKAGE / "agents" / "tester.toml").read_text(encoding="utf-8")
+        executor = (PACKAGE / "agents" / "executor_luna.toml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("contact the named executor directly", tester)
+        self.assertIn("Do not involve the parent for a routine defect", executor)
+
     def test_reserved_marker_collision_is_rejected_during_import(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
