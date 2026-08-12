@@ -45,7 +45,7 @@ After this initial installation, the current project is ready to use. Whenever y
 ```text
 use medium/heavy route. [your task description]".
 ```
-Or:
+Or continue a task that was already underway in the previous session: 
 ```text
 use medium/heavy route. Continue ongoing work.
 ```
@@ -53,7 +53,11 @@ use medium/heavy route. Continue ongoing work.
 ---------------
 > **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities and maximize token usage savings.
 
-## 3. More details 🧭 
+## Light benchmark
+
+![Light benchmark analysis](light_benchmark/analysis.png)
+
+## 3. More details 
 
 Send these exact commands to Codex from the relevant project directory:
 
