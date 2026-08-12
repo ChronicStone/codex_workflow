@@ -36,6 +36,8 @@ After this initial installation, the current project is ready to use. Whenever y
 
 > Full workflow mode : Activate `explorer companion` and the ability to automatically manage context and processes.
 
+Note that the `medium route` doesn't call subagents; it completes the task itself. It only applies `full workflow mode` to automatically manage context & progress. It's suitable for moderately sized or narrow tasks, where the main agent can do everything itself faster and more efficiently than calling a small number of workers.
+
 ### How to use
 - Normally, for simple work, general Q&A, you don't need to do anything. `light route` is the default route.
 
