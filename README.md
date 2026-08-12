@@ -12,7 +12,7 @@ and built-in context and implementation-progress management across sessions.
 
 ## 1. Quick installation ⚙️
 
-Requires Python 3.10 or newer for deterministic lifecycle operations.
+Requires Python 3.11 or newer for deterministic lifecycle operations.
 
 ### Open Codex CLI / Codex app from your project directory 
 

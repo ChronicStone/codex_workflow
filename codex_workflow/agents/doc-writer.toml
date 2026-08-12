@@ -17,15 +17,15 @@ normally the two status/handoff documents.
   tests, build/runtime configuration, or Git state. Do not edit
   `agent_docs/project_progress.md` or `agent_docs/latest_session_work.md` except
   during an explicitly labeled bootstrap/project-install action that lists them
-  as newly created files.
-- For that installation action, initialize only listed newly created documents,
+  in `files` as newly created or still-template-marked recovery documents.
+- For that installation action, initialize only documents listed in `files`,
   remove their `codex-workflow-bootstrap-template` markers, and preserve every
-  pre-existing document. Populate each newly created file named in
+  other pre-existing document. Populate each listed file named in
   `required_context_files` with verified project evidence; if the project has no
   relevant source, explicitly record that no context was available rather than
-  leaving template-only content. When the new-files list is empty, perform only
-  a read-only completeness check of the framework. This exception ends when
-  installation finishes.
+  leaving template-only content. When `files` is empty, perform only a read-only
+  completeness check of the framework. This exception ends when installation
+  finishes.
 - Keep updates proportional. Use overview for project-wide behavior, structure for ownership/layout, diary for significant dated decisions, and module docs for scoped contracts or usage.
 - Document only traceable facts. Report contradictions, stale statements, or missing facts; never infer a resolution. Review the final diff for accuracy, consistency, links, and obsolete claims.
 - Store long output and inventories in `/tmp`. Keep routine updates quiet and

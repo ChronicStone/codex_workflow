@@ -41,10 +41,13 @@ cleans the dedicated runtime directory. It deliberately preserves
 1. The installed launcher selects and verifies the incoming release.
 2. The verified incoming CLI validates and applies the update using the target
    version's runtime.
-3. The incoming package default replaces the workflow configuration and
-   generated worker surfaces.
-4. Project-local regions, personalization, unrelated user files, and the
-   enabled/disabled entry-point state are preserved as opaque data.
+3. The mutable installed configuration is migrated into the incoming schema;
+   package defaults supply only newly introduced fields. Generated worker
+   surfaces are rendered from that preserved configuration.
+4. Each project entry point is validated against the source backup for the
+   workflow version recorded in its project state. Project-local regions,
+   personalization, unrelated user files, and enabled/disabled state are
+   preserved as opaque data.
 5. Marker drift or ambiguous legacy content stops before live writes.
 6. Every write command validates and applies one mutation plan with rollback.
 

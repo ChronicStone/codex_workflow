@@ -16,6 +16,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+if sys.version_info < (3, 11):
+    raise SystemExit("codex_workflow requires Python 3.11 or newer")
+
 from runtime.config import load_config
 from runtime.errors import WorkflowError
 from runtime.layout import PROJECT_ID
@@ -92,15 +95,16 @@ def parse_args() -> argparse.Namespace:
     check_update = commands.add_parser("check-update")
     _add_common(check_update, project=False)
 
-    enable_auto_update = commands.add_parser("enable-auto-update")
-    _add_common(enable_auto_update, project=False)
-
-    disable_auto_update = commands.add_parser("disable-auto-update")
-    _add_common(disable_auto_update, project=False)
-
-    # Compatibility with releases that exposed the longer internal command.
-    disable_auto_check = commands.add_parser("disable-auto-check-update")
-    _add_common(disable_auto_check, project=False)
+    for name in (
+        "enable-auto-check-update",
+        "disable-auto-check-update",
+        # Compatibility aliases retained from releases that called a
+        # notification-only check an automatic update.
+        "enable-auto-update",
+        "disable-auto-update",
+    ):
+        command = commands.add_parser(name)
+        _add_common(command, project=False)
 
     configure = commands.add_parser("configure")
     _add_common(configure, project=False)
@@ -279,14 +283,18 @@ def main() -> int:
                 return 0
             return _finish(plan, args)
         if args.command in {
+            "enable-auto-check-update",
+            "disable-auto-check-update",
             "enable-auto-update",
             "disable-auto-update",
-            "disable-auto-check-update",
         }:
             return _finish(
                 plan_auto_check_update_setting(
                     runtime,
-                    enabled=args.command == "enable-auto-update",
+                    enabled=args.command in {
+                        "enable-auto-check-update",
+                        "enable-auto-update",
+                    },
                 ),
                 args,
             )
@@ -296,16 +304,8 @@ def main() -> int:
             return _finish(plan_bootstrap(package, runtime, project), args)
         if args.command == "install":
             assert project is not None
-            if _project_workflow_entry(project) is not None:
-                _emit(
-                    {
-                        "applied": False,
-                        "status": "already installed",
-                        "instruction": "Run `codex_workflow --enable` to reactivate it.",
-                    },
-                    compact=args.json,
-                )
-                return 0
+            if project.active.exists() and project.disabled.exists():
+                raise WorkflowError("both active and disabled project entry points exist")
             if (runtime.runtime / "VERSION").is_file():
                 package = PackageLayout.resolve(runtime.runtime)
             elif args.package_root is not None:
@@ -315,6 +315,29 @@ def main() -> int:
                     "the user-level workflow bootstrap is not installed; "
                     "complete the initial bootstrap before installing a project"
                 )
+            existing = _project_workflow_entry(project)
+            if existing is not None:
+                # Validate the recognized entry before reporting a no-op. This
+                # turns stale, malformed, or personalization-drifted installs
+                # into actionable errors instead of misreporting them as merely
+                # disabled.
+                existing_plan = plan_project_install(package, project)
+                if existing_plan.agent_actions[0]["files"]:
+                    return _finish(existing_plan, args)
+                enabled = existing == project.active
+                _emit(
+                    {
+                        "applied": False,
+                        "status": "already enabled" if enabled else "already disabled",
+                        "instruction": (
+                            "No action is required."
+                            if enabled
+                            else "Run `codex_workflow --enable` to reactivate it."
+                        ),
+                    },
+                    compact=args.json,
+                )
+                return 0
             return _finish(plan_project_install(package, project), args)
         if args.command == "update":
             assert project is not None

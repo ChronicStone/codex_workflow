@@ -279,6 +279,7 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
         f"{PACKAGE_DIR_NAME}/update.md",
         f"{PACKAGE_DIR_NAME}/check_update.md",
         f"{PACKAGE_DIR_NAME}/remove.md",
+        f"{PACKAGE_DIR_NAME}/enable_auto_check_update.md",
         f"{PACKAGE_DIR_NAME}/enable_auto_update.md",
         f"{PACKAGE_DIR_NAME}/disable_auto_update.md",
         f"{PACKAGE_DIR_NAME}/disable_auto_check_update.md",

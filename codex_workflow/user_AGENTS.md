@@ -21,14 +21,17 @@ exactly.
 - codex_workflow --remove
   Guide: ~/.codex/codex_workflow/remove.md.
 
-- codex_workflow --enable_auto_update
-  Guide: ~/.codex/codex_workflow/enable_auto_update.md.
-
-- codex_workflow --disable_auto_update
-  Guide: ~/.codex/codex_workflow/disable_auto_update.md.
+- codex_workflow --enable_auto_check_update
+  Guide: ~/.codex/codex_workflow/enable_auto_check_update.md.
 
 - codex_workflow --disable_auto_check_update
-  Guide: ~/.codex/codex_workflow/disable_auto_check_update.md (legacy alias).
+  Guide: ~/.codex/codex_workflow/disable_auto_check_update.md.
+
+- codex_workflow --enable_auto_update
+  Guide: ~/.codex/codex_workflow/enable_auto_update.md (legacy alias).
+
+- codex_workflow --disable_auto_update
+  Guide: ~/.codex/codex_workflow/disable_auto_update.md (legacy alias).
 
 - codex_workflow --configure
   Guide: ~/.codex/codex_workflow/configuration_guide.md.

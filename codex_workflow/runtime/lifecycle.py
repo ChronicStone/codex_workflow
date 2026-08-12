@@ -7,7 +7,8 @@ from typing import Any
 
 from . import RUNTIME_SCHEMA_VERSION
 from .backup import append_backup_mutations
-from .config import WorkflowConfig, load_config
+from .config import WorkflowConfig, load_config, load_migrated_config
+from .errors import ValidationError
 from .layout import USER_STATE, PackageLayout, ProjectPaths, RuntimePaths
 from .personalization import materialize_personalization
 from .plan import (
@@ -25,6 +26,7 @@ from .project_ops import (
     plan_project_remove,
     plan_project_update,
 )
+from .release import parse_semver
 from .runtime_ops import (
     plan_installed_user_agents,
     plan_materialized_config,
@@ -160,7 +162,12 @@ def plan_update(
     legacy_local_instructions: str | None = None,
 ) -> OperationPlan:
     installed = PackageLayout.resolve(runtime.runtime, allow_legacy=True)
-    config = load_config(incoming.default_config, templates=incoming.agent_templates)
+    project_installed = _project_installed_package(installed, runtime, project)
+    config = load_migrated_config(
+        runtime.runtime / "workflow_config.json",
+        defaults=incoming.default_config,
+        templates=incoming.agent_templates,
+    )
     backup_root = (
         runtime.runtime
         / ".backups"
@@ -173,7 +180,7 @@ def plan_update(
     )
     mutations.extend(runtime_mutations)
     project_mutations, warnings = plan_project_update(
-        installed,
+        project_installed,
         incoming,
         project,
         legacy_local_instructions=legacy_local_instructions,
@@ -202,6 +209,46 @@ def plan_update(
         {
             "from_version": installed.version,
             "to_version": incoming.version,
+            "project_from_version": project_installed.version,
             "backup": str(backup_root),
         },
     )
+
+
+def _project_installed_package(
+    installed: PackageLayout,
+    runtime: RuntimePaths,
+    project: ProjectPaths,
+) -> PackageLayout:
+    """Resolve the package version that produced this project's entry point."""
+
+    if not project.active.exists() and not project.disabled.exists():
+        return installed
+    state = read_json(project.state, default={})
+    version = state.get("workflow_version")
+    if version is None:
+        # Pre-state installations can only be compared with the currently
+        # installed source, retaining the legacy migration behavior.
+        return installed
+    if not isinstance(version, str) or not version:
+        raise ValidationError("project workflow_version state must be a non-empty string")
+    parse_semver(version)
+    if version == installed.version:
+        return installed
+    source_backups = (runtime.runtime / ".source_backup").resolve()
+    historical_root = (source_backups / version).resolve()
+    try:
+        historical_root.relative_to(source_backups)
+    except ValueError as error:
+        raise ValidationError("project workflow_version resolves outside source backups") from error
+    if not historical_root.is_dir():
+        raise ValidationError(
+            "the historical workflow source for this project is missing: "
+            f"{historical_root}; restore it from backup before updating the project"
+        )
+    historical = PackageLayout.resolve(historical_root, allow_legacy=True)
+    if historical.version != version:
+        raise ValidationError(
+            "project workflow state and historical source backup versions disagree"
+        )
+    return historical

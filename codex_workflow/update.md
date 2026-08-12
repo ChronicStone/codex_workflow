@@ -4,7 +4,7 @@ Supported command forms:
 
     codex_workflow --update
 
-Python 3.10 or newer is required. The lifecycle CLI applies a validated update
+Python 3.11 or newer is required. The lifecycle CLI applies a validated update
 directly.
 
 ## Source
@@ -27,10 +27,13 @@ python3 ~/.codex/codex_workflow/workflow.py update --project <project>
 For migration from a pre-script installation, run the incoming package's
 `workflow.py` instead of an older installed launcher.
 
-The script replaces the workflow configuration and distributed worker TOMLs
-with the incoming package versions. It preserves unrelated Codex settings,
-project documents, personalization, project-local instructions, source
-backups, and the project's enabled/disabled state. It creates a verified
+The script migrates and preserves the mutable workflow configuration, then
+regenerates distributed worker TOMLs from the incoming package templates. It
+preserves unrelated Codex settings, project documents, personalization,
+project-local instructions, source backups, the automatic-check preference,
+and the project's enabled/disabled state. For projects that still use an older
+workflow version, it validates their managed region against that version's
+source backup instead of the latest global template. It creates a verified
 timestamped backup and applies the user/project state as one compensating
 transaction.
 

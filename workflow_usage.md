@@ -26,18 +26,18 @@ The release package is a universal ZIP for Linux, macOS, and Windows. Its
 installation guide invokes the bundled lifecycle CLI, which owns validation,
 rendering, backups, project initialization, and rollback. After the first
 installation, start a new Codex session so the newly installed user
-instructions are loaded. Python 3.10 or newer is required.
+instructions are loaded. Python 3.11 or newer is required.
 
 The bootstrap installs the user-level workflow and the current project. It
 does not ask configuration or personalization questions. Those are explicit
 follow-up commands. It also adds the workflow-owned project paths to
 `.gitignore` and removes a project-level `Codex_Workflow/` extraction directory
 once the installation transaction succeeds. Bootstrap then requires one
-`doc-writer` action to initialize newly created `agent_docs/` files or perform a
-read-only completeness check when the framework already exists. Installation
-is incomplete until that action succeeds. For a new framework, the worker must
-populate `project_structure.md`, `project_overview.md`, and
-`project_core_tech.md` from verified project evidence.
+`doc-writer` action to initialize new or still-template-marked `agent_docs/`
+files, or perform a read-only completeness check when the framework is already
+healthy. Installation is incomplete until that action succeeds. For listed
+context documents, the worker must populate `project_structure.md`,
+`project_overview.md`, and `project_core_tech.md` from verified project evidence.
 
 ### Exact command prompts
 
@@ -88,18 +88,23 @@ already been bootstrapped:
   region instead of semantically merging it;
 - creates missing files in `agent_docs/` from the six project-document
   templates;
-- always invokes `doc-writer` to initialize newly created documentation or
-  verify an already complete framework;
-- requires newly created `project_structure.md`, `project_overview.md`, and
-  `project_core_tech.md` to be populated from verified project evidence;
+- invokes `doc-writer` to initialize new or still-template-marked documentation,
+  while healthy existing installations are a no-op;
+- requires listed `project_structure.md`, `project_overview.md`, and
+  `project_core_tech.md` recovery or new files to be populated from verified
+  project evidence;
 - creates the default hidden personalization resource when missing;
 - reuses the installed user-level configuration as a read-only source.
 
 It does not reinstall or modify any user-level payload under `~/.codex/`, reset
 existing project documents, or ask configuration and personalization
 questions. If the workflow already has an active or disabled project entry
-point, the command makes no changes and instructs the user to run
-`codex_workflow --enable`.
+point, the command first validates its state. A healthy active installation is
+a no-op; a healthy disabled installation points to `codex_workflow --enable`.
+If framework documents are missing or retain bootstrap markers after a failed
+documentation action, rerunning `--install` recreates only missing templates
+and returns the required recovery action again. Stale, malformed, or conflicted
+entry points stop with an actionable error.
 
 #### `codex_workflow --update`
 
@@ -109,11 +114,14 @@ eligible semantic-versioned release with the matching ZIP and checksum,
 downloads the asset, verifies it, and extracts it into a temporary directory.
 It never clones or pulls the repository.
 
-The update replaces the workflow configuration and distributed worker TOMLs
-from the incoming package. It preserves project personalization, project-local
-instructions, project documents, unrelated Codex settings, source backups, and
-the project's enabled or disabled state. It stops only on marker drift or
-legacy edits requiring a one-time reviewed migration.
+The update migrates and preserves the installed workflow configuration and
+regenerates distributed worker TOMLs from the incoming package. It preserves
+project personalization, project-local instructions, project documents,
+unrelated Codex settings, source backups, the automatic-check preference, and
+the project's enabled or disabled state. Projects on older workflow versions
+are validated against their matching historical source backups. It stops on
+marker drift, unavailable historical source, or legacy edits requiring a
+one-time reviewed migration.
 
 #### `codex_workflow --check-update`
 
@@ -137,15 +145,16 @@ non-affirmative response performs no changes.
 The package default is disabled: `~/.codex/AGENTS.md` contains no session-start
 check instruction, so new sessions make no automatic update-check call.
 
-Send `codex_workflow --enable_auto_update` to explicitly enable the
+Send `codex_workflow --enable_auto_check_update` to explicitly enable the
 session-start check. It updates the installed configuration and adds an
 instruction that runs the read-only `auto-check-update` command once per new
 session. When enabled, the command compares the installed version with the
 highest usable GitHub Release and reports an available update; it stays quiet
-when current. `codex_workflow --disable_auto_update` disables the setting and
-removes that instruction. Both commands preserve unrelated user-level content.
-The former `codex_workflow --disable_auto_check_update` prompt remains a
-compatibility alias.
+when current. `codex_workflow --disable_auto_check_update` disables the setting
+and removes that instruction. Both commands preserve unrelated user-level
+content.
+The former `--enable_auto_update` and `--disable_auto_update` prompts remain
+compatibility aliases; no command automatically installs an update.
 
 #### `codex_workflow --disable`
 
@@ -241,9 +250,10 @@ and the current project as follows:
     ├── update.md                           # Release-based update procedure
     ├── check_update.md                     # explicit read-only release check
     ├── remove.md                            # two-phase removal procedure
-    ├── enable_auto_update.md               # enable automatic session check
-    ├── disable_auto_update.md              # disable automatic session check
-    ├── disable_auto_check_update.md        # legacy disable alias
+    ├── enable_auto_check_update.md         # enable automatic session check
+    ├── disable_auto_check_update.md        # disable automatic session check
+    ├── enable_auto_update.md               # legacy enable alias
+    ├── disable_auto_update.md              # legacy disable alias
     ├── configuration_guide.md               # --configure procedure
     ├── personalization_guide.md            # --personal procedure
     ├── disable.md                          # --disable procedure
@@ -300,9 +310,10 @@ The persistent configuration is:
 ```
 
 This mutable installed state is distinct from the immutable package default at
-`~/.codex/codex_workflow/resources/workflow_config.default.json`. Bootstrap and
-update load the incoming package default and replace the mutable workflow
-configuration. The project entry point's enabled/disabled state is preserved
+`~/.codex/codex_workflow/resources/workflow_config.default.json`. Bootstrap
+starts from the package default. Update migrates and preserves the mutable
+configuration, using the incoming package default only for newly introduced
+fields. The project entry point's enabled/disabled state is preserved
 separately.
 
 The current default snapshot is:
@@ -442,7 +453,7 @@ The current enabled set is:
 | Selected default executor (`executor_luna` or `executor_terra`) | Package discovery, production implementation, self-check, and routine repair | Yes, within its work package |
 | `executor_sol` | Complex core reasoning or fallback implementation | Yes, within its work package; limited to one active instance |
 | `tester` | Independent focused tests and failure analysis | Test/fixture scope; production defects return to the executor |
-| `doc-writer` | Assigned documentation during implementation and required installation initialization; not automatic deployment closure | Documentation scope; installation may authorize initialization of newly created status files |
+| `doc-writer` | Assigned documentation during implementation and required installation initialization; not automatic deployment closure | Documentation scope; installation may authorize listed new or still-template-marked recovery files |
 | Explorer companion | Read-only context gateway for planning and knowledge-delta briefs | No |
 | `end_of_session` | Inherited-context reconciliation of the complete documentation framework plus Git closure and statistics | All `agent_docs/` and Git state during automatic closure |
 
@@ -664,19 +675,19 @@ Location: `~/.codex/codex_workflow/`
 
 - `user_AGENTS.md` contains the workflow marker, installed version marker,
   optional-check placeholder, and exact command prompts for
-  `--install`, `--update`, `--remove`, `--enable_auto_update`,
-  `--disable_auto_update`, `--configure`, `--personal`, `--disable`, and
-  `--enable`.
+  `--install`, `--update`, `--remove`, `--enable_auto_check_update`,
+  `--disable_auto_check_update`, `--configure`, `--personal`, `--disable`, and
+  `--enable`, plus the former automatic-check naming aliases.
 - `bootstrap.md`, `install.md`, `configuration_guide.md`, and
   `personalization_guide.md` describe initial bootstrap, project installation,
   configuration, and personalization.
 - `update.md`, `disable.md`, and `enable.md` describe update and activation
   lifecycle operations.
 - `remove.md` describes the destructive two-phase removal procedure.
-- `enable_auto_update.md` and `disable_auto_update.md` describe the explicit
-  update-check controls; `resources/auto_check_update.md` supplies the optional
-  session instruction, and `disable_auto_check_update.md` remains a legacy
-  alias.
+- `enable_auto_check_update.md` and `disable_auto_check_update.md` describe the
+  explicit update-check controls; `resources/auto_check_update.md` supplies the
+  optional session instruction. `enable_auto_update.md` and
+  `disable_auto_update.md` retain the former names as compatibility aliases.
 - `workflow.py` and `runtime/` implement validated lifecycle operations.
 - `VERSION` identifies the installed workflow version.
 - `templates/` stores the project entry-point, worker, and project-document

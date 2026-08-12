@@ -25,6 +25,7 @@ GITIGNORE_ENTRIES = (
     ".codex_workflow_hidden_resources/",
     "AGENTS.md",
 )
+BOOTSTRAP_DOC_MARKER = "<!-- codex-workflow-bootstrap-template -->"
 
 
 def _plan_gitignore(project: ProjectPaths) -> Mutation | None:
@@ -148,12 +149,20 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
         mutations.append(text_mutation(project.personalization, personalization))
     framework_sources = sorted(package.project_docs.glob("*.md"))
     framework_docs = [source.name for source in framework_sources]
+    action_docs: list[str] = []
     created_docs: list[str] = []
+    recovery_docs: list[str] = []
     for source in framework_sources:
         target = project.docs / source.name
         if not target.exists():
             mutations.append(Mutation(target, source.read_bytes()))
             created_docs.append(source.name)
+            action_docs.append(source.name)
+        elif target.is_file() and BOOTSTRAP_DOC_MARKER in target.read_text(
+            encoding="utf-8"
+        ):
+            recovery_docs.append(source.name)
+            action_docs.append(source.name)
     project_state = {
         "schema_version": RUNTIME_SCHEMA_VERSION,
         "entry_format_version": ENTRY_FORMAT_VERSION,
@@ -173,7 +182,9 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
             "role": "doc-writer",
             "action": "initialize or verify the Project Documentation Framework",
             "required": True,
-            "files": created_docs,
+            "files": action_docs,
+            "created_files": created_docs,
+            "recovery_files": recovery_docs,
             "framework": framework_docs,
             "required_context_files": [
                 "project_structure.md",

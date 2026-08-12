@@ -8,7 +8,7 @@ The lifecycle CLI is:
 
     ~/.codex/codex_workflow/workflow.py
 
-It requires Python 3.10 or newer and applies the validated configuration
+It requires Python 3.11 or newer and applies the validated configuration
 directly.
 
 ## Configuration menu
@@ -35,9 +35,10 @@ menu with refreshed current values. Continue until the user selects **Exit**.
 If no setting changed, exit without running the lifecycle CLI.
 
 The automatic session-start update check is controlled explicitly by
-`codex_workflow --enable_auto_update` and
-`codex_workflow --disable_auto_update`; it is not part of this menu. Do not edit
-any live file directly.
+`codex_workflow --enable_auto_check_update` and
+`codex_workflow --disable_auto_check_update`; it is not part of this menu. Do
+not edit any live file directly. The former `--enable_auto_update` and
+`--disable_auto_update` forms remain compatibility aliases.
 
 ## Plan and apply
 

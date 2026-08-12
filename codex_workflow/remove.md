@@ -15,7 +15,7 @@ python3 ~/.codex/codex_workflow/workflow.py \
   remove --project <project> --json
 ```
 
-Use the equivalent `py -3` invocation and native paths on Windows. Report the
+Use the equivalent `py -3.11` invocation and native paths on Windows. Report the
 plan and explicitly warn that the confirmed phase will permanently delete:
 
 - the recognized project-level `AGENTS.md` (active or disabled), project

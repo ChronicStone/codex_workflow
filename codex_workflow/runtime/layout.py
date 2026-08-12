@@ -97,6 +97,7 @@ class PackageLayout:
                 "update.md",
                 "check_update.md",
                 "remove.md",
+                "enable_auto_check_update.md",
                 "enable_auto_update.md",
                 "disable_auto_update.md",
                 "disable_auto_check_update.md",

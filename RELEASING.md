@@ -25,9 +25,10 @@ codex_workflow/
 ├── install.md
 ├── update.md
 ├── remove.md
-├── enable_auto_update.md
-├── disable_auto_update.md
-├── disable_auto_check_update.md       # legacy alias
+├── enable_auto_check_update.md
+├── disable_auto_check_update.md
+├── enable_auto_update.md              # legacy alias
+├── disable_auto_update.md             # legacy alias
 ├── workflow.py
 ├── runtime/
 ├── resources/                              # immutable package defaults
@@ -58,7 +59,8 @@ workflow.
 ## Local build and validation
 
 Run these commands from the repository root. The builder uses only Python's
-standard library and works on Linux, macOS, and Windows.
+standard library, requires Python 3.11 or newer, and works on Linux, macOS, and
+Windows.
 
 Linux/macOS:
 
@@ -71,9 +73,9 @@ python3 scripts/package_release.py --verify dist/codex_workflow-*.zip
 Windows PowerShell:
 
 ```powershell
-py -3 -B scripts\test_workflow_runtime.py -v
-py -3 scripts/package_release.py --release-tag v1.1.1 --output-dir dist
-py -3 scripts/package_release.py --verify dist\codex_workflow-1.1.1.zip
+py -3.11 -B scripts\test_workflow_runtime.py -v
+py -3.11 scripts/package_release.py --release-tag v1.1.1 --output-dir dist
+py -3.11 scripts/package_release.py --verify dist\codex_workflow-1.1.1.zip
 ```
 
 The build validates the version, marker, lifecycle runtime, and required
@@ -122,11 +124,11 @@ same tagged commit.
   project-level workflow assets from the existing bootstrap.
 - At session start, the installed runtime checks GitHub Releases once when
   `auto_check_update` is enabled and reports an available update.
-- `codex_workflow --enable_auto_update` explicitly enables that check in
+- `codex_workflow --enable_auto_check_update` explicitly enables that check in
   mutable installed configuration.
-- `codex_workflow --disable_auto_update` disables it again; the former
-  `codex_workflow --disable_auto_check_update` prompt remains a compatibility
-  alias.
+- `codex_workflow --disable_auto_check_update` disables it again. The former
+  `--enable_auto_update` and `--disable_auto_update` prompts remain compatibility
+  aliases; no command automatically installs an update.
 - `codex_workflow --update` selects the latest appropriate ZIP asset, downloads
   it from its GitHub Release URL, verifies it, and follows the package's update
   procedure. It never clones the repository.
