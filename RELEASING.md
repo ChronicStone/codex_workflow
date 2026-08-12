@@ -52,7 +52,7 @@ system:
 Use SemVer 2.0.0. Keep the plain version in `codex_workflow/VERSION` and the
 `codex-workflow-version` marker in `codex_workflow/user_AGENTS.md` identical.
 The release tag is the same value with an optional leading `v`, for example
-`VERSION=1.1.1` and tag `v1.1.1`. GitHub's prerelease flag is independent of
+`VERSION=1.1.2` and tag `v1.1.2`. GitHub's prerelease flag is independent of
 the SemVer string; the initial releases are marked as prereleases by the
 workflow.
 
@@ -66,7 +66,7 @@ Linux/macOS:
 
 ```sh
 python3 -B scripts/test_workflow_runtime.py -v
-python3 scripts/package_release.py --release-tag v1.1.1 --output-dir dist
+python3 scripts/package_release.py --release-tag v1.1.2 --output-dir dist
 python3 scripts/package_release.py --verify dist/codex_workflow-*.zip
 ```
 
@@ -74,8 +74,8 @@ Windows PowerShell:
 
 ```powershell
 py -3.11 -B scripts\test_workflow_runtime.py -v
-py -3.11 scripts/package_release.py --release-tag v1.1.1 --output-dir dist
-py -3.11 scripts/package_release.py --verify dist\codex_workflow-1.1.1.zip
+py -3.11 scripts/package_release.py --release-tag v1.1.2 --output-dir dist
+py -3.11 scripts/package_release.py --verify dist\codex_workflow-1.1.2.zip
 ```
 
 The build validates the version, marker, lifecycle runtime, and required
@@ -90,8 +90,8 @@ and prerelease setting have been approved:
 
 ```sh
 git status --short
-git tag -a v1.1.1 -m "codex_workflow v1.1.1"
-git push origin v1.1.1
+git tag -a v1.1.2 -m "codex_workflow v1.1.2"
+git push origin v1.1.2
 ```
 
 Pushing a semantic `v*` tag starts `.github/workflows/release.yml`. It rebuilds
@@ -104,10 +104,10 @@ promote the project to stable releases.
 If the workflow is unavailable, the equivalent manual publication command is:
 
 ```sh
-gh release create v1.1.1 \
-  dist/codex_workflow-1.1.1.zip \
+gh release create v1.1.2 \
+  dist/codex_workflow-1.1.2.zip \
   dist/SHA256SUMS \
-  --title "codex_workflow v1.1.1" \
+  --title "codex_workflow v1.1.2" \
   --generate-notes \
   --prerelease
 ```

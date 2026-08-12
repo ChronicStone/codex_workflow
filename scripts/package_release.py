@@ -378,7 +378,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir", type=Path, default=repository_root() / "dist", help="asset directory"
     )
-    parser.add_argument("--release-tag", help="validate a release tag such as v1.1.1")
+    parser.add_argument("--release-tag", help="validate a release tag such as v1.1.2")
     parser.add_argument("--version", help="validate an expected package version")
     parser.add_argument(
         "--verify",
