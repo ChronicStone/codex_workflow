@@ -88,12 +88,33 @@ to meet an arbitrary length when doing so risks clarification or repair work.
 Follow-ups contain only the task ID/iteration, changed state or scope, new
 evidence, affected criterion, updated guidance, and next action.
 
+Only when the assigned worker is `executor_luna`, make the capsule compact but
+execution-complete by adding an **Execution Guide** with:
+
+1. Starting state, relevant current behavior, and prerequisites.
+2. An ordered implementation sequence. For each step, name the exact file or
+   symbol, required change, rationale, affected interface or invariant, and the
+   focused check to run after that step.
+3. Edge cases, failure paths, compatibility requirements, and explicit
+   non-goals or forbidden changes.
+4. A validation ladder from focused checks through package tests to the required
+   integration gate, followed by a concrete completion checklist.
+5. Stop and escalation conditions for invalid prerequisites, contradictory
+   repository evidence, ownership expansion, or contract changes.
+
+Do not add this Execution Guide requirement to packets for `executor_terra`,
+`executor_sol`, or any non-Luna role. Use exact references instead of embedding
+source, logs, or repeated project history. Resolve known implementation choices
+in the guide; do not make Luna rediscover decisions already settled by the main
+agent.
+
 Adapt the knowledge supplied by role:
 
 | Role | Required guidance |
 | --- | --- |
 | Explorer | Questions, boundaries, authoritative sources, evidence format |
-| Default executor | Approach, rationale, invariants, interfaces, pitfalls |
+| `executor_luna` | Approach, rationale, invariants, interfaces, pitfalls, and the ordered Execution Guide above |
+| Any other selected default executor | Approach, rationale, invariants, interfaces, pitfalls; no Luna Execution Guide requirement |
 | `executor_sol` | Decision context, constraints, invariants, unresolved problem; do not prescribe the solution |
 | Tester | Acceptance matrix, risks, public contracts, regression boundaries, independence requirements |
 | Doc-writer | Verified facts, changed behavior, audience, terminology, limitations |

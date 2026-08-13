@@ -18,6 +18,19 @@ architecture, cross-package coordination, Git state, and shared status files.
 - Treat the recommended approach, rationale, invariant, and pitfall as guidance
   informed by global context. Evaluate them against repository evidence. If you
   materially diverge, report the evidence and architectural impact.
+- Treat the capsule's Execution Guide as the primary work sequence. Before
+  editing, validate its starting state, prerequisites, named touchpoints, and
+  dependency order against the repository. Then execute it in coherent stages,
+  applying each specified change and running its focused check before advancing.
+  Track the completion checklist internally and finish with the prescribed
+  validation ladder. Do not repeat discovery for decisions and interfaces the
+  guide already resolves.
+- The Execution Guide does not override repository evidence, ownership,
+  protected areas, or acceptance criteria. Adapt a local step when evidence
+  requires it and report the delta. Escalate before proceeding only when the
+  guide is materially contradictory, a prerequisite is invalid, required
+  authority is missing, or the necessary correction changes scope or a public
+  contract.
 - Tests and durable documentation belong to their specialist unless the parent explicitly assigns them. Never edit Git state, `agent_docs/project_progress.md`, or `agent_docs/latest_session_work.md`. Preserve public contracts unless the capsule authorizes a change.
 - Establish interfaces, call sites, invariants, and failure behavior. Choose the cleanest local design, not an artificially narrow patch.
 - Implement coherent increments, run the smallest relevant existing check, repair scoped production failures, then review the complete diff.

@@ -107,13 +107,17 @@ class MarkerTests(unittest.TestCase):
             name: (PACKAGE / name).read_text(encoding="utf-8") for name in names
         }
         for name, text in policies.items():
-            self.assertLess(len(text.splitlines()), 200, name)
+            limit = 225 if name == "heavy_route.md" else 200
+            self.assertLess(len(text.splitlines()), limit, name)
 
         heavy = policies["heavy_route.md"]
         self.assertIn("recommended approach", heavy.lower())
         self.assertIn("canonical task names", heavy)
         self.assertIn("Decision required: none", heavy)
         self.assertIn("knowledge-delta brief", heavy)
+        self.assertIn("Only when the assigned worker is `executor_luna`", heavy)
+        self.assertIn("ordered implementation sequence", heavy)
+        self.assertIn("Do not add this Execution Guide requirement", heavy)
         self.assertIn("not spawn, message, or otherwise call subagents", heavy)
         self.assertIn("skips End-of-Session and worker statistics", heavy)
         self.assertIn("before the final response", heavy)
@@ -180,6 +184,9 @@ class MarkerTests(unittest.TestCase):
         executor = (PACKAGE / "agents" / "executor_luna.toml").read_text(
             encoding="utf-8"
         )
+        terra = (PACKAGE / "agents" / "executor_terra.toml").read_text(
+            encoding="utf-8"
+        )
         doc_writer = (PACKAGE / "agents" / "doc-writer.toml").read_text(
             encoding="utf-8"
         )
@@ -187,6 +194,9 @@ class MarkerTests(unittest.TestCase):
         install = (PACKAGE / "install.md").read_text(encoding="utf-8")
         self.assertIn("contact the named executor directly", tester)
         self.assertIn("Do not involve the parent for a routine defect", executor)
+        self.assertIn("Execution Guide as the primary work sequence", executor)
+        self.assertIn("Track the completion checklist internally", executor)
+        self.assertNotIn("Execution Guide as the primary work sequence", terra)
         self.assertIn("always contains one required", bootstrap)
         self.assertIn("explicitly labeled bootstrap/project-install action", doc_writer)
         for required_context in (
