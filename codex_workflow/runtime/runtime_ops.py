@@ -16,6 +16,7 @@ from .layout import USER_STATE, WORKER_MARKER, PackageLayout, RuntimePaths
 from .markers import (
     AUTO_CHECK_UPDATE_PLACEHOLDER,
     USER_MANAGED,
+    WORKFLOW_MANAGED,
     append_region,
     extract,
     remove_region,
@@ -84,14 +85,25 @@ def plan_runtime_files(
     return mutations, owned
 
 
+GLOBAL_POLICY_PLACEHOLDER = "<!-- codex-workflow-global-policy -->"
+
+
 def _render_user_managed(
-    source: str, instruction: str, config: WorkflowConfig
+    source: str, instruction: str, policy_source: str, config: WorkflowConfig
 ) -> str:
     managed = extract(source, USER_MANAGED)
     if managed.count(AUTO_CHECK_UPDATE_PLACEHOLDER) != 1:
         raise ValidationError(
             "user_AGENTS.md auto-check placeholder is missing or duplicated"
         )
+    if managed.count(GLOBAL_POLICY_PLACEHOLDER) != 1:
+        raise ValidationError(
+            "user_AGENTS.md global policy placeholder is missing or duplicated"
+        )
+    managed = managed.replace(
+        GLOBAL_POLICY_PLACEHOLDER,
+        extract(policy_source, WORKFLOW_MANAGED),
+    )
     before, after = managed.split(AUTO_CHECK_UPDATE_PLACEHOLDER)
     sections = [before.strip()]
     if config.auto_check_update:
@@ -103,12 +115,14 @@ def _render_user_managed(
 def _plan_user_agents_from_sources(
     source_path: Path,
     instruction_path: Path,
+    policy_path: Path,
     runtime: RuntimePaths,
     config: WorkflowConfig,
 ) -> list[Mutation]:
     source = source_path.read_text(encoding="utf-8")
     instruction = instruction_path.read_text(encoding="utf-8")
-    managed = _render_user_managed(source, instruction, config)
+    policy = policy_path.read_text(encoding="utf-8")
+    managed = _render_user_managed(source, instruction, policy, config)
     if runtime.user_agents.is_file():
         current = runtime.user_agents.read_text(encoding="utf-8")
         if USER_MANAGED.start in current or USER_MANAGED.end in current:
@@ -126,6 +140,7 @@ def plan_user_agents(
     return _plan_user_agents_from_sources(
         package.root / "user_AGENTS.md",
         package.root / "resources" / "auto_check_update.md",
+        package.project_template,
         runtime,
         config,
     )
@@ -137,6 +152,7 @@ def plan_installed_user_agents(
     return _plan_user_agents_from_sources(
         runtime.runtime / "user_AGENTS.md",
         runtime.runtime / "resources" / "auto_check_update.md",
+        runtime.runtime / "templates" / "AGENTS.md",
         runtime,
         config,
     )

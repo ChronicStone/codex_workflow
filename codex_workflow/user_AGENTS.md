@@ -1,9 +1,11 @@
 <!-- codex-workflow-user-id: ChronicStone/codex_workflow -->
-<!-- codex-workflow-version: 2.0.0 -->
+<!-- codex-workflow-version: 2.0.1 -->
 <!-- codex-workflow-user-managed-start -->
 # AGENTS.md
 
 <!-- codex-workflow-auto-check-update-instruction -->
+
+<!-- codex-workflow-global-policy -->
 
 When the user's trimmed message matches one of the following command forms,
 read and follow the corresponding guide. Forms without placeholders must match
@@ -36,12 +38,4 @@ exactly.
 - codex_workflow --configure
   Guide: ~/.codex/codex_workflow/configuration_guide.md.
 
-- codex_workflow --personal
-  Guide: ~/.codex/codex_workflow/personalization_guide.md.
-
-- codex_workflow --disable
-  Guide: ~/.codex/codex_workflow/disable.md.
-
-- codex_workflow --enable
-  Guide: ~/.codex/codex_workflow/enable.md.
 <!-- codex-workflow-user-managed-end -->

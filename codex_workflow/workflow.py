@@ -21,7 +21,6 @@ if sys.version_info < (3, 11):
 
 from runtime.config import load_config
 from runtime.errors import WorkflowError
-from runtime.layout import PROJECT_ID
 from runtime.lifecycle import (
     OperationPlan,
     PackageLayout,
@@ -32,7 +31,6 @@ from runtime.lifecycle import (
     plan_configure,
     plan_enable,
     plan_personalize,
-    plan_project_install,
     plan_remove,
     plan_update,
 )
@@ -152,15 +150,6 @@ def _finish(plan: OperationPlan, args: argparse.Namespace) -> int:
     return 0
 
 
-def _project_workflow_entry(project: ProjectPaths) -> Path | None:
-    """Return an existing recognized active or disabled project entry point."""
-
-    for path in (project.active, project.disabled):
-        if path.is_file() and PROJECT_ID in path.read_text(encoding="utf-8"):
-            return path
-    return None
-
-
 def _delegate_update(incoming: PackageLayout, args: argparse.Namespace) -> int:
     command = [
         sys.executable,
@@ -271,8 +260,7 @@ def main() -> int:
             )
             return 0
         if args.command == "remove":
-            assert project is not None
-            plan = plan_remove(runtime, project)
+            plan = plan_remove(runtime)
             if not args.confirm:
                 summary = plan.summary()
                 summary["applied"] = False
@@ -297,46 +285,29 @@ def main() -> int:
                 args,
             )
         if args.command == "bootstrap":
-            assert project is not None
             package = PackageLayout.resolve(args.package_root)
-            return _finish(plan_bootstrap(package, runtime, project), args)
+            return _finish(plan_bootstrap(package, runtime), args)
         if args.command == "install":
-            assert project is not None
-            if project.active.exists() and project.disabled.exists():
-                raise WorkflowError("both active and disabled project entry points exist")
             if (runtime.runtime / "VERSION").is_file():
-                package = PackageLayout.resolve(runtime.runtime)
+                installed = (runtime.runtime / "VERSION").read_text(encoding="utf-8").strip()
             elif args.package_root is not None:
-                package = PackageLayout.resolve(args.package_root)
+                raise WorkflowError(
+                    "the workflow package is available but the global bootstrap is not installed"
+                )
             else:
                 raise WorkflowError(
-                    "the user-level workflow bootstrap is not installed; "
-                    "complete the initial bootstrap before installing a project"
+                    "the global workflow bootstrap is not installed"
                 )
-            existing = _project_workflow_entry(project)
-            if existing is not None:
-                # Validate the recognized entry before reporting a no-op. This
-                # turns stale, malformed, or personalization-drifted installs
-                # into actionable errors instead of misreporting them as merely
-                # disabled.
-                existing_plan = plan_project_install(package, project)
-                if existing_plan.agent_actions:
-                    return _finish(existing_plan, args)
-                enabled = existing == project.active
-                _emit(
-                    {
-                        "applied": False,
-                        "status": "already enabled" if enabled else "already disabled",
-                        "instruction": (
-                            "No action is required."
-                            if enabled
-                            else "Run `codex_workflow --enable` to reactivate it."
-                        ),
-                    },
-                    compact=args.json,
-                )
-                return 0
-            return _finish(plan_project_install(package, project), args)
+            _emit(
+                {
+                    "applied": False,
+                    "status": "globally enabled",
+                    "version": installed,
+                    "instruction": "No per-project installation is required.",
+                },
+                compact=args.json,
+            )
+            return 0
         if args.command == "update":
             assert project is not None
             if args.source:

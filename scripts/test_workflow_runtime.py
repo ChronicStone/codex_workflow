@@ -135,7 +135,7 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("Fix the owning cause", executor)
         self.assertIn("configured browser", ui_reviewer)
         self.assertIn("Do not edit files", ui_reviewer)
-        self.assertIn("creates no documentation scaffold", bootstrap)
+        self.assertIn("creates no project scaffold", bootstrap)
         self.assertIn("calls no worker", install)
 
     def test_reserved_marker_collision_is_rejected_during_import(self) -> None:
@@ -548,6 +548,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
         installed_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
+        self.assertIn("Use Sol as the coordinator", installed_user_agents)
         self.assertNotIn("auto-check-update --json", installed_user_agents)
         self.assertNotIn(AUTO_CHECK_UPDATE_PLACEHOLDER, installed_user_agents)
         self.assertEqual(plan.agent_actions, [])
@@ -768,7 +769,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(migrated["max_concurrent_workers"], 8)
         self.assertNotIn("max_executor_sol_instances", migrated)
 
-    def test_cli_install_reports_enabled_disabled_and_stale_states(self) -> None:
+    def test_cli_install_reports_global_state_without_inspecting_project(self) -> None:
         self.bootstrap()
         command = [
             sys.executable,
@@ -783,14 +784,16 @@ class LifecycleIntegrationTests(unittest.TestCase):
         ]
         enabled = subprocess.run(command, check=False, capture_output=True, text=True)
         self.assertEqual(enabled.returncode, 0, enabled.stderr)
-        self.assertEqual(json.loads(enabled.stdout)["status"], "already enabled")
-        self.assertEqual(json.loads(enabled.stdout)["instruction"], "No action is required.")
+        self.assertEqual(json.loads(enabled.stdout)["status"], "globally enabled")
+        self.assertEqual(
+            json.loads(enabled.stdout)["instruction"],
+            "No per-project installation is required.",
+        )
 
         plan_enable(self.project, enable=False).apply()
         disabled = subprocess.run(command, check=False, capture_output=True, text=True)
         self.assertEqual(disabled.returncode, 0, disabled.stderr)
-        self.assertEqual(json.loads(disabled.stdout)["status"], "already disabled")
-        self.assertIn("--enable", json.loads(disabled.stdout)["instruction"])
+        self.assertEqual(json.loads(disabled.stdout)["status"], "globally enabled")
 
         plan_enable(self.project, enable=True).apply()
         text = self.project.active.read_text(encoding="utf-8")
@@ -799,8 +802,8 @@ class LifecycleIntegrationTests(unittest.TestCase):
             encoding="utf-8",
         )
         stale = subprocess.run(command, check=False, capture_output=True, text=True)
-        self.assertEqual(stale.returncode, 1)
-        self.assertIn("--update", json.loads(stale.stdout)["error"])
+        self.assertEqual(stale.returncode, 0, stale.stderr)
+        self.assertEqual(json.loads(stale.stdout)["status"], "globally enabled")
 
     def test_update_preserves_disabled_project_state(self) -> None:
         self.bootstrap()
@@ -815,7 +818,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         state = json.loads(self.project.state.read_text(encoding="utf-8"))
         self.assertFalse(state["enabled"])
 
-    def test_cli_install_applies_without_confirmation_flag(self) -> None:
+    def test_cli_install_requires_global_bootstrap_and_leaves_project_untouched(self) -> None:
         project_root = self.root / "cli-project"
         project_root.mkdir()
         completed = subprocess.run(
@@ -836,11 +839,42 @@ class LifecycleIntegrationTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(completed.returncode, 1, completed.stderr)
         summary = json.loads(completed.stdout)
-        self.assertTrue(summary["applied"])
-        self.assertEqual(summary["agent_actions"], [])
-        self.assertTrue((project_root / "AGENTS.md").is_file())
+        self.assertIn("global bootstrap is not installed", summary["error"])
+        self.assertFalse((project_root / "AGENTS.md").exists())
+
+    def test_cli_bootstrap_installs_globally_without_touching_project(self) -> None:
+        project_root = self.root / "bootstrap-project"
+        project_root.mkdir()
+        project_agents = project_root / "AGENTS.md"
+        project_agents.write_text("# Project policy\n", encoding="utf-8")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(PACKAGE / "workflow.py"),
+                "bootstrap",
+                "--package-root",
+                str(PACKAGE),
+                "--codex-home",
+                str(self.codex_home),
+                "--project",
+                str(project_root),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertTrue(json.loads(completed.stdout)["applied"])
+        self.assertEqual(project_agents.read_text(encoding="utf-8"), "# Project policy\n")
+        self.assertFalse((project_root / ".codex_workflow_hidden_resources").exists())
+        self.assertIn(
+            "Use Sol as the coordinator",
+            self.runtime.user_agents.read_text(encoding="utf-8"),
+        )
 
     def test_remove_requires_second_confirmation_and_cleans_owned_files(self) -> None:
         self.bootstrap(existing_agents="Local policy.\n")
@@ -893,8 +927,8 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(confirmed.returncode, 0, confirmed.stderr)
         self.assertTrue(json.loads(confirmed.stdout)["applied"])
-        self.assertFalse(self.project.active.exists())
-        self.assertFalse(self.project.hidden_dir.exists())
+        self.assertTrue(self.project.active.exists())
+        self.assertTrue(self.project.hidden_dir.exists())
         self.assertTrue((self.project.docs / "project_overview.md").is_file())
         self.assertFalse(self.runtime.runtime.exists())
         self.assertTrue(unrelated_worker.is_file())

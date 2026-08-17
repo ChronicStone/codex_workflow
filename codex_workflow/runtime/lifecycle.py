@@ -23,7 +23,6 @@ from .project_ops import (
     plan_enable,
     plan_personalize,
     plan_project_install,
-    plan_project_remove,
     plan_project_update,
 )
 from .release import parse_semver
@@ -37,14 +36,17 @@ from .transaction import Mutation
 
 
 def plan_bootstrap(
-    package: PackageLayout, runtime: RuntimePaths, project: ProjectPaths
+    package: PackageLayout,
+    runtime: RuntimePaths,
+    project: ProjectPaths | None = None,
 ) -> OperationPlan:
     config = load_config(package.default_config, templates=package.agent_templates)
     mutations, owned_runtime = plan_runtime_files(
         package, runtime, config, config.to_json().encode()
     )
-    project_plan = plan_project_install(package, project)
-    mutations.extend(project_plan.mutations)
+    project_plan = plan_project_install(package, project) if project is not None else None
+    if project_plan is not None:
+        mutations.extend(project_plan.mutations)
     state = {
         "schema_version": RUNTIME_SCHEMA_VERSION,
         "version": package.version,
@@ -55,10 +57,10 @@ def plan_bootstrap(
     return OperationPlan(
         "bootstrap",
         deduplicate(mutations),
-        project_plan.warnings,
-        project_plan.agent_actions,
+        project_plan.warnings if project_plan is not None else [],
+        project_plan.agent_actions if project_plan is not None else [],
         {"version": package.version},
-        cleanup_dirs=project_plan.cleanup_dirs,
+        cleanup_dirs=project_plan.cleanup_dirs if project_plan is not None else [],
     )
 
 
@@ -123,16 +125,12 @@ def plan_auto_check_update_setting(
     )
 
 
-def plan_remove(
-    runtime: RuntimePaths,
-    project: ProjectPaths,
-) -> OperationPlan:
+def plan_remove(runtime: RuntimePaths, project: ProjectPaths | None = None) -> OperationPlan:
     runtime_mutations, runtime_dirs, runtime_warnings = plan_runtime_remove(runtime)
-    project_mutations, project_dirs, project_warnings = plan_project_remove(project)
     return OperationPlan(
         "remove",
-        deduplicate(runtime_mutations + project_mutations),
-        runtime_warnings + project_warnings,
+        deduplicate(runtime_mutations),
+        runtime_warnings,
         [],
         {
             "confirmation_required": True,
@@ -143,7 +141,7 @@ def plan_remove(
                 "unrelated worker TOMLs",
             ],
         },
-        cleanup_dirs=runtime_dirs + project_dirs,
+        cleanup_dirs=runtime_dirs,
     )
 
 
