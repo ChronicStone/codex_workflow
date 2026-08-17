@@ -26,6 +26,18 @@ instructions and routed skills remain authoritative for project-specific work.
 
 Choose the smallest route that completes the task. The user may override it.
 
+Delegation is a routing decision, not an optional optimization. Interpret a
+standalone `medium` or `high` in the user's request as the requested route, so
+the user does not need to repeat a delegation recipe. For a `medium` or `high`
+route, spawn the worker before beginning the corresponding discovery or
+implementation work. Without an explicit route, delegation is required when
+the task has multiple independent owners, combines implementation with an
+independent verification pass, or has three or more substantive execution
+stages. Only Light work may remain entirely on the coordinator. If a task meets
+one of those conditions but has no safe execution boundary, state that reason
+briefly and keep the work on the coordinator rather than silently skipping the
+route.
+
 - **Light:** questions, diagnosis, planning-only work, or small bounded changes.
   Work directly with no subagents.
 - **Medium:** one bounded execution or investigation package benefits from Luna.
