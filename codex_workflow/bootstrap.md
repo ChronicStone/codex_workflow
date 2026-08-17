@@ -17,20 +17,18 @@ Stop on any validation error. From the project being bootstrapped, run:
 
 ```text
 python3 <extracted>/codex_workflow/workflow.py bootstrap \
-  --package-root <extracted>/codex_workflow \
-  --project <project> --json
+  --package-root <extracted>/codex_workflow --json
 ```
 
-The bootstrap installs the shared runtime, role templates, source backup, user
-command block, default configuration, worker TOMLs, and workflow-owned native
-Codex agent settings. It also creates the current project's managed delegation
-entry point, personalization resource, and lifecycle state in one compensating
-transaction. Existing project instructions are preserved verbatim in the
-project-local region.
+The bootstrap installs the shared runtime, role templates, source backup,
+global delegation policy and command block, default configuration, worker
+TOMLs, and workflow-owned native Codex agent settings in one compensating
+transaction. Codex loads the global policy before each repository's own
+instructions, so no project files are created or modified.
 
-The workflow deliberately creates no documentation scaffold and runs no worker
-during installation. Verify that the result reports no agent actions, then
-restart Codex so the new role definitions and configuration are loaded.
+The workflow deliberately creates no project scaffold and runs no worker during
+installation. Verify that the result reports no agent actions, then restart
+Codex so the new role definitions, global policy, and configuration are loaded.
 
 The recommended coordinator remains a user-owned top-level setting:
 

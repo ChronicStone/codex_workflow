@@ -9,10 +9,8 @@ state, generated outputs, and project-owned content.
 - `~/.codex/codex_workflow/workflow_config.json`: mutable installed state.
 - Heavy snapshots, all worker TOMLs, and
   workflow-owned Codex settings: generated outputs; never sources of truth.
-- Project personalization: structured project state materialized into its own
-  marker region.
-- Project-local instructions: opaque preserved content in a separate marker
-  region.
+- Global delegation policy: materialized into the marked workflow region in
+  `~/.codex/AGENTS.md`; repository instructions remain repository-owned.
 
 ## Module boundaries
 
@@ -30,11 +28,9 @@ state, generated outputs, and project-owned content.
 - `workflow.py`: CLI parsing, direct application, two-phase removal, and
   incoming-runtime delegation.
 
-The removal plan deletes the recognized project entry point and private
-workflow resource, strips only the marked workflow region from the user-level
-`AGENTS.md`, removes workflow-owned Codex settings and worker files, and
-cleans the dedicated runtime directory. It deliberately preserves
-`agent_docs/` and unrelated user-level content.
+The removal plan strips only the marked workflow region from the user-level
+`AGENTS.md`, removes workflow-owned Codex settings and worker files, and cleans
+the dedicated runtime directory. It never modifies repository files.
 
 ## Upgrade contract
 

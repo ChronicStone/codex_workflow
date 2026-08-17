@@ -22,21 +22,18 @@
     └── templates and backups
 ```
 
-Each initialized project receives a managed delegation section in `AGENTS.md`,
-a protected project-local instruction region, and hidden lifecycle state.
-Existing project instructions are preserved in the
-project-local region and remain authoritative for domain work.
+The managed delegation policy lives in global `~/.codex/AGENTS.md`, so every
+repository inherits it without project installation. Repository `AGENTS.md`
+files remain untouched and provide the more specific domain rules.
 
 ## Commands
 
 | Prompt | Effect |
 | --- | --- |
-| `codex_workflow --install` | Initialize the current project using the installed user runtime |
+| `codex_workflow --install` | Verify that the global workflow is installed |
 | `codex_workflow --configure` | Change Luna effort, concurrency, or report size |
-| `codex_workflow --personal` | Configure project-specific workflow preferences |
 | `codex_workflow --check-update` | Check releases without mutation |
 | `codex_workflow --update` | Verify and install the latest eligible release |
-| `codex_workflow --disable` / `--enable` | Disable or restore the project entry point |
 | `codex_workflow --remove` | Show a destructive dry run, then remove owned workflow files after confirmation |
 
 Automatic update checks are disabled by default. Enable or disable the
@@ -72,10 +69,11 @@ must not be edited directly.
 }
 ```
 
-The lifecycle CLI patches only workflow-owned `[agents]` keys and owned role
-files. It preserves unrelated `config.toml`, user instructions, workers, and
-project content. Removal deletes the workflow runtime and owned roles while
-preserving project documentation and unrelated Codex state.
+The lifecycle CLI patches only its marked global instruction region,
+workflow-owned `[agents]` keys, and owned role files. It preserves unrelated
+`config.toml`, user instructions, workers, and every repository file. Removal
+deletes the global workflow runtime and owned roles while preserving unrelated
+Codex and project state.
 
 ## Delegation contract
 

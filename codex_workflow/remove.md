@@ -12,14 +12,12 @@ First run the lifecycle CLI without `--confirm`:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py \
-  remove --project <project> --json
+  remove --json
 ```
 
 Use the equivalent `py -3.11` invocation and native paths on Windows. Report the
 plan and explicitly warn that the confirmed phase will permanently delete:
 
-- the recognized project-level `AGENTS.md` (active or disabled), project
-  personalization, and project workflow state;
 - the workflow-managed region in the user-level `~/.codex/AGENTS.md` (the
   user file itself is deleted only when no unrelated content remains);
 - workflow-owned keys in `~/.codex/config.toml`;
@@ -27,9 +25,9 @@ plan and explicitly warn that the confirmed phase will permanently delete:
 - every file under `~/.codex/codex_workflow/`, including source and update
   backups.
 
-Also report that project documentation, unrelated user-level AGENTS/config
-content, and unrelated worker TOMLs are preserved. Do not claim anything was
-removed during this first phase.
+Also report that all project files, unrelated user-level AGENTS/config content,
+and unrelated worker TOMLs are preserved. Do not claim anything was removed
+during this first phase.
 
 Then ask exactly one confirmation, for example:
 
@@ -40,7 +38,7 @@ phase. After an affirmative reply, run:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py \
-  remove --project <project> --confirm --json
+  remove --confirm --json
 ```
 
 Report the final JSON result. If the command fails, reports an error, or rolls

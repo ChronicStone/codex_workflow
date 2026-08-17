@@ -5,8 +5,9 @@ focused on architecture and integration while GPT-5.6 Luna workers handle
 bounded execution, investigation, testing, and review.
 
 The workflow is tuned for full-stack applications, frontend product work,
-libraries, automation, and mixed repositories. Project `AGENTS.md` files and
-skills remain authoritative; this layer only controls delegation.
+libraries, automation, and mixed repositories. Its delegation policy is loaded
+globally, while project `AGENTS.md` files and skills remain authoritative for
+repository-specific work.
 
 ## Default model pair
 
@@ -54,8 +55,8 @@ Download a release asset and verify it against `SHA256SUMS`, then ask Codex to
 read the bundled `codex_workflow/bootstrap.md` and follow it. Python 3.11 or
 newer is required.
 
-After bootstrap, restart Codex. Install the already-bootstrapped workflow in
-another project with:
+After bootstrap, restart Codex. Every repository inherits the workflow; this
+command only verifies the global installation:
 
 ```text
 codex_workflow --install
