@@ -7,7 +7,7 @@ state, generated outputs, and project-owned content.
 
 - `codex_workflow/resources/`: immutable defaults distributed by a release.
 - `~/.codex/codex_workflow/workflow_config.json`: mutable installed state.
-- Heavy snapshots, the End-of-Session fork value, all worker TOMLs, and
+- Heavy snapshots, all worker TOMLs, and
   workflow-owned Codex settings: generated outputs; never sources of truth.
 - Project personalization: structured project state materialized into its own
   marker region.
@@ -20,7 +20,7 @@ state, generated outputs, and project-owned content.
 - `config.py`: configuration schema and rendering.
 - `migrations.py`: ordered persistent-resource migrations.
 - `markers.py`: strict text-region parsing and rendering.
-- `project_ops.py`: project entry point, personalization, and documents.
+- `project_ops.py`: project entry point, personalization, and lifecycle state.
 - `runtime_ops.py`: user-level runtime and generated outputs.
 - `backup.py`: persistent update backups.
 - `transaction.py`: atomic file writes and compensating rollback.

@@ -1,68 +1,25 @@
 # Medium Route
 
-Use after Medium is selected under `AGENTS.md`.
+Use one Luna worker when delegation saves coordinator context or gives a useful
+independent execution boundary. The coordinator remains responsible for the
+plan, architecture, integration, final verification, Git, and communication.
 
-## Role and Context
+Choose the role by the actual package:
 
-You are the main agent.
+- `scout` for bounded read-only discovery or root-cause evidence;
+- `implementer` for backend, full-stack, library, automation, or configuration;
+- `ui-implementer` for visible frontend work requiring browser verification;
+- `tester` for an independent verification package;
+- `reviewer` or `ui-reviewer` for an explicit independent acceptance pass;
+- `doc-writer` for a targeted durable documentation update.
 
-The main agent performs planning, implementation, and verification. Do not
-delegate those tasks. For a substantive deployment, the only subagents are the
-persistent Explorer defined by `explorer_companion.md` and one fresh
-`end_of_session` worker that reconciles the complete documentation framework
-during automatic closure.
+Spawn the worker with `fork_turns="none"`. Its capsule must state the outcome,
+owner and exact surface, protected areas, relevant decisions and references,
+recommended approach, important invariant, likely pitfall, acceptance criteria,
+required checks, escalation conditions, and concise return format.
 
-Use Explorer as the context gateway: request a planning brief before broad
-inspection and focused follow-up briefs for peripheral, unfamiliar, external,
-or newly discovered context. The main agent remains responsible for source it
-edits, acceptance decisions, critical evidence, and final claims. Inspect
-underlying evidence when a brief is uncertain, contradictory, decision-relevant,
-or insufficient for safe implementation.
-
-Questions and small or odd bounded tasks use the direct main-agent fast path:
-do not initialize or call Explorer, do not call `end_of_session`, and omit
-worker statistics. Keep process proportional; this path does not become a
-deployment merely because Medium remains selected.
-
-## Execution
-
-- Work in bounded context, inspection, implementation, verification, and review
-  stages.
-- Batch independent, already-known reads, searches, metadata checks, and
-  isolated validation. Keep dependent or overlapping edits sequential.
-- Run checks concurrently only when they share no mutable build output,
-  generated files, fixtures, databases, ports, devices, or processes.
-- Keep detailed logs in artifacts and retain only the claim, result, exact
-  command or method, artifact path, critical excerpt if needed, and confidence.
-- Reinspect after a change, failure, contradiction, or newly discovered
-  dependency—not as routine repetition.
-- Preserve unrelated work, verify in proportion to risk, and never claim an
-  unrun check passed.
-
-## Plans and Durable Status
-
-When the user asks to plan an implementation, persist and begin it unless they
-request planning only. Record the goal, major milestones, overall progress,
-current position, and next milestone.
-
-For durable or multi-session work, the main agent may update
-`agent_docs/project_progress.md` once to activate the bounded plan. The
-automatic closure worker owns final reconciliation and replaces
-`agent_docs/latest_session_work.md`; the main must not use it as scratch space.
-
-Leave the end-of-deployment documentation reconciliation to the single
-`end_of_session` worker. Do not create a separate doc-writer for that process.
-
-For a blocker, preserve a clear continuation point and record the failed step,
-evidence, suspected cause, completed state, affected criterion, and required
-input. Never present partial work as complete.
-
-## Automatic Deployment Handoff
-
-Before the final response that completes, pauses, or blocks the deployment,
-follow `~/.codex/codex_workflow/end_of_session.md` exactly once and wait for its
-fresh worker. Pass only the route, a unique deployment ID, and closure state;
-the automatic handoff context fork supplies the main-agent history. Relay its
-result; do not duplicate its documentation, status, Git, or statistics work. A
-later substantive deployment receives a new ID and handoff, even in the same
-session.
+Inspect the worker's evidence and resulting diff before integrating it. Do not
+rerun valid checks unless later edits or conflicting evidence invalidate them.
+Routine follow-ups contain only changed facts, the failed criterion, and the
+next action. Stop delegation when the remaining work is smaller than a clean
+handoff.

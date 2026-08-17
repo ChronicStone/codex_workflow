@@ -29,9 +29,35 @@ def _migrate_v3_to_v4(raw: dict[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+def _migrate_v4_to_v5(raw: dict[str, Any]) -> dict[str, Any]:
+    migrated = dict(raw)
+    defaults = {
+        "scout",
+        "implementer",
+        "ui-implementer",
+        "tester",
+        "reviewer",
+        "ui-reviewer",
+        "doc-writer",
+    }
+    migrated["default_executor"] = "implementer"
+    migrated["default_subagent_model"] = "gpt-5.6-luna"
+    executor_effort = migrated.get("default_executor_reasoning_effort", "xhigh")
+    if executor_effort == "max":
+        executor_effort = "xhigh"
+    migrated["default_executor_reasoning_effort"] = executor_effort
+    migrated["default_subagent_reasoning_effort"] = executor_effort
+    migrated.pop("max_executor_sol_instances", None)
+    migrated.pop("max_sol_specialist_instances", None)
+    migrated["enabled_workers"] = sorted(defaults)
+    migrated["schema_version"] = 5
+    return migrated
+
+
 CONFIG_MIGRATIONS: dict[int, ConfigMigration] = {
     2: _migrate_v2_to_v3,
     3: _migrate_v3_to_v4,
+    4: _migrate_v4_to_v5,
 }
 
 

@@ -27,8 +27,8 @@ plan and explicitly warn that the confirmed phase will permanently delete:
 - every file under `~/.codex/codex_workflow/`, including source and update
   backups.
 
-Also report that `agent_docs/`, unrelated user-level AGENTS/config content,
-and unrelated worker TOMLs are preserved. Do not claim that anything has been
+Also report that project documentation, unrelated user-level AGENTS/config
+content, and unrelated worker TOMLs are preserved. Do not claim anything was
 removed during this first phase.
 
 Then ask exactly one confirmation, for example:

@@ -18,8 +18,8 @@ from .markers import (
 from .personalization import materialize_personalization
 
 
-PROJECT_ID = "<!-- codex-workflow-id: viettran-edgeAI/codex_workflow -->"
-USER_ID = "<!-- codex-workflow-user-id: viettran-edgeAI/codex_workflow -->"
+PROJECT_ID = "<!-- codex-workflow-id: ChronicStone/codex_workflow -->"
+USER_ID = "<!-- codex-workflow-user-id: ChronicStone/codex_workflow -->"
 WORKER_MARKER = re.compile(r"^# codex-workflow-worker: ([A-Za-z0-9_-]+)$", re.MULTILINE)
 PROJECT_STATE = "state.json"
 USER_STATE = "install_state.json"
@@ -30,7 +30,6 @@ class PackageLayout:
     root: Path
     project_template: Path
     agent_templates: Path
-    project_docs: Path
 
     @classmethod
     def resolve(cls, root: Path, *, allow_legacy: bool = False) -> "PackageLayout":
@@ -46,10 +45,9 @@ class PackageLayout:
                 root,
                 root / "templates" / "AGENTS.md",
                 root / "templates" / "agents",
-                root / "templates" / "project_docs",
             )
         else:
-            layout = cls(root, root / "AGENTS.md", root / "agents", root / "project_docs")
+            layout = cls(root, root / "AGENTS.md", root / "agents")
         layout.validate(allow_legacy=allow_legacy)
         return layout
 
@@ -90,8 +88,6 @@ class PackageLayout:
                 "resources/workflow_config.default.json",
                 "heavy_route.md",
                 "medium_route.md",
-                "explorer_companion.md",
-                "end_of_session.md",
                 "install.md",
                 "bootstrap.md",
                 "update.md",
@@ -133,19 +129,6 @@ class PackageLayout:
                     "package automatic-check instruction is missing its command"
                 )
             validate_project_template(self.project_template.read_text(encoding="utf-8"))
-        required_docs = {
-            "project_overview.md",
-            "project_core_tech.md",
-            "project_structure.md",
-            "project_progress.md",
-            "project_diary.md",
-            "latest_session_work.md",
-        }
-        present_docs = {path.name for path in self.project_docs.glob("*.md")}
-        if not required_docs.issubset(present_docs):
-            raise ValidationError(
-                f"package project document templates missing: {sorted(required_docs - present_docs)}"
-            )
         templates = self.worker_names
         if not templates:
             raise ValidationError("package has no worker templates")

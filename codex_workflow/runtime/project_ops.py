@@ -21,11 +21,9 @@ from .transaction import Mutation
 
 
 GITIGNORE_ENTRIES = (
-    "agent_docs/",
     ".codex_workflow_hidden_resources/",
     "AGENTS.md",
 )
-BOOTSTRAP_DOC_MARKER = "<!-- codex-workflow-bootstrap-template -->"
 
 
 def _plan_gitignore(project: ProjectPaths) -> Mutation | None:
@@ -147,22 +145,6 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
         mutations.append(text_mutation(project.active, rendered))
     if not project.personalization.is_file():
         mutations.append(text_mutation(project.personalization, personalization))
-    framework_sources = sorted(package.project_docs.glob("*.md"))
-    framework_docs = [source.name for source in framework_sources]
-    action_docs: list[str] = []
-    created_docs: list[str] = []
-    recovery_docs: list[str] = []
-    for source in framework_sources:
-        target = project.docs / source.name
-        if not target.exists():
-            mutations.append(Mutation(target, source.read_bytes()))
-            created_docs.append(source.name)
-            action_docs.append(source.name)
-        elif target.is_file() and BOOTSTRAP_DOC_MARKER in target.read_text(
-            encoding="utf-8"
-        ):
-            recovery_docs.append(source.name)
-            action_docs.append(source.name)
     project_state = {
         "schema_version": RUNTIME_SCHEMA_VERSION,
         "entry_format_version": ENTRY_FORMAT_VERSION,
@@ -177,27 +159,11 @@ def plan_project_install(package: PackageLayout, project: ProjectPaths) -> Opera
     mutations.extend(cleanup_mutations)
     if cleanup_mutations:
         warnings.append(f"{project.source_dir} will be deleted after installation")
-    actions = [
-        {
-            "role": "doc-writer",
-            "action": "initialize or verify the Project Documentation Framework",
-            "required": True,
-            "files": action_docs,
-            "created_files": created_docs,
-            "recovery_files": recovery_docs,
-            "framework": framework_docs,
-            "required_context_files": [
-                "project_structure.md",
-                "project_overview.md",
-                "project_core_tech.md",
-            ],
-        }
-    ]
     return OperationPlan(
         "project-install",
         mutations,
         warnings,
-        actions,
+        [],
         cleanup_dirs=cleanup_dirs,
     )
 
@@ -337,9 +303,7 @@ def plan_project_remove(
             raise ValidationError(f"project entry point is not a regular file: {entry}")
 
     mutations: list[Mutation] = []
-    warnings = [
-        "project agent_docs/ files are project documentation and will be preserved",
-    ]
+    warnings = ["existing project documentation is outside workflow ownership"]
     entry = project.active if active_exists else project.disabled if disabled_exists else None
     if entry is not None:
         current = entry.read_text(encoding="utf-8")

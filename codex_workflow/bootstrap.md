@@ -9,7 +9,8 @@ temporary directory, and require exactly one top-level `codex_workflow/`
 directory. Validate the package first:
 
 ```text
-python3 codex_workflow/workflow.py validate --package-root codex_workflow --json
+python3 codex_workflow/workflow.py validate \
+  --package-root codex_workflow --json
 ```
 
 Stop on any validation error. From the project being bootstrapped, run:
@@ -17,46 +18,26 @@ Stop on any validation error. From the project being bootstrapped, run:
 ```text
 python3 <extracted>/codex_workflow/workflow.py bootstrap \
   --package-root <extracted>/codex_workflow \
-  --project <project>
+  --project <project> --json
 ```
 
-The bootstrap installs the shared runtime, templates, source backup, user
-command block, package-default configuration, distributed worker TOMLs, and
-workflow-owned Codex settings. It also initializes the current project's
-workflow entry point, documentation scaffold, personalization and state files,
-and other project-level assets in one compensating transaction.
+The bootstrap installs the shared runtime, role templates, source backup, user
+command block, default configuration, worker TOMLs, and workflow-owned native
+Codex agent settings. It also creates the current project's managed delegation
+entry point, personalization resource, and lifecycle state in one compensating
+transaction. Existing project instructions are preserved verbatim in the
+project-local region.
 
-## Required documentation action
+The workflow deliberately creates no documentation scaffold and runs no worker
+during installation. Verify that the result reports no agent actions, then
+restart Codex so the new role definitions and configuration are loaded.
 
-Read the command's `agent_actions` result. It always contains one required
-`doc-writer` action for the Project Documentation Framework. Spawn it with
-`agent_type="doc-writer"`, `task_name="bootstrap_docs"`, and
-`fork_turns="none"`. Its capsule must include the project root and the returned
-`files`, `created_files`, `recovery_files`, `framework`, and
-`required_context_files` lists, with these requirements:
+The recommended coordinator remains a user-owned top-level setting:
 
-- Inspect only enough project evidence to record verified initial context;
-  source-less projects are valid.
-- Initialize only documents listed in `files`—newly created or
-  still-template-marked recovery documents—and remove their
-  `codex-workflow-bootstrap-template` markers.
-- Populate listed `project_structure.md`, `project_overview.md`, and
-  `project_core_tech.md` recovery or new files with verified project structure,
-  purpose/architecture, and technology context. If relevant source is absent,
-  explicitly record that fact instead of leaving template-only content.
-- Preserve every pre-existing project document not listed for recovery. If
-  `files` is empty, perform a read-only completeness check of all documents in
-  `framework`.
-- This action may initialize listed new or recovery `project_progress.md` and
-  `latest_session_work.md` files; leave deployment status empty when no plan
-  exists.
-- Do not edit source, entry points, personalization, Git state, or user-level
-  files.
+```toml
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+```
 
-Verify that every framework file exists, no file listed in `files` retains the
-bootstrap marker, and every listed file in `required_context_files` has been
-populated. Installation is incomplete if the required worker cannot run or
-fails; do not silently perform its work in the main thread.
-
-Restart Codex only after the bootstrap and required documentation action both
-succeed.
+If those keys are absent, recommend adding them. Do not overwrite an existing
+explicit coordinator model without the user's approval.
