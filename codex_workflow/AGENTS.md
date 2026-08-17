@@ -1,102 +1,54 @@
-<!-- codex-workflow-id: viettran-edgeAI/codex_workflow -->
+<!-- codex-workflow-id: ChronicStone/codex_workflow -->
 <!-- codex-workflow-managed-start -->
-# AGENTS.md
+# Codex Workflow
 
-## Project Context
+Use Sol as the coordinator and Luna workers for bounded execution. Repository
+instructions and routed skills remain authoritative for project-specific work.
 
+## Core policy
 
-## Design Principles
+- The coordinator owns intent, architecture, scope, cross-package contracts,
+  integration, final claims, Git state, and user communication.
+- Workers own only their assigned investigation, implementation, verification,
+  review, or documentation surface.
+- Fix the owning cause. Preserve unrelated work and never trade correctness or
+  verification for lower token usage.
+- Delegate only a coherent package with a clear outcome, owner, edit boundary,
+  acceptance criteria, and evidence requirement. Use `fork_turns="none"` for
+  initial workers and pass exact references instead of conversation history.
+- Parallelize only independent work with non-overlapping mutable state. Do not
+  create workers merely because capacity exists.
+- Workers do not commit, push, publish, deploy, migrate shared systems, or take
+  destructive actions unless the user explicitly authorized that operation.
+- Automatic commits and automatic end-of-session workers are forbidden.
 
-- Keep modules cohesive, interfaces explicit, coupling minimal, and behavior
-  testable, replaceable, and reusable.
-- Define proportionate acceptance and verification before implementation. Keep
-  related tests cohesive; never weaken coverage, assertions, or failure
-  visibility to save time or tokens.
-- Preserve unrelated user work and use verified facts in durable documentation.
+## Route selection
 
-Project personalization and project-local instructions are in protected regions
-at the end of this file. They override conflicting workflow defaults, but not
-higher-level instructions.
+Choose the smallest route that completes the task. The user may override it.
 
-## Working State
+- **Light:** questions, diagnosis, planning-only work, or small bounded changes.
+  Work directly with no subagents.
+- **Medium:** one bounded execution or investigation package benefits from Luna.
+  Read `~/.codex/codex_workflow/medium_route.md`.
+- **Heavy:** at least two substantial packages are independently executable, or
+  implementation and independent acceptance need separate workers. Read
+  `~/.codex/codex_workflow/heavy_route.md`.
 
-- `deployment state`: planning or executing a broad, possibly multi-session
-  deployment plan.
-- `leaf state`: work outside that plan, including general questions and small,
-  bounded edits or operations.
+Do not infer Heavy from task size alone. If ownership or architecture is still
+uncertain, resolve it with the coordinator or one read-only scout before
+allocating implementation.
 
-## Project Documentation
+## Project context
 
-The durable project documents are under `agent_docs/`:
+Load the repository's `AGENTS.md`, routed skills, and only the documentation
+needed for the current package. Do not create a parallel documentation or
+progress framework unless the project or user explicitly requests one.
 
-- `project_overview.md`: goals, architecture, workflow, and major decisions.
-- `project_core_tech.md`: concise special technology or architecture notes.
-- `project_structure.md`: layout, modules, components, and ownership.
-- `project_progress.md`: goal, overall progress, current position, next milestone.
-- `project_diary.md`: lasting decisions, discarded approaches, and lessons.
-- `latest_session_work.md`: detailed handoff evidence and continuation point.
-- Module-specific documents, when present.
+## Completion
 
-`project_progress.md` and `latest_session_work.md` may be edited only in
-`deployment state` or when the user explicitly requests it. The main agent owns
-them during normal execution. During automatic deployment closure, the single
-`end_of_session` worker owns reconciliation of the complete documentation
-framework; no other worker participates in that closure update.
-
-Keep raw logs, temporary reasoning, and short-lived checkpoints out of durable
-documents. Never delete a main project document without warning the user and
-receiving a second explicit confirmation.
-
-## Route Selection
-
-There are three routes:
-
-- **Light**: leaf-state work. The main agent works directly; no subagents.
-- **Medium**: deployment-state work performed by the main agent. Explorer and
-  the dedicated End-of-Session worker are the only subagent exceptions. Read
-  `~/.codex/codex_workflow/medium_route.md`.
-- **Heavy**: deployment-state work orchestrated through specialized workers.
-  Read `~/.codex/codex_workflow/heavy_route.md`.
-
-The user selects the route for the session. If unspecified, use Light; do not
-infer Medium or Heavy. Light implies `leaf state`; Medium and Heavy imply
-`deployment state` only for substantive work. Their direct fast path remains
-`leaf state`. Keep the selected route until the user changes it or the session
-ends.
-
-## Context Loading
-
-- In Light, inspect only material needed for the current task.
-- Before initializing deployment state, classify the request. Questions and
-  small or odd bounded tasks use the direct main-agent fast path even when
-  Medium or Heavy is selected: call no worker, including Explorer and
-  `end_of_session`, and produce no worker statistics.
-- For every substantive Medium or Heavy deployment, read the selected route and
-  `explorer_companion.md`, then initialize or reuse the single persistent
-  Explorer.
-- Give Explorer the session goal, known constraints, investigation questions,
-  and boundaries. It reads the foundational project documents and relevant
-  repository context, then returns the planning brief defined in its contract.
-- In Medium, the main agent uses that brief to narrow its direct implementation
-  inspection. In Heavy, Explorer is the default gateway for repository,
-  architecture, dependency, and external research; the main agent normally
-  consumes the brief rather than repeating discovery.
-- The main agent may inspect any critical source or evidence, but should do so
-  only when it materially affects a decision, resolves uncertainty or
-  contradiction, or validates a high-risk integration boundary.
-- Resolve stale or conflicting project status with targeted evidence. Load only
-  relevant module documentation and avoid replaying raw logs, large diffs,
-  directory listings, or complete source files into the main context.
-- Before the final response that completes, pauses, or blocks each substantive
-  Medium or Heavy deployment, run the automatic handoff defined in
-  `end_of_session.md` exactly once. Its worker inherits recent main-agent
-  context and performs the complete documentation-framework update. The
-  handoff is not a user command.
-
-## Platform Paths
-
-Workflow documents use `/` as a platform-neutral separator. Translate paths to
-the current operating system and shell when running filesystem commands.
+Integrate worker reports against the actual diff and current repository state.
+Run or inspect the required owner and consumer gates, distinguish every form of
+evidence precisely, and report incomplete checks honestly.
 <!-- codex-workflow-managed-end -->
 
 <!-- codex-workflow-project-personalization-start -->

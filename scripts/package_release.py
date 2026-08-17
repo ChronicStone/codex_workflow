@@ -25,7 +25,7 @@ VERSION_FILE = "VERSION"
 USER_AGENTS_FILE = "user_AGENTS.md"
 VERSION_MARKER = re.compile(r"codex-workflow-version:\s*([^\s<]+)")
 IDENTIFIER = re.compile(r"^[0-9A-Za-z-]+$")
-USER_ID_MARKER = "<!-- codex-workflow-user-id: viettran-edgeAI/codex_workflow -->"
+USER_ID_MARKER = "<!-- codex-workflow-user-id: ChronicStone/codex_workflow -->"
 USER_MANAGED_START = "<!-- codex-workflow-user-managed-start -->"
 USER_MANAGED_END = "<!-- codex-workflow-user-managed-end -->"
 
@@ -283,8 +283,6 @@ def _verify_member_names(names: Iterable[str]) -> list[str]:
         f"{PACKAGE_DIR_NAME}/enable_auto_update.md",
         f"{PACKAGE_DIR_NAME}/disable_auto_update.md",
         f"{PACKAGE_DIR_NAME}/disable_auto_check_update.md",
-        f"{PACKAGE_DIR_NAME}/end_of_session.md",
-        f"{PACKAGE_DIR_NAME}/agents/end_of_session.toml",
         f"{PACKAGE_DIR_NAME}/workflow.py",
         f"{PACKAGE_DIR_NAME}/runtime/__init__.py",
         f"{PACKAGE_DIR_NAME}/runtime/_toml.py",

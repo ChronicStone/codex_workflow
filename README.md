@@ -1,77 +1,76 @@
-<h3 align="center"><big><big><strong>SIMPLE&emsp;&emsp;───&emsp;&emsp;EASY&emsp;&emsp;───&emsp;&emsp;EFFICIENT</strong></big></big></h3>
-<p align="center"><small>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to use)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(to install)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(token consumption)</small></p>
-<hr>
+# Codex Workflow
 
-![Workflow illustration](illustration.png)
+A general-purpose Codex orchestration setup that keeps a GPT-5.6 Sol coordinator
+focused on architecture and integration while GPT-5.6 Luna workers handle
+bounded execution, investigation, testing, and review.
 
-Built for maximum token efficiency: swarm execution with the main agent as the
-knowledge distributor, companion assistants that preserve operational context,
-and built-in context and implementation-progress management across sessions.
+The workflow is tuned for full-stack applications, frontend product work,
+libraries, automation, and mixed repositories. Project `AGENTS.md` files and
+skills remain authoritative; this layer only controls delegation.
 
-> ⭐ For lightweight tasks, it won’t overdo things. Light route is default.
+## Default model pair
 
-## 1. Quick installation ⚙️
+Add the coordinator model to `~/.codex/config.toml`:
 
-Requires Python 3.11 or newer for deterministic lifecycle operations.
+```toml
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+```
 
-### Open Codex CLI / Codex app from your project directory 
+The installer owns these native subagent settings:
 
-▶️ Send:
+```toml
+[agents]
+enabled = true
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "xhigh"
+max_concurrent_threads_per_session = 4
+max_depth = 1
+```
+
+Four workers is a deliberate default: it permits useful parallelism without
+encouraging duplicated repository reads or overlapping edits. Configuration
+supports up to eight when the workload consistently decomposes cleanly.
+
+## Roles
+
+| Role | Model | Purpose |
+| --- | --- | --- |
+| `scout` | Luna xhigh | Read-only repository, architecture, dependency, and root-cause investigation |
+| `implementer` | Luna xhigh | General backend, full-stack, library, automation, and configuration work |
+| `ui-implementer` | Luna xhigh | Visible frontend implementation with browser verification |
+| `tester` | Luna xhigh | Independent behavioral verification and regression coverage |
+| `reviewer` | Luna xhigh | Independent correctness, ownership, security, and regression review |
+| `ui-reviewer` | Luna xhigh | Rendered visual, interaction, responsive, and accessibility acceptance |
+| `doc-writer` | Luna xhigh | Targeted durable documentation |
+
+Workers never own Git or external delivery by default. There is no persistent
+explorer, automatic session closer, automatic documentation sweep, or automatic
+commit.
+
+## Installation
+
+Download a release asset and verify it against `SHA256SUMS`, then ask Codex to
+read the bundled `codex_workflow/bootstrap.md` and follow it. Python 3.11 or
+newer is required.
+
+After bootstrap, restart Codex. Install the already-bootstrapped workflow in
+another project with:
 
 ```text
-Download and extract the latest `codex_workflow-<version>.zip` asset (not GitHub's Source code archive) from https://github.com/viettran-edgeAI/codex_workflow/releases. Verify it against `SHA256SUMS`, then read the bundled `codex_workflow/bootstrap.md` and follow it to complete the initial installation.
+codex_workflow --install
 ```
-> ⭐ Recommended: use 5.6 Luna xhigh for installation. 
 
-🔄 Restart Codex after installation
+Configuration and lifecycle commands are documented in
+[`workflow_usage.md`](workflow_usage.md).
 
-After this initial installation, the current project is ready to use. Whenever you need to install this workflow for a new project, simply open the codex and send: `codex_workflow --install`
+## Routing
 
-## 2. Workflow usage 
+- Light works directly for questions, diagnosis, plans, and small changes.
+- Medium delegates one bounded package to the best matching role.
+- Heavy uses multiple workers only for independent ownership or independent
+  implementation and acceptance.
 
-### This workflow has 3 routes:
-- Light route : No subagents, no workflow, minimal context.
-- Heavy route : Deploy subagents, full workflow mode.
-- Medium route: No subagents, full workflow mode.
-
-> Full workflow mode : Activate `explorer companion` and the ability to automatically manage context and processes.
-
-Note that the `medium route` doesn't call subagents; it completes the task itself. It only applies `full workflow mode` to automatically manage context & progress. It's suitable for moderately sized or narrow tasks, where the main agent can do everything itself faster and more efficiently than calling a small number of workers.
-
-### How to use
-- Normally, for simple work, general Q&A, you don't need to do anything. `light route` is the default route.
-
---------------------------------
-- When starting or continuing a plan in progress, just tell Codex in the prompt: "
-
-```text
-use medium/heavy route. [your task description]".
-```
-Or continue a task that was already underway in the previous session: 
-```text
-use medium/heavy route. Continue ongoing work.
-```
-> Codex stays on the selected route until you change it, so you don’t need to repeat it in every prompt.
----------------
-> **⭐ Recommendation:** Assign very large and complex tasks to the `heavy route` to make the most of its capabilities and maximize token usage savings.
-
-## Light benchmark
-
-![Light benchmark analysis](light_benchmark/analysis.png)
-
-## 3. More details 
-
-Send these exact commands to Codex from the relevant project directory:
-
-| Command | Purpose |
-| --- | --- |
-| `codex_workflow --install` | Install workflow in the current project and initialize its documentation framework. |
-| `codex_workflow --configure` | Configure the default executor, reasoning effort, and worker limits. |
-| `codex_workflow --personal` | Add or update project-specific workflow preferences. |
-| `codex_workflow --check-update` | Check for a newer release without installing it. |
-| `codex_workflow --update` | Download, verify, and install the latest eligible release. |
-| `codex_workflow --disable` / `codex_workflow --enable` | Disable or re-enable the workflow for the current project. |
-| `codex_workflow --remove` | Remove the installed workflow after a destructive dry-run and confirmation. |
-
-For the complete command reference, installed-file map, scripted customization
-guide, and Heavy-route design, see [workflow_usage.md](workflow_usage.md).
+The coordinator chooses the smallest sufficient route unless the user requests
+one explicitly. Every initial worker receives a compact capsule with
+`fork_turns="none"`; repository history is referenced rather than copied.

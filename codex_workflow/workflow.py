@@ -108,10 +108,8 @@ def parse_args() -> argparse.Namespace:
 
     configure = commands.add_parser("configure")
     _add_common(configure, project=False)
-    configure.add_argument("--default-executor", choices=["executor_luna", "executor_terra"])
-    configure.add_argument("--reasoning-effort", choices=["high", "xhigh", "max"])
+    configure.add_argument("--reasoning-effort", choices=["high", "xhigh"])
     configure.add_argument("--max-workers", type=int)
-    configure.add_argument("--max-sol", type=int)
     configure.add_argument("--report-size", type=int)
     configure.add_argument(
         "--auto-check-update",
@@ -322,7 +320,7 @@ def main() -> int:
                 # into actionable errors instead of misreporting them as merely
                 # disabled.
                 existing_plan = plan_project_install(package, project)
-                if existing_plan.agent_actions[0]["files"]:
+                if existing_plan.agent_actions:
                     return _finish(existing_plan, args)
                 enabled = existing == project.active
                 _emit(
@@ -368,10 +366,9 @@ def main() -> int:
             )
         if args.command == "configure":
             changes = {
-                "default_executor": args.default_executor,
                 "default_executor_reasoning_effort": args.reasoning_effort,
+                "default_subagent_reasoning_effort": args.reasoning_effort,
                 "max_concurrent_workers": args.max_workers,
-                "max_executor_sol_instances": args.max_sol,
                 "report_package_size": args.report_size,
                 "auto_check_update": (
                     args.auto_check_update == "enabled"

@@ -70,13 +70,6 @@ def plan_configure(
     current = load_config(runtime.runtime / "workflow_config.json", templates=templates)
     raw = current.to_mapping()
     raw.update({key: value for key, value in changes.items() if value is not None})
-    if "enabled_workers" not in changes and changes.get("default_executor"):
-        other = ({"executor_luna", "executor_terra"} - {changes["default_executor"]}).pop()
-        raw["enabled_workers"] = [
-            worker for worker in raw["enabled_workers"] if worker != other
-        ]
-        if changes["default_executor"] not in raw["enabled_workers"]:
-            raw["enabled_workers"].insert(0, changes["default_executor"])
     available = {path.stem for path in templates.glob("*.toml")}
     proposed = WorkflowConfig.from_mapping(raw, available_workers=available)
     mutations = plan_materialized_config(runtime, proposed)
@@ -144,7 +137,7 @@ def plan_remove(
         {
             "confirmation_required": True,
             "preserves": [
-                "project agent_docs/ files",
+                "project documentation",
                 "unrelated user AGENTS.md content",
                 "unrelated Codex config.toml keys",
                 "unrelated worker TOMLs",

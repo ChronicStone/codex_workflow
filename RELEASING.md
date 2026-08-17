@@ -32,8 +32,7 @@ codex_workflow/
 ├── workflow.py
 ├── runtime/
 ├── resources/                              # immutable package defaults
-├── agents/
-└── project_docs/
+└── agents/
 ```
 
 The package does not contain `README.md`, `illustration.png`,

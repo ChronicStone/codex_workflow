@@ -37,7 +37,6 @@ def plan_runtime_files(
         "AGENTS.md",
         "workflow_config.json",
         "agents",
-        "project_docs",
         "templates",
         ".source_backup",
         ".backups",
@@ -62,10 +61,6 @@ def plan_runtime_files(
     template_targets.extend(
         (source, runtime.runtime / "templates" / "agents" / source.name)
         for source in sorted(package.agent_templates.glob("*.toml"))
-    )
-    template_targets.extend(
-        (source, runtime.runtime / "templates" / "project_docs" / source.name)
-        for source in package.project_docs.glob("*.md")
     )
     for source, target in template_targets:
         mutations.append(Mutation(target, source.read_bytes()))

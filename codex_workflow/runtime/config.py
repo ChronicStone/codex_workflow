@@ -14,11 +14,12 @@ from .markers import EFFECTIVE_CONFIG, replace
 from .migrations import migrate_config_resource
 
 
-DEFAULT_EXECUTORS = {"executor_luna", "executor_terra"}
-REASONING_EFFORTS = {"high", "xhigh", "max"}
-CONFIG_SCHEMA_VERSION = 4
-REQUIRED_WORKERS = {"doc-writer", "end_of_session"}
-PLATFORM_MAX_WORKERS = 20
+DEFAULT_EXECUTORS = {"implementer"}
+REASONING_EFFORTS = {"high", "xhigh"}
+CONFIG_SCHEMA_VERSION = 5
+REQUIRED_WORKERS: set[str] = set()
+PLATFORM_MAX_WORKERS = 8
+SUBAGENT_MODELS = {"gpt-5.6-luna"}
 
 
 @dataclass(frozen=True)
@@ -26,9 +27,10 @@ class WorkflowConfig:
     schema_version: int
     default_executor: str
     default_executor_reasoning_effort: str
+    default_subagent_model: str
+    default_subagent_reasoning_effort: str
     auto_check_update: bool
     max_concurrent_workers: int
-    max_executor_sol_instances: int
     report_package_size: int
     enabled_workers: tuple[str, ...]
 
@@ -40,9 +42,10 @@ class WorkflowConfig:
             "schema_version",
             "default_executor",
             "default_executor_reasoning_effort",
+            "default_subagent_model",
+            "default_subagent_reasoning_effort",
             "auto_check_update",
             "max_concurrent_workers",
-            "max_executor_sol_instances",
             "report_package_size",
             "enabled_workers",
         }
@@ -64,10 +67,7 @@ class WorkflowConfig:
             raise ValidationError("enabled_workers contains duplicates")
         default = raw["default_executor"]
         if default not in DEFAULT_EXECUTORS or default not in workers:
-            raise ValidationError("default_executor must be enabled luna or terra")
-        enabled_defaults = DEFAULT_EXECUTORS.intersection(workers)
-        if enabled_defaults != {default}:
-            raise ValidationError("exactly the selected default executor must be enabled")
+            raise ValidationError("default_executor must be the enabled implementer")
         missing_required = REQUIRED_WORKERS - set(workers)
         if missing_required:
             raise ValidationError(
@@ -76,6 +76,12 @@ class WorkflowConfig:
         effort = raw["default_executor_reasoning_effort"]
         if effort not in REASONING_EFFORTS:
             raise ValidationError("invalid default_executor_reasoning_effort")
+        subagent_model = raw["default_subagent_model"]
+        if subagent_model not in SUBAGENT_MODELS:
+            raise ValidationError("invalid default_subagent_model")
+        subagent_effort = raw["default_subagent_reasoning_effort"]
+        if subagent_effort not in REASONING_EFFORTS:
+            raise ValidationError("invalid default_subagent_reasoning_effort")
         auto_check = raw["auto_check_update"]
         if not isinstance(auto_check, bool):
             raise ValidationError("auto_check_update must be a boolean")
@@ -83,15 +89,6 @@ class WorkflowConfig:
         if maximum > PLATFORM_MAX_WORKERS:
             raise ValidationError(
                 f"max_concurrent_workers exceeds platform limit {PLATFORM_MAX_WORKERS}"
-            )
-        sol_maximum = raw["max_executor_sol_instances"]
-        if not isinstance(sol_maximum, int) or isinstance(sol_maximum, bool):
-            raise ValidationError("max_executor_sol_instances must be an integer")
-        if sol_maximum < 0 or sol_maximum > maximum:
-            raise ValidationError("max_executor_sol_instances is outside worker limit")
-        if "executor_sol" not in workers and sol_maximum != 0:
-            raise ValidationError(
-                "max_executor_sol_instances must be zero when executor_sol is disabled"
             )
         report_size = _positive_int(raw["report_package_size"], "report_package_size")
         if available_workers is not None:
@@ -102,9 +99,10 @@ class WorkflowConfig:
             CONFIG_SCHEMA_VERSION,
             default,
             effort,
+            subagent_model,
+            subagent_effort,
             auto_check,
             maximum,
-            sol_maximum,
             report_size,
             workers,
         )
@@ -160,9 +158,10 @@ def effective_config_body(config: WorkflowConfig) -> str:
             "",
             f"- Default executor: `{config.default_executor}` "
             f"(`{config.default_executor_reasoning_effort}` reasoning effort).",
+            f"- Default subagent model: `{config.default_subagent_model}` "
+            f"(`{config.default_subagent_reasoning_effort}` reasoning effort).",
             f"- Enabled workers: {workers}.",
             f"- Maximum concurrent child workers: `{config.max_concurrent_workers}`.",
-            f"- Maximum `executor_sol` workers: `{config.max_executor_sol_instances}`.",
             f"- Maximum worker final-report package: `{config.report_package_size}` words.",
             "",
             "Create only enabled workers and obey these limits.",
@@ -202,15 +201,14 @@ def patch_codex_config(text: str, config: WorkflowConfig) -> str:
         except tomllib.TOMLDecodeError as error:
             raise ValidationError(f"existing Codex config is invalid TOML: {error}") from error
     sections: dict[str, dict[str, str]] = {
-        "agents": {"enabled": "true"},
-        "features.multi_agent_v2": {
+        "agents": {
             "enabled": "true",
+            "default_subagent_model": f'"{config.default_subagent_model}"',
+            "default_subagent_reasoning_effort": (
+                f'"{config.default_subagent_reasoning_effort}"'
+            ),
             "max_concurrent_threads_per_session": str(config.max_concurrent_workers),
-            "hide_spawn_agent_metadata": "false",
-            "tool_namespace": '"agents"',
-            "min_wait_timeout_ms": "300_000",
-            "default_wait_timeout_ms": "300_000",
-            "max_wait_timeout_ms": "3_600_000",
+            "max_depth": "1",
         },
     }
     lines = text.splitlines()
@@ -260,15 +258,12 @@ def _patch_section(lines: list[str], section: str, values: dict[str, str]) -> li
 
 
 _WORKFLOW_OWNED_KEYS: dict[str, set[str]] = {
-    "agents": {"enabled"},
-    "features.multi_agent_v2": {
+    "agents": {
         "enabled",
+        "default_subagent_model",
+        "default_subagent_reasoning_effort",
         "max_concurrent_threads_per_session",
-        "hide_spawn_agent_metadata",
-        "tool_namespace",
-        "min_wait_timeout_ms",
-        "default_wait_timeout_ms",
-        "max_wait_timeout_ms",
+        "max_depth",
     },
 }
 
