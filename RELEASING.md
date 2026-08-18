@@ -12,6 +12,7 @@ The repository-only release machinery is:
 .github/workflows/release.yml
 scripts/package_release.py
 RELEASING.md
+CHANGELOG.md
 ```
 
 Every archive contains exactly this top-level directory and nothing beside it:
@@ -41,7 +42,7 @@ codex_workflow/
 ```
 
 The package does not contain `README.md`, `illustration.png`,
-`workflow_usage.md`, `RELEASING.md`, `.github/`, `scripts/`, `.git/`, or any
+`workflow_usage.md`, `RELEASING.md`, `CHANGELOG.md`, `.github/`, `scripts/`, `.git/`, or any
 other repository-only file. All files below `codex_workflow/` are included so
 the installed workflow remains self-contained.
 
@@ -56,8 +57,12 @@ system:
 Use SemVer 2.0.0. Keep the plain version in `codex_workflow/VERSION` and the
 `codex-workflow-version` marker in `codex_workflow/user_AGENTS.md` identical.
 The release tag is the same value with an optional leading `v`, for example
-`VERSION=2.0.5` and tag `v2.0.5`. GitHub's prerelease flag is independent of
+`VERSION=2.1.0` and tag `v2.1.0`. GitHub's prerelease flag is independent of
 the SemVer string.
+
+Add the release entry to `CHANGELOG.md` before tagging. The changelog is the
+durable human-edited history; GitHub Releases may additionally include generated
+commit notes.
 
 ## Local build and validation
 

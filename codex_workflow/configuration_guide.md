@@ -8,11 +8,13 @@ Read the current values from
 `~/.codex/codex_workflow/workflow_config.json`, then show one menu with the
 current value beside each setting:
 
-1. Luna worker effort: `high` or `xhigh`; the default and all role templates use
-   `xhigh` so bounded workers can complete substantive work without Sol rework.
-2. Maximum concurrent workers: 1 through 8.
-3. Maximum worker final-report size in words.
-4. Exit.
+1. Luna implementation effort: `high` or `xhigh`; `implementer` and
+   `ui-implementer` default to `xhigh` because they own production changes.
+2. Luna support effort: `high` or `xhigh`; scouts, testers, reviewers, UI
+   reviewers, and documentation workers default to `high` for bounded evidence.
+3. Maximum concurrent workers: 1 through 8.
+4. Maximum worker final-report size in words.
+5. Exit.
 
 Ask only for the selected setting, allow **Keep current**, and return to the
 menu. Do not edit generated files directly. When the user exits, run the CLI
@@ -20,13 +22,15 @@ once with only changed flags:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py configure --json \
-  --reasoning-effort <effort> \
+  --implementation-effort <effort> \
+  --support-effort <effort> \
   --max-workers <count> \
   --report-size <words>
 ```
 
-The reasoning setting is an explicit override for the default Luna subagent and
-general implementer. The cumulative task worker budget is owned by
+The legacy `--reasoning-effort` flag remains available to set both effort groups
+to the same value, but it cannot be combined with the role-specific flags. The
+cumulative task worker budget is owned by
 `workflow_config.json`, defaults to six, and is separate from native
 concurrency. The CLI validates and applies one configuration transaction,
 updates native `[agents]` settings, materializes every owned role, and preserves

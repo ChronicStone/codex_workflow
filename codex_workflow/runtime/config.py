@@ -15,6 +15,7 @@ from .migrations import migrate_config_resource
 
 
 DEFAULT_EXECUTORS = {"implementer"}
+IMPLEMENTATION_WORKERS = {"implementer", "ui-implementer"}
 REASONING_EFFORTS = {"medium", "high", "xhigh"}
 CONFIG_SCHEMA_VERSION = 6
 REQUIRED_WORKERS: set[str] = set()
@@ -167,7 +168,9 @@ def effective_config_body(config: WorkflowConfig) -> str:
             "",
             f"- Default executor: `{config.default_executor}` "
             f"(`{config.default_executor_reasoning_effort}` reasoning effort).",
-            f"- Default subagent model: `{config.default_subagent_model}` "
+            f"- Implementation workers: `{config.default_subagent_model}` "
+            f"(`{config.default_executor_reasoning_effort}` reasoning effort).",
+            f"- Support workers: `{config.default_subagent_model}` "
             f"(`{config.default_subagent_reasoning_effort}` reasoning effort).",
             f"- Enabled workers: {workers}.",
             f"- Maximum concurrent child workers: `{config.max_concurrent_workers}`.",
@@ -194,7 +197,7 @@ def render_worker_template(text: str, *, worker: str, config: WorkflowConfig) ->
         raise ValidationError(f"worker template ownership marker mismatch: {worker}")
     effort = (
         config.default_executor_reasoning_effort
-        if worker == config.default_executor
+        if worker in IMPLEMENTATION_WORKERS
         else config.default_subagent_reasoning_effort
     )
     matches = list(_EFFORT_LINE.finditer(text))

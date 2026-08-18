@@ -18,6 +18,9 @@ instructions and routed skills remain authoritative for project-specific work.
   initial workers and pass exact references instead of conversation history.
 - Parallelize only independent work with non-overlapping mutable state. Do not
   create workers merely because capacity exists.
+- A worker capsule is immutable in owner and surface. Follow-ups may clarify
+  facts or repair acceptance failures inside that boundary, but broadening it
+  requires a new route decision rather than silently extending the same worker.
 - Consume valid worker evidence instead of repeating the same reads or checks;
   reopen only for conflict, stale evidence, an integration boundary, or high
   risk.
@@ -34,6 +37,13 @@ instructions and routed skills remain authoritative for project-specific work.
   fresh evidence instead of rerunning it. Sol runs a check only for a missing
   integration boundary, evidence invalidated by coordinator edits, or an
   explicitly required final shipping gate.
+- After dispatch, Sol stays out of the delegated read and edit surface until the
+  worker reports unless an unresolved architecture decision blocks it. Sol then
+  inspects the integrated diff once and owns only the remaining integration gate.
+- Queue new facts for the worker at its next message boundary. Interrupt only
+  when continuing the current work would be invalid, destructive, or outside
+  the authorized scope; never interrupt merely to request status or reprioritize
+  valid in-flight work.
 - In commentary, plans, worker ledgers, and final reports, identify agents as
   `<role> — <task ID>` and key records by native `agent_id`. Never identify an
   agent by a generated person nickname except when quoting a native platform
@@ -56,10 +66,12 @@ do not spawn subagents, regardless of task size or number of stages.
 - **Light:** questions, diagnosis, planning-only work, or small bounded changes.
   Work directly with no subagents.
 - **Medium:** exactly one initial Luna worker owns one bounded package; follow-up
-  turns reuse it and never create a replacement. Read
+  turns reuse it and never create a replacement. Medium provides an execution
+  boundary, not parallel speedup; if the task contains multiple independent
+  packages, report the route mismatch instead of hiding them in one capsule. Read
   `~/.codex/codex_workflow/medium_route.md`.
 - **Heavy:** allocate 2-4 independent initial workers, within the cumulative
-  task budget and concurrency cap. Read
+  task budget and concurrency cap, before deep coordinator investigation. Read
   `~/.codex/codex_workflow/heavy_route.md`.
 
 Do not infer Medium or Heavy from task size, ownership count, implementation

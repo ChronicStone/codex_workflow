@@ -31,7 +31,8 @@ files remain untouched and provide the more specific domain rules.
 | Prompt | Effect |
 | --- | --- |
 | `codex_workflow --install` | Verify that the global workflow is installed |
-| `codex_workflow --configure` | Change Luna effort, concurrency, or report size |
+| `codex_workflow --configure` | Change implementation/support effort, concurrency, or report size |
+| `codex_workflow --analyze-thread <reference>` | Analyze native rollout timing, concurrency, tokens, and tools |
 | `codex_workflow --check-update` | Check releases without mutation |
 | `codex_workflow --update` | Verify and install the latest eligible release |
 | `codex_workflow --remove` | Show a destructive dry run, then remove owned workflow files after confirmation |
@@ -53,7 +54,7 @@ must not be edited directly.
   "default_executor": "implementer",
   "default_executor_reasoning_effort": "xhigh",
   "default_subagent_model": "gpt-5.6-luna",
-  "default_subagent_reasoning_effort": "xhigh",
+  "default_subagent_reasoning_effort": "high",
   "auto_check_update": false,
   "max_concurrent_workers": 4,
   "max_total_workers": 6,
@@ -95,8 +96,10 @@ The coordinator selects roles from task shape:
 - use `doc-writer` only for assigned durable documentation.
 
 Medium creates exactly one initial worker and reuses it for follow-ups without a
-replacement. Heavy creates 2-4 independent initial workers within the six-worker
-cumulative task budget and reuses the responsible implementer for repairs.
+replacement, so it provides no parallel speedup. Its owner and surface remain
+fixed. Heavy creates 2-4 independent initial workers before deep coordinator
+investigation, within the six-worker cumulative task budget, and reuses the
+responsible implementer for repairs.
 Independent review runs only when the user asks or a concrete risk requires it.
 Do not repeat scouts or reviewers over the same surface.
 
@@ -110,6 +113,10 @@ surface, protected areas, relevant decisions and references, recommended
 approach, invariant, likely pitfall, acceptance criteria, validation, and
 escalation conditions. Workers return evidence and knowledge deltas rather than
 logs or repeated repository context.
+
+Implementation roles use Luna `xhigh` by default. Read-only investigation,
+testing, review, UI acceptance, and documentation use Luna `high`; configure the
+groups independently when a repository needs a different quality/cost balance.
 
 ## Validation cadence
 

@@ -23,6 +23,7 @@ sys.path.insert(0, str(PACKAGE))
 
 import workflow as workflow_cli
 
+from runtime.analyze import analyze_thread
 from runtime.config import (
     WorkflowConfig,
     patch_codex_config,
@@ -79,6 +80,7 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("codex_workflow --enable_auto_update", instructions)
         self.assertIn("codex_workflow --disable_auto_update", instructions)
         self.assertIn("codex_workflow --remove", instructions)
+        self.assertIn("codex_workflow --analyze-thread", instructions)
 
         personalization = (PACKAGE / "personalization_guide.md").read_text(
             encoding="utf-8"
@@ -114,6 +116,9 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("rendered interaction and visual", heavy)
         self.assertIn("Never run an automatic documentation sweep, session closure, or commit", heavy)
         self.assertIn("2-4 initial workers", heavy)
+        self.assertIn("Use a spawn-first sequence", heavy)
+        self.assertIn("capsule owner and surface are immutable", heavy)
+        self.assertIn("interrupt only when", heavy)
         self.assertIn("cumulative task budget", heavy)
         self.assertIn("Add an independent tester or reviewer only", heavy)
         self.assertIn("reuse the responsible implementer", heavy.lower())
@@ -124,6 +129,8 @@ class MarkerTests(unittest.TestCase):
 
         medium = policies["medium_route.md"]
         self.assertIn("Use exactly one Luna worker", medium)
+        self.assertIn("Medium has no worker parallelism", medium)
+        self.assertIn("route mismatch", medium)
         self.assertIn("Never create a replacement worker", medium)
         self.assertIn('fork_turns="none"', medium)
         self.assertIn("`ui-reviewer`", medium)
@@ -141,6 +148,8 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("Validation is milestone-based, not edit-based", agents_policy)
         self.assertIn("Never rerun an\n  unchanged command", agents_policy)
         self.assertIn("implementing Luna worker owns focused and owner", agents_policy)
+        self.assertIn("A worker capsule is immutable in owner and surface", agents_policy)
+        self.assertIn("Sol stays out of the delegated read and edit surface", agents_policy)
         identity = "<role> — <task ID>"
         for policy in (agents_policy, medium, heavy):
             self.assertIn(identity, policy)
@@ -279,6 +288,8 @@ class MarkerTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertNotIn("--handoff-context-turns", completed.stdout)
+        self.assertIn("--implementation-effort", completed.stdout)
+        self.assertIn("--support-effort", completed.stdout)
 
     def test_remove_help_hides_internal_confirmation_flag(self) -> None:
         completed = subprocess.run(
@@ -317,6 +328,118 @@ class SafetyTests(unittest.TestCase):
             self.assertEqual(mutations, [])
 
 
+class AnalyzeTests(unittest.TestCase):
+    def test_native_parent_and_direct_child_are_aggregated(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            sessions = Path(temporary)
+            parent_id = "01parent"
+            child_id = "01child"
+            parent = sessions / f"rollout-{parent_id}.jsonl"
+            child = sessions / f"rollout-{child_id}.jsonl"
+
+            def write(path: Path, records: list[dict[str, object]]) -> None:
+                path.write_text(
+                    "".join(json.dumps(record) + "\n" for record in records),
+                    encoding="utf-8",
+                )
+
+            write(
+                parent,
+                [
+                    {
+                        "timestamp": "2026-08-18T10:00:00Z",
+                        "type": "session_meta",
+                        "payload": {"id": parent_id, "source": {}},
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:01Z",
+                        "type": "turn_context",
+                        "payload": {"model": "gpt-5.6-sol", "effort": "high"},
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:02Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "custom_tool_call",
+                            "name": "exec",
+                            "input": "text(await tools.apply_patch(patch));",
+                        },
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:02Z",
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "token_count",
+                            "info": {
+                                "total_token_usage": {
+                                    "input_tokens": 100,
+                                    "cached_input_tokens": 40,
+                                    "cache_write_input_tokens": 0,
+                                    "output_tokens": 20,
+                                    "reasoning_output_tokens": 10,
+                                    "total_tokens": 120,
+                                }
+                            },
+                        },
+                    },
+                ],
+            )
+            write(
+                child,
+                [
+                    {
+                        "timestamp": "2026-08-18T10:00:03Z",
+                        "type": "session_meta",
+                        "payload": {
+                            "id": child_id,
+                            "source": {
+                                "subagent": {
+                                    "thread_spawn": {
+                                        "parent_thread_id": parent_id,
+                                        "agent_path": "/root/task",
+                                        "agent_role": "implementer",
+                                    }
+                                }
+                            },
+                        },
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:04Z",
+                        "type": "turn_context",
+                        "payload": {"model": "gpt-5.6-luna", "effort": "xhigh"},
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:05Z",
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "task_started",
+                            "turn_id": "turn",
+                            "started_at": 1787047205,
+                        },
+                    },
+                    {
+                        "timestamp": "2026-08-18T10:00:07Z",
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "task_complete",
+                            "turn_id": "turn",
+                            "completed_at": 1787047207,
+                            "duration_ms": 2000,
+                        },
+                    },
+                ],
+            )
+
+            result = analyze_thread(parent_id, sessions_root=sessions)
+            self.assertEqual(result["child_count"], 1)
+            self.assertEqual(result["max_child_concurrency"], 1)
+            self.assertEqual(result["children"][0]["agent_role"], "implementer")
+            self.assertEqual(result["parent"]["nested_tool_calls"]["apply_patch"], 1)
+            self.assertEqual(
+                result["totals_by_model"]["gpt-5.6-sol"]["total_tokens"], 120
+            )
+
+
 class ConfigTests(unittest.TestCase):
     def test_package_default_disables_automatic_update_checks(self) -> None:
         raw = json.loads(
@@ -327,7 +450,7 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(raw["auto_check_update"])
         self.assertEqual(raw["schema_version"], 6)
         self.assertEqual(raw["default_executor_reasoning_effort"], "xhigh")
-        self.assertEqual(raw["default_subagent_reasoning_effort"], "xhigh")
+        self.assertEqual(raw["default_subagent_reasoning_effort"], "high")
         self.assertEqual(raw["max_total_workers"], 6)
         self.assertNotIn("nickname", raw)
         self.assertNotIn("display_name", raw)
@@ -452,19 +575,20 @@ class ConfigTests(unittest.TestCase):
         self.assertIn("Maximum concurrent child workers: `4`", rendered)
         self.assertIn("Cumulative task worker budget: `6` total workers", rendered)
         self.assertIn("Default executor: `implementer` (`xhigh`", rendered)
-        self.assertIn("Default subagent model: `gpt-5.6-luna` (`xhigh`", rendered)
+        self.assertIn("Implementation workers: `gpt-5.6-luna` (`xhigh`", rendered)
+        self.assertIn("Support workers: `gpt-5.6-luna` (`high`", rendered)
         self.assertIn("Never run an automatic documentation sweep, session closure, or commit", rendered)
 
-    def test_role_defaults_keep_luna_at_xhigh(self) -> None:
-        expected = {worker: "xhigh" for worker in (
-            "scout",
-            "implementer",
-            "ui-implementer",
-            "tester",
-            "reviewer",
-            "ui-reviewer",
-            "doc-writer",
-        )}
+    def test_role_defaults_split_implementation_and_support_effort(self) -> None:
+        expected = {
+            "scout": "high",
+            "implementer": "xhigh",
+            "ui-implementer": "xhigh",
+            "tester": "high",
+            "reviewer": "high",
+            "ui-reviewer": "high",
+            "doc-writer": "high",
+        }
         raw = json.loads(
             (PACKAGE / "resources" / "workflow_config.default.json").read_text(
                 encoding="utf-8"
@@ -645,7 +769,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
         self.assertIn(
-            'default_subagent_reasoning_effort = "xhigh"',
+            'default_subagent_reasoning_effort = "high"',
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
         installed_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
@@ -803,12 +927,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         incoming_root = self.root / "incoming" / "codex_workflow"
         shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        (incoming_root / "VERSION").write_text("2.1.0\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.2.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.1.0",
+                "codex-workflow-version: 2.2.0",
             ),
             encoding="utf-8",
         )
@@ -816,7 +940,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         plan_update(incoming, self.runtime, self.project).apply()
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.1.0\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.2.0\n")
         updated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
         self.assertEqual(updated_config["default_executor"], "implementer")
         self.assertEqual(updated_config["max_concurrent_workers"], 7)
@@ -839,7 +963,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         second = ProjectPaths(second_root)
         plan_project_install(self.package, second).apply()
 
-        incoming = self.incoming_package("multi-project-incoming", "2.1.0")
+        incoming = self.incoming_package("multi-project-incoming", "2.2.0")
         incoming_template = incoming.project_template.read_text(encoding="utf-8")
         incoming.project_template.write_text(
             incoming_template.replace("## Core policy", "## Core policy (2.1)"),
@@ -849,7 +973,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
 
         plan_update(incoming, self.runtime, self.project).apply()
         second_plan = plan_update(incoming, self.runtime, second)
-        self.assertEqual(second_plan.details["from_version"], "2.1.0")
+        self.assertEqual(second_plan.details["from_version"], "2.2.0")
         self.assertEqual(second_plan.details["project_from_version"], PACKAGE_VERSION)
         second_plan.apply()
         self.assertIn(
@@ -868,7 +992,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         configured.pop("default_subagent_reasoning_effort")
         config_path.write_text(json.dumps(configured) + "\n", encoding="utf-8")
 
-        incoming = self.incoming_package("config-migration-incoming", "2.1.0")
+        incoming = self.incoming_package("config-migration-incoming", "2.2.0")
         plan_update(incoming, self.runtime, self.project).apply()
         migrated = json.loads(config_path.read_text(encoding="utf-8"))
         self.assertEqual(migrated["schema_version"], 6)
@@ -1215,12 +1339,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
             incoming_root,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        (incoming_root / "VERSION").write_text("2.1.0\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.2.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.1.0",
+                "codex-workflow-version: 2.2.0",
             ),
             encoding="utf-8",
         )
@@ -1242,7 +1366,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         summary = json.loads(completed.stdout)
-        self.assertEqual(summary["details"]["to_version"], "2.1.0")
+        self.assertEqual(summary["details"]["to_version"], "2.2.0")
         self.assertTrue(summary["applied"])
         project_state = json.loads(self.project.state.read_text(encoding="utf-8"))
         self.assertEqual(project_state["workflow_version"], PACKAGE_VERSION)
@@ -1253,7 +1377,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         ordinary_root.mkdir()
         ordinary_agents = ordinary_root / "AGENTS.md"
         ordinary_agents.write_text("# Ordinary repository policy\n", encoding="utf-8")
-        incoming = self.incoming_package("legacy-delegated-incoming", "2.1.0")
+        incoming = self.incoming_package("legacy-delegated-incoming", "2.2.0")
 
         completed = subprocess.run(
             [
@@ -1279,7 +1403,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertTrue(summary["applied"])
         self.assertIn("older launcher", summary["warnings"][0])
         self.assertEqual(ordinary_agents.read_text(), "# Ordinary repository policy\n")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.1.0\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.2.0\n")
 
 
 class PersonalizationTests(unittest.TestCase):

@@ -20,6 +20,7 @@ if sys.version_info < (3, 11):
     raise SystemExit("codex_workflow requires Python 3.11 or newer")
 
 from runtime.config import load_config
+from runtime.analyze import analyze_thread
 from runtime.errors import WorkflowError
 from runtime.layout import PROJECT_ID
 from runtime.lifecycle import (
@@ -112,7 +113,13 @@ def parse_args() -> argparse.Namespace:
 
     configure = commands.add_parser("configure")
     _add_common(configure, project=False)
-    configure.add_argument("--reasoning-effort", choices=["high", "xhigh"])
+    configure.add_argument(
+        "--reasoning-effort",
+        choices=["high", "xhigh"],
+        help="legacy override that sets implementation and support effort together",
+    )
+    configure.add_argument("--implementation-effort", choices=["high", "xhigh"])
+    configure.add_argument("--support-effort", choices=["high", "xhigh"])
     configure.add_argument("--max-workers", type=int)
     configure.add_argument("--report-size", type=int)
     configure.add_argument(
@@ -132,6 +139,15 @@ def parse_args() -> argparse.Namespace:
     validate = commands.add_parser("validate")
     _add_common(validate, project=False)
     validate.add_argument("--package-root", type=Path, default=Path(__file__).resolve().parent)
+
+    analyze = commands.add_parser("analyze-thread")
+    _add_common(analyze, project=False)
+    analyze.add_argument("reference", help="native Codex session ID or rollout JSONL path")
+    analyze.add_argument(
+        "--sessions-root",
+        type=Path,
+        help="override the native Codex sessions directory",
+    )
     return parser.parse_args()
 
 
@@ -194,6 +210,17 @@ def main() -> int:
     temporary = None
     try:
         runtime, project = _paths(args)
+        if args.command == "analyze-thread":
+            sessions_root = (
+                args.sessions_root.expanduser().resolve()
+                if args.sessions_root is not None
+                else runtime.codex_home / "sessions"
+            )
+            _emit(
+                analyze_thread(args.reference, sessions_root=sessions_root),
+                compact=args.json,
+            )
+            return 0
         if args.command == "validate":
             package = PackageLayout.resolve(args.package_root)
             _emit(
@@ -359,9 +386,26 @@ def main() -> int:
                 )
             return _finish(plan, args)
         if args.command == "configure":
+            if args.reasoning_effort is not None and (
+                args.implementation_effort is not None
+                or args.support_effort is not None
+            ):
+                raise WorkflowError(
+                    "--reasoning-effort cannot be combined with role-specific effort flags"
+                )
+            implementation_effort = (
+                args.reasoning_effort
+                if args.reasoning_effort is not None
+                else args.implementation_effort
+            )
+            support_effort = (
+                args.reasoning_effort
+                if args.reasoning_effort is not None
+                else args.support_effort
+            )
             changes = {
-                "default_executor_reasoning_effort": args.reasoning_effort,
-                "default_subagent_reasoning_effort": args.reasoning_effort,
+                "default_executor_reasoning_effort": implementation_effort,
+                "default_subagent_reasoning_effort": support_effort,
                 "max_concurrent_workers": args.max_workers,
                 "report_package_size": args.report_size,
                 "auto_check_update": (

@@ -9,6 +9,8 @@ libraries, automation, and mixed repositories. Its delegation policy is loaded
 globally, while project `AGENTS.md` files and skills remain authoritative for
 repository-specific work.
 
+Release history is maintained in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Default model pair
 
 Add the coordinator model to `~/.codex/config.toml`:
@@ -24,7 +26,7 @@ The installer owns these native subagent settings:
 [agents]
 enabled = true
 default_subagent_model = "gpt-5.6-luna"
-default_subagent_reasoning_effort = "xhigh"
+default_subagent_reasoning_effort = "high"
 max_concurrent_threads_per_session = 4
 max_depth = 1
 ```
@@ -37,16 +39,18 @@ supports up to eight when the workload consistently decomposes cleanly.
 
 | Role | Model | Purpose |
 | --- | --- | --- |
-| `scout` | Luna xhigh | Read-only repository, architecture, dependency, and root-cause investigation |
+| `scout` | Luna high | Read-only repository, architecture, dependency, and root-cause investigation |
 | `implementer` | Luna xhigh | General backend, full-stack, library, automation, and configuration work |
 | `ui-implementer` | Luna xhigh | Visible frontend implementation with browser verification |
-| `tester` | Luna xhigh | Independent behavioral verification and regression coverage |
-| `reviewer` | Luna xhigh | Independent correctness, ownership, security, and regression review |
-| `ui-reviewer` | Luna xhigh | Rendered visual, interaction, responsive, and accessibility acceptance |
-| `doc-writer` | Luna xhigh | Targeted durable documentation |
+| `tester` | Luna high | Independent behavioral verification and regression coverage |
+| `reviewer` | Luna high | Independent correctness, ownership, security, and regression review |
+| `ui-reviewer` | Luna high | Rendered visual, interaction, responsive, and accessibility acceptance |
+| `doc-writer` | Luna high | Targeted durable documentation |
 
-Luna stays at `xhigh` because reducing expensive Sol work is the optimization
-target; worker count, reuse, ownership, and evidence consumption control waste.
+Implementation workers stay at `xhigh`, while bounded discovery, verification,
+review, and documentation use `high`. This preserves execution quality where a
+worker owns production changes and reduces reasoning cost on narrower evidence
+packages.
 
 Use `<role> — <task ID>` for agent references in commentary, plans, worker
 ledgers, and final reports, keyed by native `agent_id`. Generated person
@@ -78,10 +82,11 @@ Configuration and lifecycle commands are documented in
 ## Routing
 
 - Light works directly for questions, diagnosis, plans, and small changes.
-- Medium delegates exactly one initial worker, with follow-ups reusing it and no
-  replacement worker.
-- Heavy allocates 2-4 independent initial workers and never exceeds six total;
-  repairs return to the responsible implementer, and independent review runs
+- Medium delegates exactly one initial worker, so it provides isolation but no
+  parallel speedup; follow-ups reuse it without broadening its owner or surface.
+- Heavy allocates 2-4 independent initial workers before deep coordinator work
+  and never exceeds six total; repairs return to the responsible implementer,
+  and independent review runs
   only when the user asks or a concrete risk requires it.
 
 Delegation is opt-in. Only `workflow medium`, `workflow high`/`workflow heavy`,
@@ -93,6 +98,10 @@ is referenced rather than copied. Waiting is event-driven: use one long native
 wait or background monitor rather than coordinator polling or repeated status
 turns. Valid worker evidence is consumed unless conflict, staleness, an
 integration boundary, or high risk reopens it.
+
+Use `codex_workflow --analyze-thread <native-session-id-or-rollout-path>` to
+measure parent and child timing, concurrency, models, token usage, compactions,
+and tool calls from native rollout records without changing them.
 
 Validation follows a deduplicated ladder: the implementing Luna worker runs the
 smallest focused check when a coherent slice should pass and one owner gate at

@@ -1,5 +1,5 @@
 <!-- codex-workflow-user-id: ChronicStone/codex_workflow -->
-<!-- codex-workflow-version: 2.0.5 -->
+<!-- codex-workflow-version: 2.1.0 -->
 <!-- codex-workflow-user-managed-start -->
 # AGENTS.md
 
@@ -37,5 +37,8 @@ exactly.
 
 - codex_workflow --configure
   Guide: ~/.codex/codex_workflow/configuration_guide.md.
+
+- codex_workflow --analyze-thread <native-session-id-or-rollout-path>
+  Guide: ~/.codex/codex_workflow/analyze_thread.md.
 
 <!-- codex-workflow-user-managed-end -->
