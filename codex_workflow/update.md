@@ -38,7 +38,9 @@ also pass `--project <project>`. That path preserves project documents,
 personalization, local instructions, and enabled/disabled state, and validates
 the managed region against its recorded source version. Ordinary repository
 `AGENTS.md` files are inherited alongside the global workflow and must not be
-passed to the updater.
+passed to the updater. When an older installed launcher automatically forwards
+an ordinary project during delegation, the verified incoming updater ignores
+that project and reports a warning while completing the global update.
 
 If a legacy project entry point contains merged local edits, the update stops.
 Review and extract only the project-local instructions into a temporary file,

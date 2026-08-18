@@ -21,6 +21,7 @@ if sys.version_info < (3, 11):
 
 from runtime.config import load_config
 from runtime.errors import WorkflowError
+from runtime.layout import PROJECT_ID
 from runtime.lifecycle import (
     OperationPlan,
     PackageLayout,
@@ -146,6 +147,11 @@ def _emit(value: dict[str, object], *, compact: bool) -> None:
         print(json.dumps(value, separators=(",", ":"), sort_keys=True))
     else:
         print(json.dumps(value, indent=2, sort_keys=True))
+
+
+def _is_workflow_owned_project(project: ProjectPaths) -> bool:
+    entries = [path for path in (project.active, project.disabled) if path.is_file()]
+    return len(entries) == 1 and PROJECT_ID in entries[0].read_text(encoding="utf-8")
 
 
 def _finish(plan: OperationPlan, args: argparse.Namespace) -> int:
@@ -323,6 +329,14 @@ def main() -> int:
                 incoming = PackageLayout.resolve(package_path)
             if incoming.root != Path(__file__).resolve().parent:
                 return _delegate_update(incoming, args)
+            ignored_legacy_project = False
+            if args.source is not None and project is not None:
+                entries = [
+                    path for path in (project.active, project.disabled) if path.exists()
+                ]
+                if len(entries) <= 1 and not _is_workflow_owned_project(project):
+                    project = None
+                    ignored_legacy_project = True
             installed_text = (runtime.runtime / "VERSION").read_text(encoding="utf-8").strip()
             if parse_semver(incoming.version) < parse_semver(installed_text) and not args.allow_downgrade:
                 raise WorkflowError("incoming version is older; pass --allow-downgrade after approval")
@@ -333,15 +347,17 @@ def main() -> int:
             )
             if legacy_local is not None and project is None:
                 raise WorkflowError("--legacy-local-instructions requires --project")
-            return _finish(
-                plan_update(
-                    incoming,
-                    runtime,
-                    project,
-                    legacy_local_instructions=legacy_local,
-                ),
-                args,
+            plan = plan_update(
+                incoming,
+                runtime,
+                project,
+                legacy_local_instructions=legacy_local,
             )
+            if ignored_legacy_project:
+                plan.warnings.append(
+                    "ignored a non-workflow-owned project forwarded by an older launcher"
+                )
+            return _finish(plan, args)
         if args.command == "configure":
             changes = {
                 "default_executor_reasoning_effort": args.reasoning_effort,

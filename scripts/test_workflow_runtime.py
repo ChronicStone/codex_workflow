@@ -1247,6 +1247,40 @@ class LifecycleIntegrationTests(unittest.TestCase):
         project_state = json.loads(self.project.state.read_text(encoding="utf-8"))
         self.assertEqual(project_state["workflow_version"], PACKAGE_VERSION)
 
+    def test_incoming_update_ignores_unowned_project_from_older_launcher(self) -> None:
+        self.bootstrap()
+        ordinary_root = self.root / "ordinary-project"
+        ordinary_root.mkdir()
+        ordinary_agents = ordinary_root / "AGENTS.md"
+        ordinary_agents.write_text("# Ordinary repository policy\n", encoding="utf-8")
+        incoming = self.incoming_package("legacy-delegated-incoming", "2.1.0")
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(incoming.root / "workflow.py"),
+                "update",
+                "--source",
+                str(incoming.root),
+                "--codex-home",
+                str(self.codex_home),
+                "--project",
+                str(ordinary_root),
+                "--json",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        summary = json.loads(completed.stdout)
+        self.assertTrue(summary["applied"])
+        self.assertIn("older launcher", summary["warnings"][0])
+        self.assertEqual(ordinary_agents.read_text(), "# Ordinary repository policy\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.1.0\n")
+
 
 class PersonalizationTests(unittest.TestCase):
     def test_only_customized_decisions_are_materialized(self) -> None:
