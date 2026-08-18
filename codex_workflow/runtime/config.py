@@ -15,10 +15,11 @@ from .migrations import migrate_config_resource
 
 
 DEFAULT_EXECUTORS = {"implementer"}
-REASONING_EFFORTS = {"high", "xhigh"}
-CONFIG_SCHEMA_VERSION = 5
+REASONING_EFFORTS = {"medium", "high", "xhigh"}
+CONFIG_SCHEMA_VERSION = 6
 REQUIRED_WORKERS: set[str] = set()
 PLATFORM_MAX_WORKERS = 8
+MAX_TOTAL_WORKERS = 6
 SUBAGENT_MODELS = {"gpt-5.6-luna"}
 
 
@@ -31,6 +32,7 @@ class WorkflowConfig:
     default_subagent_reasoning_effort: str
     auto_check_update: bool
     max_concurrent_workers: int
+    max_total_workers: int
     report_package_size: int
     enabled_workers: tuple[str, ...]
 
@@ -46,6 +48,7 @@ class WorkflowConfig:
             "default_subagent_reasoning_effort",
             "auto_check_update",
             "max_concurrent_workers",
+            "max_total_workers",
             "report_package_size",
             "enabled_workers",
         }
@@ -90,6 +93,11 @@ class WorkflowConfig:
             raise ValidationError(
                 f"max_concurrent_workers exceeds platform limit {PLATFORM_MAX_WORKERS}"
             )
+        total = _positive_int(raw["max_total_workers"], "max_total_workers")
+        if total > MAX_TOTAL_WORKERS:
+            raise ValidationError(
+                f"max_total_workers exceeds workflow limit {MAX_TOTAL_WORKERS}"
+            )
         report_size = _positive_int(raw["report_package_size"], "report_package_size")
         if available_workers is not None:
             unavailable = set(workers) - available_workers
@@ -103,6 +111,7 @@ class WorkflowConfig:
             subagent_effort,
             auto_check,
             maximum,
+            total,
             report_size,
             workers,
         )
@@ -162,6 +171,7 @@ def effective_config_body(config: WorkflowConfig) -> str:
             f"(`{config.default_subagent_reasoning_effort}` reasoning effort).",
             f"- Enabled workers: {workers}.",
             f"- Maximum concurrent child workers: `{config.max_concurrent_workers}`.",
+            f"- Cumulative task worker budget: `{config.max_total_workers}` total workers.",
             f"- Maximum worker final-report package: `{config.report_package_size}` words.",
             "",
             "Create only enabled workers and obey these limits.",
@@ -182,14 +192,15 @@ def render_worker_template(text: str, *, worker: str, config: WorkflowConfig) ->
     marker = f"# codex-workflow-worker: {worker}"
     if not text.startswith(marker + "\n"):
         raise ValidationError(f"worker template ownership marker mismatch: {worker}")
-    if worker == config.default_executor:
-        matches = list(_EFFORT_LINE.finditer(text))
-        if len(matches) != 1:
-            raise ValidationError(f"expected one reasoning effort field in {worker}")
-        text = _EFFORT_LINE.sub(
-            f'model_reasoning_effort = "{config.default_executor_reasoning_effort}"',
-            text,
-        )
+    effort = (
+        config.default_executor_reasoning_effort
+        if worker == config.default_executor
+        else config.default_subagent_reasoning_effort
+    )
+    matches = list(_EFFORT_LINE.finditer(text))
+    if len(matches) != 1:
+        raise ValidationError(f"expected one reasoning effort field in {worker}")
+    text = _EFFORT_LINE.sub(f'model_reasoning_effort = "{effort}"', text)
     tomllib.loads(text)
     return text
 

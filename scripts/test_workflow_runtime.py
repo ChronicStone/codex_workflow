@@ -28,6 +28,7 @@ from runtime.config import (
     patch_codex_config,
     remove_workflow_owned_config,
     render_heavy_route,
+    render_worker_template,
 )
 from runtime.backup import append_backup_mutations
 from runtime.errors import TransactionError, ValidationError
@@ -110,17 +111,54 @@ class MarkerTests(unittest.TestCase):
         self.assertIn('fork_turns="none"', heavy)
         self.assertIn("ordered execution guide", heavy.lower())
         self.assertIn("`ui-reviewer`", heavy)
-        self.assertIn("rendered interaction and visual acceptance", heavy)
-        self.assertIn("Never run an automatic documentation sweep or commit", heavy)
+        self.assertIn("rendered interaction and visual", heavy)
+        self.assertIn("Never run an automatic documentation sweep, session closure, or commit", heavy)
+        self.assertIn("2-4 initial workers", heavy)
+        self.assertIn("cumulative task budget", heavy)
+        self.assertIn("Add an independent tester or reviewer only", heavy)
+        self.assertIn("reuse the responsible implementer", heavy.lower())
+        self.assertIn("one long native wait", heavy)
+        self.assertIn("immediate push, deploy, or ship", heavy)
+        self.assertIn("Assign each gate to exactly one worker", heavy)
+        self.assertIn("does not rerun the implementer's fresh passing suite", heavy)
 
         medium = policies["medium_route.md"]
-        self.assertIn("Use one Luna worker", medium)
+        self.assertIn("Use exactly one Luna worker", medium)
+        self.assertIn("Never create a replacement worker", medium)
         self.assertIn('fork_turns="none"', medium)
         self.assertIn("`ui-reviewer`", medium)
+        self.assertIn("one long native wait", medium)
+        self.assertIn("never repeat it\nonly to obtain independent confirmation", medium)
 
         agents_policy = policies["AGENTS.md"]
-        self.assertIn("Automatic commits and automatic end-of-session workers are forbidden", agents_policy)
+        self.assertIn("Automatic commits, automatic session closure, and Explorer workers are forbidden", agents_policy)
         self.assertIn("repository's `AGENTS.md`", agents_policy)
+        self.assertIn("regardless of task size or number of stages", agents_policy)
+        self.assertIn("Consume valid worker evidence", agents_policy)
+        self.assertIn("Delegation is opt-in", agents_policy)
+        self.assertIn("`Luna high`", agents_policy)
+        self.assertIn("always use Light", agents_policy)
+        self.assertIn("Validation is milestone-based, not edit-based", agents_policy)
+        self.assertIn("Never rerun an\n  unchanged command", agents_policy)
+        self.assertIn("implementing Luna worker owns focused and owner", agents_policy)
+        identity = "<role> — <task ID>"
+        for policy in (agents_policy, medium, heavy):
+            self.assertIn(identity, policy)
+            self.assertIn("agent_id", policy)
+            self.assertIn("generated person nickname", policy)
+        for worker in ("scout", "implementer", "ui-implementer", "tester", "reviewer", "ui-reviewer", "doc-writer"):
+            worker_text = (PACKAGE / "agents" / f"{worker}.toml").read_text(encoding="utf-8")
+            self.assertIn("Require a capsule task ID", worker_text)
+            self.assertIn(identity, worker_text)
+            self.assertIn("agent_id", worker_text)
+        for documentation in (
+            ROOT / "README.md",
+            ROOT / "workflow_usage.md",
+            PACKAGE / "configuration_guide.md",
+        ):
+            documentation_text = documentation.read_text(encoding="utf-8")
+            self.assertIn(identity, documentation_text)
+            self.assertIn("agent_id", documentation_text)
 
         tester = (PACKAGE / "agents" / "tester.toml").read_text(encoding="utf-8")
         executor = (PACKAGE / "agents" / "implementer.toml").read_text(
@@ -287,13 +325,19 @@ class ConfigTests(unittest.TestCase):
             )
         )
         self.assertFalse(raw["auto_check_update"])
+        self.assertEqual(raw["schema_version"], 6)
+        self.assertEqual(raw["default_executor_reasoning_effort"], "xhigh")
+        self.assertEqual(raw["default_subagent_reasoning_effort"], "xhigh")
+        self.assertEqual(raw["max_total_workers"], 6)
+        self.assertNotIn("nickname", raw)
+        self.assertNotIn("display_name", raw)
         self.assertFalse(WorkflowConfig.from_mapping(raw).auto_check_update)
 
     def test_newer_persistent_schema_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
             migrate_config_resource(
+                {"schema_version": 7},
                 {"schema_version": 6},
-                {"schema_version": 5},
             )
 
     def test_v2_config_migration_replaces_legacy_roles(self) -> None:
@@ -302,9 +346,9 @@ class ConfigTests(unittest.TestCase):
                 "schema_version": 2,
                 "enabled_workers": ["executor_luna", "doc-writer", "explorer"],
             },
-            {"schema_version": 5},
+            {"schema_version": 6},
         )
-        self.assertEqual(migrated["schema_version"], 5)
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertIn("implementer", migrated["enabled_workers"])
         self.assertIn("ui-reviewer", migrated["enabled_workers"])
         self.assertNotIn("end_of_session", migrated["enabled_workers"])
@@ -316,10 +360,25 @@ class ConfigTests(unittest.TestCase):
                 "schema_version": 3,
                 "end_of_session_context_turns": 150,
             },
-            {"schema_version": 5},
+            {"schema_version": 6},
         )
-        self.assertEqual(migrated["schema_version"], 5)
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertNotIn("end_of_session_context_turns", migrated)
+
+    def test_v5_config_migration_adds_cumulative_worker_budget(self) -> None:
+        migrated = migrate_config_resource(
+            {
+                "schema_version": 5,
+                "default_executor_reasoning_effort": "xhigh",
+                "default_subagent_reasoning_effort": "xhigh",
+                "max_concurrent_workers": 4,
+            },
+            {"schema_version": 6, "max_total_workers": 6},
+        )
+        self.assertEqual(migrated["schema_version"], 6)
+        self.assertEqual(migrated["max_total_workers"], 6)
+        self.assertEqual(migrated["default_executor_reasoning_effort"], "xhigh")
+        self.assertEqual(migrated["default_subagent_reasoning_effort"], "xhigh")
 
     def test_worker_limit_above_platform_limit_is_rejected(self) -> None:
         raw = json.loads(
@@ -328,6 +387,19 @@ class ConfigTests(unittest.TestCase):
             )
         )
         raw["max_concurrent_workers"] = 9
+        with self.assertRaises(ValidationError):
+            WorkflowConfig.from_mapping(raw)
+
+    def test_cumulative_worker_budget_is_positive_and_capped(self) -> None:
+        raw = json.loads(
+            (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        raw["max_total_workers"] = 0
+        with self.assertRaises(ValidationError):
+            WorkflowConfig.from_mapping(raw)
+        raw["max_total_workers"] = 7
         with self.assertRaises(ValidationError):
             WorkflowConfig.from_mapping(raw)
 
@@ -378,9 +450,34 @@ class ConfigTests(unittest.TestCase):
             (PACKAGE / "heavy_route.md").read_text(encoding="utf-8"), config
         )
         self.assertIn("Maximum concurrent child workers: `4`", rendered)
+        self.assertIn("Cumulative task worker budget: `6` total workers", rendered)
         self.assertIn("Default executor: `implementer` (`xhigh`", rendered)
-        self.assertIn("Default subagent model: `gpt-5.6-luna`", rendered)
-        self.assertIn("Never run an automatic documentation sweep or commit", rendered)
+        self.assertIn("Default subagent model: `gpt-5.6-luna` (`xhigh`", rendered)
+        self.assertIn("Never run an automatic documentation sweep, session closure, or commit", rendered)
+
+    def test_role_defaults_keep_luna_at_xhigh(self) -> None:
+        expected = {worker: "xhigh" for worker in (
+            "scout",
+            "implementer",
+            "ui-implementer",
+            "tester",
+            "reviewer",
+            "ui-reviewer",
+            "doc-writer",
+        )}
+        raw = json.loads(
+            (PACKAGE / "resources" / "workflow_config.default.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        config = WorkflowConfig.from_mapping(raw)
+        for worker, effort in expected.items():
+            template = (PACKAGE / "agents" / f"{worker}.toml").read_text(
+                encoding="utf-8"
+            )
+            rendered = render_worker_template(template, worker=worker, config=config)
+            self.assertIn(f'model_reasoning_effort = "{effort}"', rendered)
+            self.assertEqual(rendered.count("model_reasoning_effort ="), 1)
 
 
 class ReleaseTests(unittest.TestCase):
@@ -547,6 +644,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
             'default_subagent_model = "gpt-5.6-luna"',
             self.runtime.config_toml.read_text(encoding="utf-8"),
         )
+        self.assertIn(
+            'default_subagent_reasoning_effort = "xhigh"',
+            self.runtime.config_toml.read_text(encoding="utf-8"),
+        )
         installed_user_agents = self.runtime.user_agents.read_text(encoding="utf-8")
         self.assertIn("Use Sol as the coordinator", installed_user_agents)
         self.assertNotIn("auto-check-update --json", installed_user_agents)
@@ -595,6 +696,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 "default_executor_reasoning_effort": "high",
                 "default_subagent_reasoning_effort": "high",
                 "max_concurrent_workers": 7,
+                "max_total_workers": 5,
             },
         )
         plan.apply()
@@ -603,9 +705,15 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(configured["default_executor"], "implementer")
         self.assertEqual(configured["max_concurrent_workers"], 7)
+        self.assertEqual(configured["max_total_workers"], 5)
         self.assertEqual(configured["default_subagent_reasoning_effort"], "high")
         implementer = (self.runtime.agents / "implementer.toml").read_text(encoding="utf-8")
         self.assertIn('model_reasoning_effort = "high"', implementer)
+        for worker in configured["enabled_workers"]:
+            rendered_worker = (self.runtime.agents / f"{worker}.toml").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn('model_reasoning_effort = "high"', rendered_worker)
         self.assertEqual(extract(self.project.active.read_text(), PROJECT_LOCAL), "Local policy.")
 
     def test_configure_keeps_unactivated_worker_definitions_materialized(self) -> None:
@@ -695,12 +803,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         incoming_root = self.root / "incoming" / "codex_workflow"
         shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        (incoming_root / "VERSION").write_text("2.0.1\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.0.3\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.0.1",
+                "codex-workflow-version: 2.0.3",
             ),
             encoding="utf-8",
         )
@@ -708,7 +816,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         plan_update(incoming, self.runtime, self.project).apply()
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.0.1\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.0.3\n")
         updated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
         self.assertEqual(updated_config["default_executor"], "implementer")
         self.assertEqual(updated_config["max_concurrent_workers"], 7)
@@ -763,9 +871,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
         incoming = self.incoming_package("config-migration-incoming", "2.1.0")
         plan_update(incoming, self.runtime, self.project).apply()
         migrated = json.loads(config_path.read_text(encoding="utf-8"))
-        self.assertEqual(migrated["schema_version"], 5)
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertEqual(migrated["default_executor_reasoning_effort"], "xhigh")
         self.assertEqual(migrated["default_subagent_reasoning_effort"], "xhigh")
+        self.assertEqual(migrated["max_total_workers"], 6)
         self.assertEqual(migrated["max_concurrent_workers"], 8)
         self.assertNotIn("max_executor_sol_instances", migrated)
 
@@ -1106,12 +1215,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
             incoming_root,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        (incoming_root / "VERSION").write_text("2.0.1\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.0.3\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.0.1",
+                "codex-workflow-version: 2.0.3",
             ),
             encoding="utf-8",
         )
@@ -1135,7 +1244,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         summary = json.loads(completed.stdout)
-        self.assertEqual(summary["details"]["to_version"], "2.0.1")
+        self.assertEqual(summary["details"]["to_version"], "2.0.3")
         self.assertTrue(summary["applied"])
 
 

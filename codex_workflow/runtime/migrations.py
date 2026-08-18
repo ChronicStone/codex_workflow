@@ -54,10 +54,19 @@ def _migrate_v4_to_v5(raw: dict[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+def _migrate_v5_to_v6(raw: dict[str, Any]) -> dict[str, Any]:
+    migrated = dict(raw)
+    migrated["default_executor_reasoning_effort"] = "xhigh"
+    migrated["default_subagent_reasoning_effort"] = "xhigh"
+    migrated["schema_version"] = 6
+    return migrated
+
+
 CONFIG_MIGRATIONS: dict[int, ConfigMigration] = {
     2: _migrate_v2_to_v3,
     3: _migrate_v3_to_v4,
     4: _migrate_v4_to_v5,
+    5: _migrate_v5_to_v6,
 }
 
 

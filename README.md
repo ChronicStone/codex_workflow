@@ -45,9 +45,19 @@ supports up to eight when the workload consistently decomposes cleanly.
 | `ui-reviewer` | Luna xhigh | Rendered visual, interaction, responsive, and accessibility acceptance |
 | `doc-writer` | Luna xhigh | Targeted durable documentation |
 
+Luna stays at `xhigh` because reducing expensive Sol work is the optimization
+target; worker count, reuse, ownership, and evidence consumption control waste.
+
+Use `<role> — <task ID>` for agent references in commentary, plans, worker
+ledgers, and final reports, keyed by native `agent_id`. Generated person
+nicknames may appear only inside a quoted native platform error; no nickname or
+display-name configuration is supported, and every worker capsule includes its
+task ID.
+
 Workers never own Git or external delivery by default. There is no persistent
-explorer, automatic session closer, automatic documentation sweep, or automatic
-commit.
+Explorer, automatic session closure, automatic documentation sweep, or automatic
+commit. The default task budget is six cumulative workers, separate from the
+four-worker concurrency cap.
 
 ## Installation
 
@@ -68,10 +78,25 @@ Configuration and lifecycle commands are documented in
 ## Routing
 
 - Light works directly for questions, diagnosis, plans, and small changes.
-- Medium delegates one bounded package to the best matching role.
-- Heavy uses multiple workers only for independent ownership or independent
-  implementation and acceptance.
+- Medium delegates exactly one initial worker, with follow-ups reusing it and no
+  replacement worker.
+- Heavy allocates 2-4 independent initial workers and never exceeds six total;
+  repairs return to the responsible implementer, and independent review runs
+  only when the user asks or a concrete risk requires it.
 
-The coordinator chooses the smallest sufficient route unless the user requests
-one explicitly. Every initial worker receives a compact capsule with
-`fork_turns="none"`; repository history is referenced rather than copied.
+Delegation is opt-in. Only `workflow medium`, `workflow high`/`workflow heavy`,
+or a direct request to delegate, spawn, or use subagents activates it. Model or
+reasoning selections such as `Luna high` never select a route; without an
+explicit trigger the task stays Light, regardless of size. Every initial worker
+receives a compact capsule with `fork_turns="none"`; repository history
+is referenced rather than copied. Waiting is event-driven: use one long native
+wait or background monitor rather than coordinator polling or repeated status
+turns. Valid worker evidence is consumed unless conflict, staleness, an
+integration boundary, or high risk reopens it.
+
+Validation follows a deduplicated ladder: the implementing Luna worker runs the
+smallest focused check when a coherent slice should pass and one owner gate at
+handoff; a tester covers only an otherwise-unchecked risk; Sol runs only a
+missing integration or explicitly required shipping gate. Passing evidence is
+reused until its scoped inputs change, and a readiness command that subsumes
+owner checks runs once rather than back-to-back with them.

@@ -18,37 +18,54 @@ instructions and routed skills remain authoritative for project-specific work.
   initial workers and pass exact references instead of conversation history.
 - Parallelize only independent work with non-overlapping mutable state. Do not
   create workers merely because capacity exists.
+- Consume valid worker evidence instead of repeating the same reads or checks;
+  reopen only for conflict, stale evidence, an integration boundary, or high
+  risk.
+- Validation is milestone-based, not edit-based. Do not run broad checks while
+  a coherent slice is knowingly incomplete. Run the smallest relevant check
+  once when that slice is expected to pass, one affected-owner gate at
+  handoff, and one integration or readiness gate at the end when required.
+- A passing check remains valid until code, configuration, dependencies,
+  generated inputs, or environment in its scope changes. Never rerun an
+  unchanged command against unchanged scoped inputs. After a failure, diagnose
+  and make a relevant change before retrying; do not poll a failing check.
+- In delegated routes, the implementing Luna worker owns focused and owner
+  checks. A tester runs only missing risk-specific acceptance, and Sol consumes
+  fresh evidence instead of rerunning it. Sol runs a check only for a missing
+  integration boundary, evidence invalidated by coordinator edits, or an
+  explicitly required final shipping gate.
+- In commentary, plans, worker ledgers, and final reports, identify agents as
+  `<role> — <task ID>` and key records by native `agent_id`. Never identify an
+  agent by a generated person nickname except when quoting a native platform
+  error. Do not invent `nickname` or `display_name` configuration.
 - Workers do not commit, push, publish, deploy, migrate shared systems, or take
   destructive actions unless the user explicitly authorized that operation.
-- Automatic commits and automatic end-of-session workers are forbidden.
+- Automatic commits, automatic session closure, and Explorer workers are forbidden.
 
 ## Route selection
 
 Choose the smallest route that completes the task. The user may override it.
 
-Delegation is a routing decision, not an optional optimization. Interpret a
-standalone `medium` or `high` in the user's request as the requested route, so
-the user does not need to repeat a delegation recipe. For a `medium` or `high`
-route, spawn the worker before beginning the corresponding discovery or
-implementation work. Without an explicit route, delegation is required when
-the task has multiple independent owners, combines implementation with an
-independent verification pass, or has three or more substantive execution
-stages. Only Light work may remain entirely on the coordinator. If a task meets
-one of those conditions but has no safe execution boundary, state that reason
-briefly and keep the work on the coordinator rather than silently skipping the
-route.
+Delegation is opt-in. Use Medium or Heavy only when the user explicitly asks
+for a workflow route (`workflow medium`, `workflow high`, or `workflow heavy`)
+or directly asks to delegate, spawn, or use subagents. Model and reasoning
+selections such as `Luna high`, `Sol high`, `xhigh`, and `ultra` never select a
+workflow route. Without an explicit delegation trigger, always use Light and
+do not spawn subagents, regardless of task size or number of stages.
 
 - **Light:** questions, diagnosis, planning-only work, or small bounded changes.
   Work directly with no subagents.
-- **Medium:** one bounded execution or investigation package benefits from Luna.
-  Read `~/.codex/codex_workflow/medium_route.md`.
-- **Heavy:** at least two substantial packages are independently executable, or
-  implementation and independent acceptance need separate workers. Read
+- **Medium:** exactly one initial Luna worker owns one bounded package; follow-up
+  turns reuse it and never create a replacement. Read
+  `~/.codex/codex_workflow/medium_route.md`.
+- **Heavy:** allocate 2-4 independent initial workers, within the cumulative
+  task budget and concurrency cap. Read
   `~/.codex/codex_workflow/heavy_route.md`.
 
-Do not infer Heavy from task size alone. If ownership or architecture is still
-uncertain, resolve it with the coordinator or one read-only scout before
-allocating implementation.
+Do not infer Medium or Heavy from task size, ownership count, implementation
+plus acceptance, or sequential stages. If the user explicitly selects a
+delegated route but ownership is still uncertain, resolve it with the
+coordinator or one read-only scout before allocating implementation.
 
 ## Project context
 
@@ -58,9 +75,15 @@ progress framework unless the project or user explicitly requests one.
 
 ## Completion
 
-Integrate worker reports against the actual diff and current repository state.
-Run or inspect the required owner and consumer gates, distinguish every form of
-evidence precisely, and report incomplete checks honestly.
+Wait on one long native wait or background monitor after dispatch; do not poll
+in a coordinator loop or spend repeated status turns. If the user explicitly
+requests immediate push, deploy, or ship, stop optional delegation and checks,
+spawn no new workers, keep Sol responsible for the authorized irreversible
+action, and allow at most one existing read-only Luna monitor. Integrate worker
+reports against the actual diff and current repository state, distinguish every
+form of evidence precisely, and report incomplete checks honestly. When a final
+readiness command subsumes earlier owner checks, run the readiness command once
+instead of running both immediately back-to-back.
 <!-- codex-workflow-managed-end -->
 
 <!-- codex-workflow-project-personalization-start -->
