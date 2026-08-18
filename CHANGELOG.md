@@ -3,6 +3,17 @@
 All notable changes to `codex_workflow` are recorded here. Versions follow
 Semantic Versioning.
 
+## [2.2.0] - 2026-08-18
+
+- Added progressive Medium and Heavy checkpoints for material evidence,
+  decisions, coherent slices, verification boundaries, and blockers.
+- Added a bounded heartbeat after 12 substantive tool calls without a semantic
+  update, with worker messages capped at 60 words.
+- Made Sol relay native worker updates promptly while preserving event-driven
+  waits, delegated-surface isolation, and worker execution continuity.
+- Kept checkpoints focused on evidence, rationale, and next actions without
+  exposing private chain-of-thought, full logs, or routine tool narration.
+
 ## [2.1.0] - 2026-08-18
 
 - Added spawn-first Heavy routing and an explicit Medium admission guard so a
@@ -34,6 +45,7 @@ Semantic Versioning.
 - Added opt-in Light, Medium, and Heavy routing, bounded Luna worker roles,
   evidence reuse, milestone validation, and global lifecycle configuration.
 
+[2.2.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.5...v2.1.0
 [2.0.5]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.3...v2.0.4

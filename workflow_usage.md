@@ -114,6 +114,15 @@ approach, invariant, likely pitfall, acceptance criteria, validation, and
 escalation conditions. Workers return evidence and knowledge deltas rather than
 logs or repeated repository context.
 
+Delegated work emits progressive checkpoints through native worker messages.
+Workers report the first material evidence, material decisions, coherent slice
+completion, long verification boundaries, and blockers; a short heartbeat is
+required after 12 substantive tool calls without a semantic checkpoint. Sol
+relays these updates promptly, batching only messages already available, while
+the worker continues without waiting for acknowledgement. Updates are capped at
+60 words and explain evidence, rationale, and the next action without exposing
+private chain-of-thought, full logs, or routine tool narration.
+
 Implementation roles use Luna `xhigh` by default. Read-only investigation,
 testing, review, UI acceptance, and documentation use Luna `high`; configure the
 groups independently when a repository needs a different quality/cost balance.
@@ -138,8 +147,9 @@ actions require explicit user intent and remain coordinator-owned. Parallel
 workers must not share mutable build output, fixtures, databases, ports,
 browsers, devices, or overlapping edit surfaces.
 
-Use one long native wait or background monitor for delegated work; do not poll in
-a coordinator loop or repeat status model turns. If the user explicitly asks to
+Use one long native wait between lifecycle or progress events for delegated
+work; do not poll in a coordinator loop or repeat status model turns. If the
+user explicitly asks to
 push, deploy, or ship immediately, stop optional delegation and checks, spawn no
 new workers, keep Sol responsible for the authorized irreversible action, and
 allow at most one existing read-only Luna monitor.

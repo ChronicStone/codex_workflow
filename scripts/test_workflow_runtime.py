@@ -123,6 +123,10 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("Add an independent tester or reviewer only", heavy)
         self.assertIn("reuse the responsible implementer", heavy.lower())
         self.assertIn("one long native wait", heavy)
+        self.assertIn("progress checkpoints", heavy)
+        self.assertIn("12 substantive tool calls", heavy)
+        self.assertIn("under 60 words", heavy)
+        self.assertIn("Batch checkpoints already available", heavy)
         self.assertIn("immediate push, deploy, or ship", heavy)
         self.assertIn("Assign each gate to exactly one worker", heavy)
         self.assertIn("does not rerun the implementer's fresh passing suite", heavy)
@@ -135,6 +139,10 @@ class MarkerTests(unittest.TestCase):
         self.assertIn('fork_turns="none"', medium)
         self.assertIn("`ui-reviewer`", medium)
         self.assertIn("one long native wait", medium)
+        self.assertIn("progress checkpoints", medium)
+        self.assertIn("12 substantive tool calls", medium)
+        self.assertIn("under 60 words", medium)
+        self.assertIn("Relay checkpoints promptly", medium)
         self.assertIn("never repeat it\nonly to obtain independent confirmation", medium)
 
         agents_policy = policies["AGENTS.md"]
@@ -150,6 +158,9 @@ class MarkerTests(unittest.TestCase):
         self.assertIn("implementing Luna worker owns focused and owner", agents_policy)
         self.assertIn("A worker capsule is immutable in owner and surface", agents_policy)
         self.assertIn("Sol stays out of the delegated read and edit surface", agents_policy)
+        self.assertIn("Delegated routes remain progressively visible", agents_policy)
+        self.assertIn("send_message", agents_policy)
+        self.assertIn("raw chain-of-thought", agents_policy)
         identity = "<role> — <task ID>"
         for policy in (agents_policy, medium, heavy):
             self.assertIn(identity, policy)
@@ -160,6 +171,11 @@ class MarkerTests(unittest.TestCase):
             self.assertIn("Require a capsule task ID", worker_text)
             self.assertIn(identity, worker_text)
             self.assertIn("agent_id", worker_text)
+            self.assertIn("send_message", worker_text)
+            self.assertIn("progress checkpoint", worker_text)
+            self.assertIn("12 substantive tool calls", worker_text)
+            self.assertIn("under 60 words", worker_text)
+            self.assertIn("raw chain-of-thought", worker_text)
         for documentation in (
             ROOT / "README.md",
             ROOT / "workflow_usage.md",
@@ -927,12 +943,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         incoming_root = self.root / "incoming" / "codex_workflow"
         shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        (incoming_root / "VERSION").write_text("2.2.0\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.3.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.2.0",
+                "codex-workflow-version: 2.3.0",
             ),
             encoding="utf-8",
         )
@@ -940,7 +956,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         plan_update(incoming, self.runtime, self.project).apply()
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.2.0\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.3.0\n")
         updated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
         self.assertEqual(updated_config["default_executor"], "implementer")
         self.assertEqual(updated_config["max_concurrent_workers"], 7)
@@ -963,7 +979,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         second = ProjectPaths(second_root)
         plan_project_install(self.package, second).apply()
 
-        incoming = self.incoming_package("multi-project-incoming", "2.2.0")
+        incoming = self.incoming_package("multi-project-incoming", "2.3.0")
         incoming_template = incoming.project_template.read_text(encoding="utf-8")
         incoming.project_template.write_text(
             incoming_template.replace("## Core policy", "## Core policy (2.1)"),
@@ -973,7 +989,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
 
         plan_update(incoming, self.runtime, self.project).apply()
         second_plan = plan_update(incoming, self.runtime, second)
-        self.assertEqual(second_plan.details["from_version"], "2.2.0")
+        self.assertEqual(second_plan.details["from_version"], "2.3.0")
         self.assertEqual(second_plan.details["project_from_version"], PACKAGE_VERSION)
         second_plan.apply()
         self.assertIn(
@@ -992,7 +1008,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         configured.pop("default_subagent_reasoning_effort")
         config_path.write_text(json.dumps(configured) + "\n", encoding="utf-8")
 
-        incoming = self.incoming_package("config-migration-incoming", "2.2.0")
+        incoming = self.incoming_package("config-migration-incoming", "2.3.0")
         plan_update(incoming, self.runtime, self.project).apply()
         migrated = json.loads(config_path.read_text(encoding="utf-8"))
         self.assertEqual(migrated["schema_version"], 6)
@@ -1339,12 +1355,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
             incoming_root,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        (incoming_root / "VERSION").write_text("2.2.0\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.3.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.2.0",
+                "codex-workflow-version: 2.3.0",
             ),
             encoding="utf-8",
         )
@@ -1366,7 +1382,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         summary = json.loads(completed.stdout)
-        self.assertEqual(summary["details"]["to_version"], "2.2.0")
+        self.assertEqual(summary["details"]["to_version"], "2.3.0")
         self.assertTrue(summary["applied"])
         project_state = json.loads(self.project.state.read_text(encoding="utf-8"))
         self.assertEqual(project_state["workflow_version"], PACKAGE_VERSION)
@@ -1377,7 +1393,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         ordinary_root.mkdir()
         ordinary_agents = ordinary_root / "AGENTS.md"
         ordinary_agents.write_text("# Ordinary repository policy\n", encoding="utf-8")
-        incoming = self.incoming_package("legacy-delegated-incoming", "2.2.0")
+        incoming = self.incoming_package("legacy-delegated-incoming", "2.3.0")
 
         completed = subprocess.run(
             [
@@ -1403,7 +1419,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertTrue(summary["applied"])
         self.assertIn("older launcher", summary["warnings"][0])
         self.assertEqual(ordinary_agents.read_text(), "# Ordinary repository policy\n")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.2.0\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.3.0\n")
 
 
 class PersonalizationTests(unittest.TestCase):

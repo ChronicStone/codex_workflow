@@ -69,6 +69,18 @@ reports, keyed by native `agent_id`. Never use a generated person nickname
 except when quoting a native platform error, and do not invent `nickname` or
 `display_name` configuration.
 
+At dispatch, publish a worker ledger with every worker's scope, expected
+outcome, and first milestone. Each capsule requires proactive `send_message`
+progress checkpoints at the first material evidence, a material decision or
+approach change, completion of a coherent slice, before and after long
+verification, and any blocker. After 12 substantive tool calls without a
+semantic checkpoint, the worker sends a compact heartbeat. Each update stays
+under 60 words and states evidence, the current decision and why, the next
+action, and blockers without raw chain-of-thought, full logs, or routine tool
+narration. Workers continue immediately after sending; acknowledgement is not
+required. Batch checkpoints already available into one readable commentary
+update, but do not wait to manufacture a complete batch.
+
 The capsule owner and surface are immutable. Follow-ups can clarify facts or
 repair a failed criterion inside the same boundary; work that adds a feature,
 owner, package, or acceptance surface requires a new allocation decision within
@@ -98,8 +110,9 @@ observed versus expected behavior, affected contract, exact evidence, and scope
 impact. Escalate repeated failures or any repair that changes ownership,
 architecture, public contracts, security, migration risk, or authority.
 
-Wait for lifecycle events with one long native wait or background monitor instead
-of polling. Queue new facts for the next worker boundary and interrupt only when
+Wait for lifecycle or progress events with one long native wait between events
+instead of polling. Relay checkpoints promptly, then return to waiting. Queue
+new facts for the next worker boundary and interrupt only when
 continuing became invalid, destructive, or unauthorized. Sol stays out of each
 delegated read and edit surface until its report unless a blocking architecture
 decision requires coordinator input. If the user explicitly requests immediate push, deploy, or ship,

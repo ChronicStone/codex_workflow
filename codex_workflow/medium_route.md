@@ -31,6 +31,16 @@ concise return format. Use `<role> — <task ID>` in commentary, plans, worker
 ledgers, and reports, keyed by native `agent_id`; generated person nicknames are
 reserved for quoted native platform errors.
 
+At dispatch, tell the user the worker's scope, expected outcome, and first
+milestone. The capsule requires proactive `send_message` progress checkpoints
+at the first material evidence, a material decision or approach change,
+completion of a coherent slice, before and after long verification, and any
+blocker. After 12 substantive tool calls without a semantic checkpoint, the
+worker sends a compact heartbeat. Each update stays under 60 words and states
+evidence, the current decision and why, the next action, and blockers without
+raw chain-of-thought, full logs, or routine tool narration. The worker continues
+immediately after sending it; acknowledgement is not required.
+
 The capsule owner and surface remain fixed for the entire task. Follow-ups may
 send changed facts, answer a question, or request a repair against an existing
 acceptance criterion, but they cannot add another feature, owner, package, or
@@ -40,8 +50,9 @@ Inspect the worker's evidence and resulting diff before integrating it. Treat a
 passing command as fresh until its scoped inputs change, and never repeat it
 only to obtain independent confirmation. Reopen only for conflict, stale
 evidence, a missing integration boundary, or high risk. Use one long native wait
-or background monitor rather than coordinator polling loops or repeated status
-turns. Queue changed facts for the next worker boundary; interrupt only when its
+between lifecycle or progress events rather than coordinator polling loops or
+repeated status turns. Relay checkpoints promptly and return to waiting. Queue
+changed facts for the next worker boundary; interrupt only when its
 current work became invalid, destructive, or unauthorized. Sol does not inspect
 or edit the delegated surface before the report unless an unresolved
 architecture decision blocks progress. Stop delegation when the remaining work

@@ -57,7 +57,7 @@ system:
 Use SemVer 2.0.0. Keep the plain version in `codex_workflow/VERSION` and the
 `codex-workflow-version` marker in `codex_workflow/user_AGENTS.md` identical.
 The release tag is the same value with an optional leading `v`, for example
-`VERSION=2.1.0` and tag `v2.1.0`. GitHub's prerelease flag is independent of
+`VERSION=2.2.0` and tag `v2.2.0`. GitHub's prerelease flag is independent of
 the SemVer string.
 
 Add the release entry to `CHANGELOG.md` before tagging. The changelog is the

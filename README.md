@@ -95,8 +95,13 @@ reasoning selections such as `Luna high` never select a route; without an
 explicit trigger the task stays Light, regardless of size. Every initial worker
 receives a compact capsule with `fork_turns="none"`; repository history
 is referenced rather than copied. Waiting is event-driven: use one long native
-wait or background monitor rather than coordinator polling or repeated status
-turns. Valid worker evidence is consumed unless conflict, staleness, an
+wait between lifecycle or progress events rather than coordinator polling.
+Workers proactively send concise checkpoints when evidence, a decision, a
+completed slice, a long verification boundary, or a blocker materially changes;
+Sol relays them without reopening the delegated surface. These checkpoints
+contain evidence, rationale, and the next action rather than private
+chain-of-thought or routine tool narration. Valid worker evidence is consumed
+unless conflict, staleness, an
 integration boundary, or high risk reopens it.
 
 Use `codex_workflow --analyze-thread <native-session-id-or-rollout-path>` to

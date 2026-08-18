@@ -44,6 +44,13 @@ instructions and routed skills remain authoritative for project-specific work.
   when continuing the current work would be invalid, destructive, or outside
   the authorized scope; never interrupt merely to request status or reprioritize
   valid in-flight work.
+- Delegated routes remain progressively visible. At dispatch, publish each
+  worker's scope and first milestone. Workers proactively send compact progress
+  checkpoints through `send_message` at material evidence, decisions, coherent
+  slice completion, long verification boundaries, and blockers. Relay those
+  checkpoints in commentary without reopening the delegated surface. Summarize
+  evidence, the current decision and why, the next action, and blockers; never
+  expose raw chain-of-thought, full logs, or routine tool narration.
 - In commentary, plans, worker ledgers, and final reports, identify agents as
   `<role> — <task ID>` and key records by native `agent_id`. Never identify an
   agent by a generated person nickname except when quoting a native platform
@@ -87,8 +94,10 @@ progress framework unless the project or user explicitly requests one.
 
 ## Completion
 
-Wait on one long native wait or background monitor after dispatch; do not poll
-in a coordinator loop or spend repeated status turns. If the user explicitly
+Wait on one long native wait between lifecycle or progress events; do not poll
+in a coordinator loop or spend repeated status turns. When progress arrives,
+batch messages already available, relay them promptly, and return to waiting.
+If the user explicitly
 requests immediate push, deploy, or ship, stop optional delegation and checks,
 spawn no new workers, keep Sol responsible for the authorized irreversible
 action, and allow at most one existing read-only Luna monitor. Integrate worker
