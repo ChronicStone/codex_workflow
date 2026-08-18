@@ -21,7 +21,7 @@ release.
 Run:
 
 ```text
-python3 ~/.codex/codex_workflow/workflow.py update --project <project>
+python3 ~/.codex/codex_workflow/workflow.py update
 ```
 
 For migration from a pre-script installation, run the incoming package's
@@ -29,13 +29,16 @@ For migration from a pre-script installation, run the incoming package's
 
 The script migrates and preserves the mutable workflow configuration, then
 regenerates distributed worker TOMLs from the incoming package templates. It
-preserves unrelated Codex settings, project documents, personalization,
-project-local instructions, source backups, the automatic-check preference,
-and the project's enabled/disabled state. For projects that still use an older
-workflow version, it validates their managed region against that version's
-source backup instead of the latest global template. It creates a verified
-timestamped backup and applies the user/project state as one compensating
-transaction.
+preserves unrelated Codex settings, source backups, and the automatic-check
+preference. It creates a verified timestamped backup and applies the global
+state as one compensating transaction.
+
+Only installations that still have a workflow-owned project entry point should
+also pass `--project <project>`. That path preserves project documents,
+personalization, local instructions, and enabled/disabled state, and validates
+the managed region against its recorded source version. Ordinary repository
+`AGENTS.md` files are inherited alongside the global workflow and must not be
+passed to the updater.
 
 If a legacy project entry point contains merged local edits, the update stops.
 Review and extract only the project-local instructions into a temporary file,

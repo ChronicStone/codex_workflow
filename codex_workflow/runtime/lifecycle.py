@@ -148,12 +148,11 @@ def plan_remove(runtime: RuntimePaths, project: ProjectPaths | None = None) -> O
 def plan_update(
     incoming: PackageLayout,
     runtime: RuntimePaths,
-    project: ProjectPaths,
+    project: ProjectPaths | None = None,
     *,
     legacy_local_instructions: str | None = None,
 ) -> OperationPlan:
     installed = PackageLayout.resolve(runtime.runtime, allow_legacy=True)
-    project_installed = _project_installed_package(installed, runtime, project)
     config = load_migrated_config(
         runtime.runtime / "workflow_config.json",
         defaults=incoming.default_config,
@@ -170,13 +169,17 @@ def plan_update(
         incoming, runtime, config, config.to_json().encode()
     )
     mutations.extend(runtime_mutations)
-    project_mutations, warnings = plan_project_update(
-        project_installed,
-        incoming,
-        project,
-        legacy_local_instructions=legacy_local_instructions,
-    )
-    mutations.extend(project_mutations)
+    warnings: list[str] = []
+    project_installed = None
+    if project is not None:
+        project_installed = _project_installed_package(installed, runtime, project)
+        project_mutations, warnings = plan_project_update(
+            project_installed,
+            incoming,
+            project,
+            legacy_local_instructions=legacy_local_instructions,
+        )
+        mutations.extend(project_mutations)
     previous_state = read_json(runtime.runtime / USER_STATE, default={})
     incoming_targets = {
         mutation.path.resolve(strict=False) for mutation in runtime_mutations
@@ -192,17 +195,19 @@ def plan_update(
         "owned_workers": sorted(incoming.worker_names),
     }
     mutations.append(json_mutation(runtime.runtime / USER_STATE, state))
+    details = {
+        "from_version": installed.version,
+        "to_version": incoming.version,
+        "backup": str(backup_root),
+    }
+    if project_installed is not None:
+        details["project_from_version"] = project_installed.version
     return OperationPlan(
         "update",
         deduplicate(mutations),
         warnings,
         [],
-        {
-            "from_version": installed.version,
-            "to_version": incoming.version,
-            "project_from_version": project_installed.version,
-            "backup": str(backup_root),
-        },
+        details,
     )
 
 

@@ -803,12 +803,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         incoming_root = self.root / "incoming" / "codex_workflow"
         shutil.copytree(PACKAGE, incoming_root, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-        (incoming_root / "VERSION").write_text("2.0.3\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.1.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.0.3",
+                "codex-workflow-version: 2.1.0",
             ),
             encoding="utf-8",
         )
@@ -816,7 +816,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         plan_update(incoming, self.runtime, self.project).apply()
         entry = self.project.active.read_text(encoding="utf-8")
         self.assertEqual(extract(entry, PROJECT_LOCAL), "Local policy.")
-        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.0.3\n")
+        self.assertEqual((self.runtime.runtime / "VERSION").read_text(), "2.1.0\n")
         updated_config = json.loads(installed_config_path.read_text(encoding="utf-8"))
         self.assertEqual(updated_config["default_executor"], "implementer")
         self.assertEqual(updated_config["max_concurrent_workers"], 7)
@@ -1215,12 +1215,12 @@ class LifecycleIntegrationTests(unittest.TestCase):
             incoming_root,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        (incoming_root / "VERSION").write_text("2.0.3\n", encoding="utf-8")
+        (incoming_root / "VERSION").write_text("2.1.0\n", encoding="utf-8")
         user_agents = (incoming_root / "user_AGENTS.md").read_text(encoding="utf-8")
         (incoming_root / "user_AGENTS.md").write_text(
             user_agents.replace(
                 f"codex-workflow-version: {PACKAGE_VERSION}",
-                "codex-workflow-version: 2.0.3",
+                "codex-workflow-version: 2.1.0",
             ),
             encoding="utf-8",
         )
@@ -1234,8 +1234,6 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 str(incoming_root),
                 "--codex-home",
                 str(self.codex_home),
-                "--project",
-                str(self.project_root),
                 "--json",
             ],
             check=False,
@@ -1244,8 +1242,10 @@ class LifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         summary = json.loads(completed.stdout)
-        self.assertEqual(summary["details"]["to_version"], "2.0.3")
+        self.assertEqual(summary["details"]["to_version"], "2.1.0")
         self.assertTrue(summary["applied"])
+        project_state = json.loads(self.project.state.read_text(encoding="utf-8"))
+        self.assertEqual(project_state["workflow_version"], PACKAGE_VERSION)
 
 
 class PersonalizationTests(unittest.TestCase):

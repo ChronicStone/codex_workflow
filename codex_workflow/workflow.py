@@ -73,7 +73,12 @@ def parse_args() -> argparse.Namespace:
     )
 
     update = commands.add_parser("update")
-    _add_common(update)
+    _add_common(update, project=False)
+    update.add_argument(
+        "--project",
+        type=Path,
+        help="also update a legacy workflow-owned project entry point",
+    )
     # Internal hand-off from an installed launcher; not a public prompt form.
     update.add_argument("--source", type=Path, help=argparse.SUPPRESS)
     update.add_argument("--allow-downgrade", action="store_true")
@@ -131,7 +136,8 @@ def parse_args() -> argparse.Namespace:
 
 def _paths(args: argparse.Namespace) -> tuple[RuntimePaths, ProjectPaths | None]:
     runtime = RuntimePaths(args.codex_home.expanduser().resolve())
-    project = ProjectPaths(args.project.resolve()) if hasattr(args, "project") else None
+    project_path = getattr(args, "project", None)
+    project = ProjectPaths(project_path.resolve()) if project_path is not None else None
     return runtime, project
 
 
@@ -160,9 +166,9 @@ def _delegate_update(incoming: PackageLayout, args: argparse.Namespace) -> int:
         str(incoming.root),
         "--codex-home",
         str(args.codex_home),
-        "--project",
-        str(args.project),
     ]
+    if args.project is not None:
+        command.extend(["--project", str(args.project)])
     if args.allow_downgrade:
         command.append("--allow-downgrade")
     if args.legacy_local_instructions:
@@ -309,7 +315,6 @@ def main() -> int:
             )
             return 0
         if args.command == "update":
-            assert project is not None
             if args.source:
                 incoming = PackageLayout.resolve(args.source)
             else:
@@ -326,6 +331,8 @@ def main() -> int:
                 if args.legacy_local_instructions
                 else None
             )
+            if legacy_local is not None and project is None:
+                raise WorkflowError("--legacy-local-instructions requires --project")
             return _finish(
                 plan_update(
                     incoming,
