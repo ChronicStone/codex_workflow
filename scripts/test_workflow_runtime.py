@@ -365,20 +365,20 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(migrated["schema_version"], 6)
         self.assertNotIn("end_of_session_context_turns", migrated)
 
-    def test_v5_config_migration_adds_cumulative_worker_budget(self) -> None:
+    def test_v5_config_migration_adds_budget_and_preserves_reasoning(self) -> None:
         migrated = migrate_config_resource(
             {
                 "schema_version": 5,
-                "default_executor_reasoning_effort": "xhigh",
-                "default_subagent_reasoning_effort": "xhigh",
+                "default_executor_reasoning_effort": "high",
+                "default_subagent_reasoning_effort": "high",
                 "max_concurrent_workers": 4,
             },
             {"schema_version": 6, "max_total_workers": 6},
         )
         self.assertEqual(migrated["schema_version"], 6)
         self.assertEqual(migrated["max_total_workers"], 6)
-        self.assertEqual(migrated["default_executor_reasoning_effort"], "xhigh")
-        self.assertEqual(migrated["default_subagent_reasoning_effort"], "xhigh")
+        self.assertEqual(migrated["default_executor_reasoning_effort"], "high")
+        self.assertEqual(migrated["default_subagent_reasoning_effort"], "high")
 
     def test_worker_limit_above_platform_limit_is_rejected(self) -> None:
         raw = json.loads(

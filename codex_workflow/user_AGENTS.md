@@ -1,5 +1,5 @@
 <!-- codex-workflow-user-id: ChronicStone/codex_workflow -->
-<!-- codex-workflow-version: 2.0.4 -->
+<!-- codex-workflow-version: 2.0.5 -->
 <!-- codex-workflow-user-managed-start -->
 # AGENTS.md
 

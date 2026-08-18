@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Semantic release tag, for example v1.1.0"
+        description: "Semantic release tag, for example vX.Y.Z"
         required: true
         type: string
       prerelease:
@@ -23,8 +23,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the tagged source
+      - name: Check out the release source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,6 +43,11 @@ jobs:
             release_tag="$GITHUB_REF_NAME"
           else
             release_tag="$MANUAL_TAG"
+          fi
+          existing_target="$(git rev-list -n 1 "$release_tag" 2>/dev/null || true)"
+          if [[ -n "$existing_target" && "$existing_target" != "$GITHUB_SHA" ]]; then
+            echo "release tag $release_tag points to $existing_target, not $GITHUB_SHA" >&2
+            exit 1
           fi
           python -B scripts/test_workflow_runtime.py -v
           python -B codex_workflow/workflow.py validate \
@@ -61,7 +68,7 @@ jobs:
         shell: bash
         run: |
           release_options=(--generate-notes)
-          if [[ "$GITHUB_EVENT_NAME" == "push" || "$MANUAL_PRERELEASE" != "false" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$MANUAL_PRERELEASE" != "false" ]]; then
             release_options+=(--prerelease)
           fi
           gh release create "$RELEASE_TAG" \

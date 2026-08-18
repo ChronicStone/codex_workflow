@@ -56,8 +56,6 @@ def _migrate_v4_to_v5(raw: dict[str, Any]) -> dict[str, Any]:
 
 def _migrate_v5_to_v6(raw: dict[str, Any]) -> dict[str, Any]:
     migrated = dict(raw)
-    migrated["default_executor_reasoning_effort"] = "xhigh"
-    migrated["default_subagent_reasoning_effort"] = "xhigh"
     migrated["schema_version"] = 6
     return migrated
 

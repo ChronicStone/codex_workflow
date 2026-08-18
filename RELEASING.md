@@ -22,7 +22,12 @@ codex_workflow/
 ├── user_AGENTS.md
 ├── AGENTS.md
 ├── bootstrap.md
+├── check_update.md
+├── configuration_guide.md
+├── disable.md
+├── enable.md
 ├── install.md
+├── personalization_guide.md
 ├── update.md
 ├── remove.md
 ├── enable_auto_check_update.md
@@ -51,9 +56,8 @@ system:
 Use SemVer 2.0.0. Keep the plain version in `codex_workflow/VERSION` and the
 `codex-workflow-version` marker in `codex_workflow/user_AGENTS.md` identical.
 The release tag is the same value with an optional leading `v`, for example
-`VERSION=1.1.2` and tag `v1.1.2`. GitHub's prerelease flag is independent of
-the SemVer string; the initial releases are marked as prereleases by the
-workflow.
+`VERSION=2.0.5` and tag `v2.0.5`. GitHub's prerelease flag is independent of
+the SemVer string.
 
 ## Local build and validation
 
@@ -64,17 +68,21 @@ Windows.
 Linux/macOS:
 
 ```sh
+version="$(cat codex_workflow/VERSION)"
+tag="v$version"
 python3 -B scripts/test_workflow_runtime.py -v
-python3 scripts/package_release.py --release-tag v1.1.2 --output-dir dist
+python3 scripts/package_release.py --release-tag "$tag" --output-dir dist
 python3 scripts/package_release.py --verify dist/codex_workflow-*.zip
 ```
 
 Windows PowerShell:
 
 ```powershell
+$version = (Get-Content codex_workflow\VERSION).Trim()
+$tag = "v$version"
 py -3.11 -B scripts\test_workflow_runtime.py -v
-py -3.11 scripts/package_release.py --release-tag v1.1.2 --output-dir dist
-py -3.11 scripts/package_release.py --verify dist\codex_workflow-1.1.2.zip
+py -3.11 scripts\package_release.py --release-tag $tag --output-dir dist
+py -3.11 scripts\package_release.py --verify "dist\codex_workflow-$version.zip"
 ```
 
 The build validates the version, marker, lifecycle runtime, and required
@@ -89,26 +97,26 @@ and prerelease setting have been approved:
 
 ```sh
 git status --short
-git tag -a v1.1.2 -m "codex_workflow v1.1.2"
-git push origin v1.1.2
+version="$(cat codex_workflow/VERSION)"
+tag="v$version"
+git tag -a "$tag" -m "codex_workflow $tag"
+git push origin "$tag"
 ```
 
 Pushing a semantic `v*` tag starts `.github/workflows/release.yml`. It rebuilds
-and validates the archives from that tagged commit, then publishes the GitHub
-Release with `--prerelease` and generated notes. The workflow also supports a
-manual dispatch with a tag and defaults to prerelease publication. The
-prerelease flag should be removed or disabled only after a separate decision to
-promote the project to stable releases.
+and validates the archives from that tagged commit, then publishes a stable
+GitHub Release with generated notes. Manual dispatch packages the selected
+workflow ref, rejects an existing release tag that points elsewhere, and
+defaults to prerelease publication.
 
 If the workflow is unavailable, the equivalent manual publication command is:
 
 ```sh
-gh release create v1.1.2 \
-  dist/codex_workflow-1.1.2.zip \
+gh release create "$tag" \
+  "dist/codex_workflow-$version.zip" \
   dist/SHA256SUMS \
-  --title "codex_workflow v1.1.2" \
-  --generate-notes \
-  --prerelease
+  --title "codex_workflow $tag" \
+  --generate-notes
 ```
 
 The manual command is also approval-gated and must use assets built from the
@@ -119,8 +127,8 @@ same tagged commit.
 - Initial installation reads the extracted release package's
   `codex_workflow/bootstrap.md`; the bundled lifecycle CLI validates and
   applies the user-level bootstrap transaction directly.
-- `codex_workflow --install` reads the installed `install.md` and creates only
-  project-level workflow assets from the existing bootstrap.
+- `codex_workflow --install` reads the installed `install.md` and reports the
+  globally enabled version; no per-project installation is required.
 - At session start, the installed runtime checks GitHub Releases once when
   `auto_check_update` is enabled and reports an available update.
 - `codex_workflow --enable_auto_check_update` explicitly enables that check in
@@ -129,8 +137,8 @@ same tagged commit.
   `--enable_auto_update` and `--disable_auto_update` prompts remain compatibility
   aliases; no command automatically installs an update.
 - `codex_workflow --update` selects the latest appropriate ZIP asset, downloads
-  it from its GitHub Release URL, verifies it, and follows the package's update
-  procedure. It never clones the repository.
+  it from its GitHub Release URL, verifies it, and updates the global runtime.
+  It never clones the repository or modifies an ordinary project `AGENTS.md`.
 - `codex_workflow --remove` first displays a destructive dry-run summary and
   requires one explicit second confirmation before deleting workflow-owned
   files.
