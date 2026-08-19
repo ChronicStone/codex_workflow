@@ -1,8 +1,8 @@
 # Medium Route
 
-Use exactly one Luna worker when delegation saves coordinator context or gives a
-useful independent execution boundary. Never create a replacement worker for
-the same Medium task; follow-up turns reuse the initial worker. The coordinator
+Use exactly one configured worker when delegation saves coordinator context or
+gives a useful independent execution boundary. Never create a replacement worker
+for the same Medium task; follow-up turns reuse the initial worker. The coordinator
 remains responsible for the plan, architecture, integration assurance, Git,
 and communication. The worker owns focused and affected-owner checks; the
 coordinator consumes that evidence and runs only a missing integration or
@@ -23,23 +23,33 @@ Choose the role by the actual package:
 - `reviewer` or `ui-reviewer` for an explicit independent acceptance pass;
 - `doc-writer` for a targeted durable documentation update.
 
-Spawn the worker with `fork_turns="none"`. Its capsule must include the task ID
-and state the outcome, owner and exact surface, protected areas, relevant
-decisions and references, recommended approach, important invariant, likely
+For visible UI, Sol first states the intended hierarchy, interaction behavior,
+responsive contract, and design-system constraints. The Terra `ui-implementer`
+then owns the bounded implementation and browser evidence; after its report, Sol
+inspects the integrated rendered flow and owns final visual and UX acceptance.
+Open-ended design exploration or a major redesign stays with Sol. If one Terra
+repair cycle still leaves substantial defects, Sol takes over the surface.
+
+Spawn the worker with `fork_turns="none"`. Its capsule must include the task ID,
+`progress_target` set to the exact canonical parent task path, outcome, owner and
+exact surface, protected areas, relevant decisions and references, recommended
+approach, important invariant, likely
 pitfall, acceptance criteria, required checks, escalation conditions, and
 concise return format. Use `<role> — <task ID>` in commentary, plans, worker
 ledgers, and reports, keyed by native `agent_id`; generated person nicknames are
 reserved for quoted native platform errors.
 
 At dispatch, tell the user the worker's scope, expected outcome, and first
-milestone. The capsule requires proactive `send_message` progress checkpoints
-at the first material evidence, a material decision or approach change,
-completion of a coherent slice, before and after long verification, and any
-blocker. After 12 substantive tool calls without a semantic checkpoint, the
-worker sends a compact heartbeat. Each update stays under 60 words and states
-evidence, the current decision and why, the next action, and blockers without
-raw chain-of-thought, full logs, or routine tool narration. The worker continues
-immediately after sending it; acknowledgement is not required.
+milestone. Before its first repository or task tool call, the worker must call
+`send_message` with `target` equal to `progress_target`, acknowledge the capsule,
+and state its first action. It sends progress checkpoints at the first material
+evidence, a material decision or approach change, completion of a coherent slice,
+before and after long verification, and any blocker. After 8 substantive tool
+calls since the last checkpoint, it sends a compact heartbeat. Each update stays
+under 60 words and states evidence, the current decision and why, the next action,
+and blockers without raw chain-of-thought, full logs, or routine tool narration.
+The worker continues immediately after sending it; acknowledgement is not
+required. A missing or unusable `progress_target` makes the capsule invalid.
 
 The capsule owner and surface remain fixed for the entire task. Follow-ups may
 send changed facts, answer a question, or request a repair against an existing

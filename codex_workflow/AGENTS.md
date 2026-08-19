@@ -2,8 +2,9 @@
 <!-- codex-workflow-managed-start -->
 # Codex Workflow
 
-Use Sol as the coordinator and Luna workers for bounded execution. Repository
-instructions and routed skills remain authoritative for project-specific work.
+Use Sol as the coordinator, Terra for delegated visible UI work, and Luna for
+bounded non-visual execution. Repository instructions and routed skills remain
+authoritative for project-specific work.
 
 ## Core policy
 
@@ -32,7 +33,7 @@ instructions and routed skills remain authoritative for project-specific work.
   generated inputs, or environment in its scope changes. Never rerun an
   unchanged command against unchanged scoped inputs. After a failure, diagnose
   and make a relevant change before retrying; do not poll a failing check.
-- In delegated routes, the implementing Luna worker owns focused and owner
+- In delegated routes, the implementing worker owns focused and owner
   checks. A tester runs only missing risk-specific acceptance, and Sol consumes
   fresh evidence instead of rerunning it. Sol runs a check only for a missing
   integration boundary, evidence invalidated by coordinator edits, or an
@@ -40,17 +41,25 @@ instructions and routed skills remain authoritative for project-specific work.
 - After dispatch, Sol stays out of the delegated read and edit surface until the
   worker reports unless an unresolved architecture decision blocks it. Sol then
   inspects the integrated diff once and owns only the remaining integration gate.
+- For visible UI work, Sol defines the product direction and visual acceptance
+  contract before dispatch, Terra implements the bounded rendered surface, and
+  Sol verifies the integrated product in the configured browser. Keep design-
+  critical exploration, major redesigns, and unresolved UX decisions with Sol.
+  After one Terra repair cycle still leaves substantial visual or interaction
+  defects, Sol takes over instead of repeating delegation.
 - Queue new facts for the worker at its next message boundary. Interrupt only
   when continuing the current work would be invalid, destructive, or outside
   the authorized scope; never interrupt merely to request status or reprioritize
   valid in-flight work.
-- Delegated routes remain progressively visible. At dispatch, publish each
-  worker's scope and first milestone. Workers proactively send compact progress
-  checkpoints through `send_message` at material evidence, decisions, coherent
-  slice completion, long verification boundaries, and blockers. Relay those
-  checkpoints in commentary without reopening the delegated surface. Summarize
-  evidence, the current decision and why, the next action, and blockers; never
-  expose raw chain-of-thought, full logs, or routine tool narration.
+- Delegated routes remain progressively visible. Every capsule includes a
+  `progress_target` equal to the exact canonical parent task path. Before its
+  first repository or task tool call, the worker sends an acknowledgement to
+  that target with `send_message`, then sends compact checkpoints at material
+  evidence, decisions, coherent slice completion, long verification boundaries,
+  blockers, and no later than 8 substantive tool calls since its last update.
+  Relay each checkpoint in commentary before the next wait or task tool call.
+  Summarize evidence, the current decision and why, the next action, and blockers;
+  never expose raw chain-of-thought, full logs, or routine tool narration.
 - In commentary, plans, worker ledgers, and final reports, identify agents as
   `<role> — <task ID>` and key records by native `agent_id`. Never identify an
   agent by a generated person nickname except when quoting a native platform
@@ -72,7 +81,7 @@ do not spawn subagents, regardless of task size or number of stages.
 
 - **Light:** questions, diagnosis, planning-only work, or small bounded changes.
   Work directly with no subagents.
-- **Medium:** exactly one initial Luna worker owns one bounded package; follow-up
+- **Medium:** exactly one initial configured worker owns one bounded package; follow-up
   turns reuse it and never create a replacement. Medium provides an execution
   boundary, not parallel speedup; if the task contains multiple independent
   packages, report the route mismatch instead of hiding them in one capsule. Read

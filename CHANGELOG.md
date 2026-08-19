@@ -3,6 +3,19 @@
 All notable changes to `codex_workflow` are recorded here. Versions follow
 Semantic Versioning.
 
+## [2.3.0] - 2026-08-19
+
+- Routed bounded visible UI implementation and acceptance workers through Terra,
+  while Sol retains product direction and final browser acceptance and Luna
+  remains the default for non-visual worker packages.
+- Added a configurable `ui_subagent_model` with a schema migration that preserves
+  existing user configuration while defaulting UI roles to Terra.
+- Made worker progress delivery deterministic with an exact canonical parent
+  `progress_target`, a mandatory pre-action acknowledgement, and a heartbeat no
+  later than 8 substantive tool calls since the previous checkpoint.
+- Required Sol to relay received worker checkpoints before its next wait or task
+  tool call, and to take over UI work after one unsuccessful Terra repair cycle.
+
 ## [2.2.0] - 2026-08-18
 
 - Added progressive Medium and Heavy checkpoints for material evidence,
@@ -45,6 +58,7 @@ Semantic Versioning.
 - Added opt-in Light, Medium, and Heavy routing, bounded Luna worker roles,
   evidence reuse, milestone validation, and global lifecycle configuration.
 
+[2.3.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.5...v2.1.0
 [2.0.5]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.4...v2.0.5

@@ -1,8 +1,9 @@
 # Codex Workflow
 
 A general-purpose Codex orchestration setup that keeps a GPT-5.6 Sol coordinator
-focused on architecture and integration while GPT-5.6 Luna workers handle
-bounded execution, investigation, testing, and review.
+focused on architecture, product direction, and integration, uses GPT-5.6 Terra
+for bounded visible UI work, and uses GPT-5.6 Luna for non-visual execution,
+investigation, testing, and review.
 
 The workflow is tuned for full-stack applications, frontend product work,
 libraries, automation, and mixed repositories. Its delegation policy is loaded
@@ -11,7 +12,7 @@ repository-specific work.
 
 Release history is maintained in [`CHANGELOG.md`](CHANGELOG.md).
 
-## Default model pair
+## Default model routing
 
 Add the coordinator model to `~/.codex/config.toml`:
 
@@ -41,16 +42,17 @@ supports up to eight when the workload consistently decomposes cleanly.
 | --- | --- | --- |
 | `scout` | Luna high | Read-only repository, architecture, dependency, and root-cause investigation |
 | `implementer` | Luna xhigh | General backend, full-stack, library, automation, and configuration work |
-| `ui-implementer` | Luna xhigh | Visible frontend implementation with browser verification |
+| `ui-implementer` | Terra xhigh | Visible frontend implementation with browser verification |
 | `tester` | Luna high | Independent behavioral verification and regression coverage |
 | `reviewer` | Luna high | Independent correctness, ownership, security, and regression review |
-| `ui-reviewer` | Luna high | Rendered visual, interaction, responsive, and accessibility acceptance |
+| `ui-reviewer` | Terra high | Rendered visual, interaction, responsive, and accessibility acceptance |
 | `doc-writer` | Luna high | Targeted durable documentation |
 
 Implementation workers stay at `xhigh`, while bounded discovery, verification,
-review, and documentation use `high`. This preserves execution quality where a
-worker owns production changes and reduces reasoning cost on narrower evidence
-packages.
+review, and documentation use `high`. Sol owns UI direction and final rendered
+acceptance; Terra implements or reviews bounded UI surfaces; Luna handles the
+remaining worker packages. This routing is a configurable workflow default, so
+representative product tasks should remain the benchmark for changing it.
 
 Use `<role> — <task ID>` for agent references in commentary, plans, worker
 ledgers, and final reports, keyed by native `agent_id`. Generated person
@@ -96,11 +98,14 @@ explicit trigger the task stays Light, regardless of size. Every initial worker
 receives a compact capsule with `fork_turns="none"`; repository history
 is referenced rather than copied. Waiting is event-driven: use one long native
 wait between lifecycle or progress events rather than coordinator polling.
-Workers proactively send concise checkpoints when evidence, a decision, a
-completed slice, a long verification boundary, or a blocker materially changes;
-Sol relays them without reopening the delegated surface. These checkpoints
-contain evidence, rationale, and the next action rather than private
-chain-of-thought or routine tool narration. Valid worker evidence is consumed
+Every capsule carries an exact canonical parent `progress_target`. The worker
+acknowledges it through `send_message` before its first task action, then sends
+concise checkpoints when evidence, a decision, a completed slice, a long
+verification boundary, or a blocker materially changes, with a heartbeat after
+at most 8 substantive calls. Sol relays each update before its next wait or task
+tool call without reopening the delegated surface. Checkpoints contain evidence,
+rationale, and the next action rather than private chain-of-thought or routine
+tool narration. Valid worker evidence is consumed
 unless conflict, staleness, an
 integration boundary, or high risk reopens it.
 
@@ -108,7 +113,7 @@ Use `codex_workflow --analyze-thread <native-session-id-or-rollout-path>` to
 measure parent and child timing, concurrency, models, token usage, compactions,
 and tool calls from native rollout records without changing them.
 
-Validation follows a deduplicated ladder: the implementing Luna worker runs the
+Validation follows a deduplicated ladder: the implementing worker runs the
 smallest focused check when a coherent slice should pass and one owner gate at
 handoff; a tester covers only an otherwise-unchecked risk; Sol runs only a
 missing integration or explicitly required shipping gate. Passing evidence is

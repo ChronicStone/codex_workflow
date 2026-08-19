@@ -5,6 +5,7 @@
 
 - Default executor: `implementer` (`xhigh` reasoning effort).
 - Implementation workers: `gpt-5.6-luna` (`xhigh` reasoning effort).
+- UI workers: `gpt-5.6-terra` (`xhigh` implementation, `high` review reasoning effort).
 - Support workers: `gpt-5.6-luna` (`high` reasoning effort).
 - Enabled workers: `scout`, `implementer`, `ui-implementer`, `tester`, `reviewer`, `ui-reviewer`, `doc-writer`.
 - Maximum concurrent child workers: `4`.
@@ -48,6 +49,15 @@ reviewers over the same surface. Use `reviewer` for correctness and architecture
 review, and `ui-reviewer` for rendered interaction and visual acceptance. A UI
 reviewer must inspect the running product and cannot be replaced by code review.
 
+For visible UI, Sol defines the intended hierarchy, interaction behavior,
+responsive contract, and design-system constraints before allocation. Terra UI
+workers may run in parallel only on independent rendered experiences with no
+shared component, state, browser, port, or visual contract. Sol inspects the
+integrated rendered flow and owns final visual and UX acceptance. Open-ended
+design exploration and major redesigns stay with Sol; after one Terra repair
+cycle still leaves substantial defects, Sol takes over instead of delegating
+again.
+
 Keep hard architecture, security, migration, concurrency, and cross-cutting
 decisions with the Sol coordinator. Do not spawn another Sol instance; give a
 Luna implementer an explicit execution guide after the coordinator resolves the
@@ -58,6 +68,7 @@ decision.
 Every initial worker uses `fork_turns="none"` and receives:
 
 - task ID, outcome, owner, exact edit or read surface, and protected areas;
+- `progress_target` equal to the exact canonical parent task path;
 - relevant decisions, interfaces, dependencies, and exact references;
 - recommended approach and why it fits;
 - the most important invariant and likely integration pitfall;
@@ -70,26 +81,31 @@ except when quoting a native platform error, and do not invent `nickname` or
 `display_name` configuration.
 
 At dispatch, publish a worker ledger with every worker's scope, expected
-outcome, and first milestone. Each capsule requires proactive `send_message`
-progress checkpoints at the first material evidence, a material decision or
-approach change, completion of a coherent slice, before and after long
-verification, and any blocker. After 12 substantive tool calls without a
-semantic checkpoint, the worker sends a compact heartbeat. Each update stays
-under 60 words and states evidence, the current decision and why, the next
-action, and blockers without raw chain-of-thought, full logs, or routine tool
-narration. Workers continue immediately after sending; acknowledgement is not
-required. Batch checkpoints already available into one readable commentary
-update, but do not wait to manufacture a complete batch.
+outcome, and first milestone. Before its first repository or task tool call, each
+worker must call `send_message` with `target` equal to `progress_target`,
+acknowledge the capsule, and state its first action. It sends progress checkpoints
+at the first material evidence, a material decision or approach change,
+completion of a coherent slice, before and after long verification, and any
+blocker. After 8 substantive tool calls since the last checkpoint, it sends a
+compact heartbeat. Each update stays under 60 words and states evidence, the
+current decision and why, the next action, and blockers without raw chain-of-
+thought, full logs, or routine tool narration. Workers continue immediately
+after sending; acknowledgement is not required. A missing or unusable
+`progress_target` makes the capsule invalid. Relay every received checkpoint in
+commentary before the next wait or task tool call. Combine checkpoints that are
+already available into one readable update, but do not wait to manufacture a
+batch.
 
 The capsule owner and surface are immutable. Follow-ups can clarify facts or
 repair a failed criterion inside the same boundary; work that adds a feature,
 owner, package, or acceptance surface requires a new allocation decision within
 the remaining task budget.
 
-For Luna implementation, include an ordered execution guide with prerequisites,
-named files or symbols, the milestone where a focused check should first pass,
-the single owner gate required at handoff, edge cases, forbidden changes, and
-any final integration gate. Do not schedule broad checks for knowingly broken
+For delegated implementation, include an ordered execution guide with
+prerequisites, named files or symbols, the milestone where a focused check
+should first pass, the single owner gate required at handoff, edge cases,
+forbidden changes, and any final integration gate. Do not schedule broad checks
+for knowingly broken
 intermediate states or make workers rediscover established decisions.
 
 ## Evidence and repair

@@ -50,10 +50,11 @@ must not be edited directly.
 
 ```json
 {
-  "schema_version": 6,
+  "schema_version": 7,
   "default_executor": "implementer",
   "default_executor_reasoning_effort": "xhigh",
   "default_subagent_model": "gpt-5.6-luna",
+  "ui_subagent_model": "gpt-5.6-terra",
   "default_subagent_reasoning_effort": "high",
   "auto_check_update": false,
   "max_concurrent_workers": 4,
@@ -106,7 +107,8 @@ Do not repeat scouts or reviewers over the same surface.
 Identify agents as `<role> — <task ID>` in commentary, plans, worker ledgers, and
 final reports, keyed by native `agent_id`. Generated person nicknames are never
 used except when quoting a native platform error. Every capsule includes the
-task ID, and the workflow adds no `nickname` or `display_name` setting.
+task ID and exact canonical parent `progress_target`, and the workflow adds no
+`nickname` or `display_name` setting.
 
 Every initial worker receives `fork_turns="none"` plus the outcome, owner,
 surface, protected areas, relevant decisions and references, recommended
@@ -115,22 +117,28 @@ escalation conditions. Workers return evidence and knowledge deltas rather than
 logs or repeated repository context.
 
 Delegated work emits progressive checkpoints through native worker messages.
-Workers report the first material evidence, material decisions, coherent slice
-completion, long verification boundaries, and blockers; a short heartbeat is
-required after 12 substantive tool calls without a semantic checkpoint. Sol
-relays these updates promptly, batching only messages already available, while
+Before its first repository or task action, every worker sends an acknowledgement
+to its capsule's exact `progress_target`. Workers then report the first material
+evidence, material decisions, coherent slice completion, long verification
+boundaries, and blockers; a short heartbeat is required after at most 8
+substantive tool calls since the last checkpoint. Sol relays each update before
+its next wait or task tool call, batching only messages already available, while
 the worker continues without waiting for acknowledgement. Updates are capped at
 60 words and explain evidence, rationale, and the next action without exposing
 private chain-of-thought, full logs, or routine tool narration.
 
-Implementation roles use Luna `xhigh` by default. Read-only investigation,
-testing, review, UI acceptance, and documentation use Luna `high`; configure the
-groups independently when a repository needs a different quality/cost balance.
+General implementation uses Luna `xhigh`, while UI implementation uses Terra
+`xhigh`. Read-only investigation, testing, general review, and documentation use
+Luna `high`; UI review uses Terra `high`. Sol states the visual contract before
+delegation and owns final browser acceptance. Open-ended design or major
+redesigns remain Sol work, and substantial defects after one Terra repair cycle
+return the surface to Sol. The UI worker model is configurable for representative
+task benchmarking.
 
 ## Validation cadence
 
 Checks have one owner and run at milestones rather than after every edit. The
-implementing Luna worker runs the smallest focused check once when its slice is
+implementing worker runs the smallest focused check once when its slice is
 expected to work, then one affected-owner gate before handoff. A tester runs
 only missing risk-specific acceptance, and Sol consumes fresh evidence instead
 of repeating it. A passing result remains valid until scoped code,

@@ -60,11 +60,19 @@ def _migrate_v5_to_v6(raw: dict[str, Any]) -> dict[str, Any]:
     return migrated
 
 
+def _migrate_v6_to_v7(raw: dict[str, Any]) -> dict[str, Any]:
+    migrated = dict(raw)
+    migrated["ui_subagent_model"] = "gpt-5.6-terra"
+    migrated["schema_version"] = 7
+    return migrated
+
+
 CONFIG_MIGRATIONS: dict[int, ConfigMigration] = {
     2: _migrate_v2_to_v3,
     3: _migrate_v3_to_v4,
     4: _migrate_v4_to_v5,
     5: _migrate_v5_to_v6,
+    6: _migrate_v6_to_v7,
 }
 
 
