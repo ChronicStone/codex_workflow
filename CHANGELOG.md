@@ -3,6 +3,12 @@
 All notable changes to `codex_workflow` are recorded here. Versions follow
 Semantic Versioning.
 
+## [2.3.1] - 2026-08-19
+
+- Restored update compatibility with v2.2 launchers by keeping the persistent
+  configuration on schema 6 and expressing Terra UI routing in the owned role
+  templates instead of a new configuration key.
+
 ## [2.3.0] - 2026-08-19
 
 - Routed bounded visible UI implementation and acceptance workers through Terra,
@@ -58,6 +64,7 @@ Semantic Versioning.
 - Added opt-in Light, Medium, and Heavy routing, bounded Luna worker roles,
   evidence reuse, milestone validation, and global lifecycle configuration.
 
+[2.3.1]: https://github.com/ChronicStone/codex_workflow/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/ChronicStone/codex_workflow/compare/v2.0.5...v2.1.0

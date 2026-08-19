@@ -51,8 +51,8 @@ supports up to eight when the workload consistently decomposes cleanly.
 Implementation workers stay at `xhigh`, while bounded discovery, verification,
 review, and documentation use `high`. Sol owns UI direction and final rendered
 acceptance; Terra implements or reviews bounded UI surfaces; Luna handles the
-remaining worker packages. This routing is a configurable workflow default, so
-representative product tasks should remain the benchmark for changing it.
+remaining worker packages. This routing is a workflow default, so representative
+product tasks should remain the benchmark for changing it.
 
 Use `<role> — <task ID>` for agent references in commentary, plans, worker
 ledgers, and final reports, keyed by native `agent_id`. Generated person

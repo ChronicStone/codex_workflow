@@ -50,11 +50,10 @@ must not be edited directly.
 
 ```json
 {
-  "schema_version": 7,
+  "schema_version": 6,
   "default_executor": "implementer",
   "default_executor_reasoning_effort": "xhigh",
   "default_subagent_model": "gpt-5.6-luna",
-  "ui_subagent_model": "gpt-5.6-terra",
   "default_subagent_reasoning_effort": "high",
   "auto_check_update": false,
   "max_concurrent_workers": 4,
@@ -132,8 +131,8 @@ General implementation uses Luna `xhigh`, while UI implementation uses Terra
 Luna `high`; UI review uses Terra `high`. Sol states the visual contract before
 delegation and owns final browser acceptance. Open-ended design or major
 redesigns remain Sol work, and substantial defects after one Terra repair cycle
-return the surface to Sol. The UI worker model is configurable for representative
-task benchmarking.
+return the surface to Sol. Representative product tasks remain the benchmark
+for changing this routing in a later release.
 
 ## Validation cadence
 

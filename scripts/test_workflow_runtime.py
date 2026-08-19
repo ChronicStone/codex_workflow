@@ -314,7 +314,6 @@ class MarkerTests(unittest.TestCase):
         self.assertNotIn("--handoff-context-turns", completed.stdout)
         self.assertIn("--implementation-effort", completed.stdout)
         self.assertIn("--support-effort", completed.stdout)
-        self.assertIn("--ui-model", completed.stdout)
 
     def test_remove_help_hides_internal_confirmation_flag(self) -> None:
         completed = subprocess.run(
@@ -473,10 +472,9 @@ class ConfigTests(unittest.TestCase):
             )
         )
         self.assertFalse(raw["auto_check_update"])
-        self.assertEqual(raw["schema_version"], 7)
+        self.assertEqual(raw["schema_version"], 6)
         self.assertEqual(raw["default_executor_reasoning_effort"], "xhigh")
         self.assertEqual(raw["default_subagent_reasoning_effort"], "high")
-        self.assertEqual(raw["ui_subagent_model"], "gpt-5.6-terra")
         self.assertEqual(raw["max_total_workers"], 6)
         self.assertNotIn("nickname", raw)
         self.assertNotIn("display_name", raw)
@@ -485,8 +483,8 @@ class ConfigTests(unittest.TestCase):
     def test_newer_persistent_schema_is_rejected(self) -> None:
         with self.assertRaises(ValidationError):
             migrate_config_resource(
-                {"schema_version": 8},
                 {"schema_version": 7},
+                {"schema_version": 6},
             )
 
     def test_v2_config_migration_replaces_legacy_roles(self) -> None:
@@ -495,10 +493,9 @@ class ConfigTests(unittest.TestCase):
                 "schema_version": 2,
                 "enabled_workers": ["executor_luna", "doc-writer", "explorer"],
             },
-            {"schema_version": 7},
+            {"schema_version": 6},
         )
-        self.assertEqual(migrated["schema_version"], 7)
-        self.assertEqual(migrated["ui_subagent_model"], "gpt-5.6-terra")
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertIn("implementer", migrated["enabled_workers"])
         self.assertIn("ui-reviewer", migrated["enabled_workers"])
         self.assertNotIn("end_of_session", migrated["enabled_workers"])
@@ -510,9 +507,9 @@ class ConfigTests(unittest.TestCase):
                 "schema_version": 3,
                 "end_of_session_context_turns": 150,
             },
-            {"schema_version": 7},
+            {"schema_version": 6},
         )
-        self.assertEqual(migrated["schema_version"], 7)
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertNotIn("end_of_session_context_turns", migrated)
 
     def test_v5_config_migration_adds_budget_and_preserves_reasoning(self) -> None:
@@ -523,10 +520,9 @@ class ConfigTests(unittest.TestCase):
                 "default_subagent_reasoning_effort": "high",
                 "max_concurrent_workers": 4,
             },
-            {"schema_version": 7, "max_total_workers": 6},
+            {"schema_version": 6, "max_total_workers": 6},
         )
-        self.assertEqual(migrated["schema_version"], 7)
-        self.assertEqual(migrated["ui_subagent_model"], "gpt-5.6-terra")
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertEqual(migrated["max_total_workers"], 6)
         self.assertEqual(migrated["default_executor_reasoning_effort"], "high")
         self.assertEqual(migrated["default_subagent_reasoning_effort"], "high")
@@ -863,7 +859,6 @@ class LifecycleIntegrationTests(unittest.TestCase):
             {
                 "default_executor_reasoning_effort": "high",
                 "default_subagent_reasoning_effort": "high",
-                "ui_subagent_model": "gpt-5.6-luna",
                 "max_concurrent_workers": 7,
                 "max_total_workers": 5,
             },
@@ -876,7 +871,6 @@ class LifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(configured["max_concurrent_workers"], 7)
         self.assertEqual(configured["max_total_workers"], 5)
         self.assertEqual(configured["default_subagent_reasoning_effort"], "high")
-        self.assertEqual(configured["ui_subagent_model"], "gpt-5.6-luna")
         implementer = (self.runtime.agents / "implementer.toml").read_text(encoding="utf-8")
         self.assertIn('model_reasoning_effort = "high"', implementer)
         for worker in configured["enabled_workers"]:
@@ -884,10 +878,6 @@ class LifecycleIntegrationTests(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn('model_reasoning_effort = "high"', rendered_worker)
-        self.assertIn(
-            'model = "gpt-5.6-luna"',
-            (self.runtime.agents / "ui-implementer.toml").read_text(encoding="utf-8"),
-        )
         self.assertEqual(extract(self.project.active.read_text(), PROJECT_LOCAL), "Local policy.")
 
     def test_configure_keeps_unactivated_worker_definitions_materialized(self) -> None:
@@ -1045,8 +1035,7 @@ class LifecycleIntegrationTests(unittest.TestCase):
         incoming = self.incoming_package("config-migration-incoming", "2.4.0")
         plan_update(incoming, self.runtime, self.project).apply()
         migrated = json.loads(config_path.read_text(encoding="utf-8"))
-        self.assertEqual(migrated["schema_version"], 7)
-        self.assertEqual(migrated["ui_subagent_model"], "gpt-5.6-terra")
+        self.assertEqual(migrated["schema_version"], 6)
         self.assertEqual(migrated["default_executor_reasoning_effort"], "xhigh")
         self.assertEqual(migrated["default_subagent_reasoning_effort"], "xhigh")
         self.assertEqual(migrated["max_total_workers"], 6)

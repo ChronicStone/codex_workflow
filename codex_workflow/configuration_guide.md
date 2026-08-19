@@ -8,15 +8,13 @@ Read the current values from
 `~/.codex/codex_workflow/workflow_config.json`, then show one menu with the
 current value beside each setting:
 
-1. UI worker model: `gpt-5.6-terra` or `gpt-5.6-luna`; Terra is the default for
-   `ui-implementer` and `ui-reviewer`.
-2. Implementation effort: `high` or `xhigh`; `implementer` and
+1. Implementation effort: `high` or `xhigh`; `implementer` and
    `ui-implementer` default to `xhigh` because they own production changes.
-3. Support effort: `high` or `xhigh`; scouts, testers, reviewers, UI reviewers,
+2. Support effort: `high` or `xhigh`; scouts, testers, reviewers, UI reviewers,
    and documentation workers default to `high` for bounded evidence.
-4. Maximum concurrent workers: 1 through 8.
-5. Maximum worker final-report size in words.
-6. Exit.
+3. Maximum concurrent workers: 1 through 8.
+4. Maximum worker final-report size in words.
+5. Exit.
 
 Ask only for the selected setting, allow **Keep current**, and return to the
 menu. Do not edit generated files directly. When the user exits, run the CLI
@@ -24,7 +22,6 @@ once with only changed flags:
 
 ```text
 python3 ~/.codex/codex_workflow/workflow.py configure --json \
-  --ui-model <model> \
   --implementation-effort <effort> \
   --support-effort <effort> \
   --max-workers <count> \

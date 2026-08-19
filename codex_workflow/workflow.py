@@ -120,11 +120,6 @@ def parse_args() -> argparse.Namespace:
     )
     configure.add_argument("--implementation-effort", choices=["high", "xhigh"])
     configure.add_argument("--support-effort", choices=["high", "xhigh"])
-    configure.add_argument(
-        "--ui-model",
-        choices=["gpt-5.6-terra", "gpt-5.6-luna"],
-        help="model used by ui-implementer and ui-reviewer",
-    )
     configure.add_argument("--max-workers", type=int)
     configure.add_argument("--report-size", type=int)
     configure.add_argument(
@@ -411,7 +406,6 @@ def main() -> int:
             changes = {
                 "default_executor_reasoning_effort": implementation_effort,
                 "default_subagent_reasoning_effort": support_effort,
-                "ui_subagent_model": args.ui_model,
                 "max_concurrent_workers": args.max_workers,
                 "report_package_size": args.report_size,
                 "auto_check_update": (

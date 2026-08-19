@@ -16,13 +16,12 @@ from .migrations import migrate_config_resource
 
 DEFAULT_EXECUTORS = {"implementer"}
 IMPLEMENTATION_WORKERS = {"implementer", "ui-implementer"}
-UI_WORKERS = {"ui-implementer", "ui-reviewer"}
 REASONING_EFFORTS = {"medium", "high", "xhigh"}
-CONFIG_SCHEMA_VERSION = 7
+CONFIG_SCHEMA_VERSION = 6
 REQUIRED_WORKERS: set[str] = set()
 PLATFORM_MAX_WORKERS = 8
 MAX_TOTAL_WORKERS = 6
-SUBAGENT_MODELS = {"gpt-5.6-luna", "gpt-5.6-terra"}
+SUBAGENT_MODELS = {"gpt-5.6-luna"}
 
 
 @dataclass(frozen=True)
@@ -31,7 +30,6 @@ class WorkflowConfig:
     default_executor: str
     default_executor_reasoning_effort: str
     default_subagent_model: str
-    ui_subagent_model: str
     default_subagent_reasoning_effort: str
     auto_check_update: bool
     max_concurrent_workers: int
@@ -48,7 +46,6 @@ class WorkflowConfig:
             "default_executor",
             "default_executor_reasoning_effort",
             "default_subagent_model",
-            "ui_subagent_model",
             "default_subagent_reasoning_effort",
             "auto_check_update",
             "max_concurrent_workers",
@@ -86,9 +83,6 @@ class WorkflowConfig:
         subagent_model = raw["default_subagent_model"]
         if subagent_model not in SUBAGENT_MODELS:
             raise ValidationError("invalid default_subagent_model")
-        ui_subagent_model = raw["ui_subagent_model"]
-        if ui_subagent_model not in SUBAGENT_MODELS:
-            raise ValidationError("invalid ui_subagent_model")
         subagent_effort = raw["default_subagent_reasoning_effort"]
         if subagent_effort not in REASONING_EFFORTS:
             raise ValidationError("invalid default_subagent_reasoning_effort")
@@ -115,7 +109,6 @@ class WorkflowConfig:
             default,
             effort,
             subagent_model,
-            ui_subagent_model,
             subagent_effort,
             auto_check,
             maximum,
@@ -177,7 +170,7 @@ def effective_config_body(config: WorkflowConfig) -> str:
             f"(`{config.default_executor_reasoning_effort}` reasoning effort).",
             f"- Implementation workers: `{config.default_subagent_model}` "
             f"(`{config.default_executor_reasoning_effort}` reasoning effort).",
-            f"- UI workers: `{config.ui_subagent_model}` "
+            "- UI workers: `gpt-5.6-terra` "
             f"(`{config.default_executor_reasoning_effort}` implementation, "
             f"`{config.default_subagent_reasoning_effort}` review reasoning effort).",
             f"- Support workers: `{config.default_subagent_model}` "
@@ -199,7 +192,6 @@ def render_heavy_route(text: str, config: WorkflowConfig) -> str:
 _EFFORT_LINE = re.compile(
     r'(?m)^model_reasoning_effort\s*=\s*"[^"]+"\s*$'
 )
-_MODEL_LINE = re.compile(r'(?m)^model\s*=\s*"[^"]+"\s*$')
 
 
 def render_worker_template(text: str, *, worker: str, config: WorkflowConfig) -> str:
@@ -215,15 +207,6 @@ def render_worker_template(text: str, *, worker: str, config: WorkflowConfig) ->
     if len(matches) != 1:
         raise ValidationError(f"expected one reasoning effort field in {worker}")
     text = _EFFORT_LINE.sub(f'model_reasoning_effort = "{effort}"', text)
-    model_matches = list(_MODEL_LINE.finditer(text))
-    if len(model_matches) != 1:
-        raise ValidationError(f"expected one model field in {worker}")
-    model = (
-        config.ui_subagent_model
-        if worker in UI_WORKERS
-        else config.default_subagent_model
-    )
-    text = _MODEL_LINE.sub(f'model = "{model}"', text)
     tomllib.loads(text)
     return text
 
